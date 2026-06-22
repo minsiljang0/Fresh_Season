@@ -32,7 +32,7 @@ export default function RegionPage({ regionId }) {
   return (
     <>
       <Head>
-        <title>{region.name} 제철 먹거리 — 제철밥상</title>
+        <title>{region.name} 제철 먹거리 — Fresh Season</title>
         <meta name="description" content={`${region.name}의 제철 식재료, 건강 효능, TV 레시피를 확인하세요.`} />
       </Head>
       <Header />

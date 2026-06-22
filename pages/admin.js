@@ -76,10 +76,10 @@ export default function Admin() {
 
   if (!loggedIn) return (
     <>
-      <Head><title>관리자 — 제철밥상</title></Head>
+      <Head><title>관리자 — Fresh Season</title></Head>
       <Header />
       <main className="wrap" style={{ maxWidth: 400, paddingTop: 80 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 24 }}>관리자 로그인</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 24 }}>Fresh Season 관리자 로그인</h1>
         <input type="password" placeholder="관리자 비밀번호" value={pw} onChange={e => setPw(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && login()} style={{ ...inputStyle, marginBottom: 10 }} />
         <button onClick={login} style={btnStyle}>로그인</button>
@@ -90,7 +90,7 @@ export default function Admin() {
 
   return (
     <>
-      <Head><title>관리자 — 제철밥상</title></Head>
+      <Head><title>관리자 — Fresh Season</title></Head>
       <Header />
       <main className="wrap" style={{ paddingTop: 32, paddingBottom: 64 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>

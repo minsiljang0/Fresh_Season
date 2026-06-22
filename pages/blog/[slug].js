@@ -21,7 +21,7 @@ export default function BlogPost({ slug: initialSlug }) {
   return (
     <>
       <Head>
-        <title>{post?.title || '로딩 중'} — 제철밥상</title>
+        <title>{post?.title || '로딩 중'} — Fresh Season</title>
       </Head>
       <Header />
       <main className="wrap" style={{ maxWidth: 780 }}>

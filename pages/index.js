@@ -18,7 +18,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>제철밥상 — 지역별 제철 먹거리 & TV 레시피</title>
+        <title>Fresh Season — 지역별 제철 먹거리 & TV 레시피</title>
         <meta name="description" content="전국 지역별 제철 식재료, 건강 효능, TV 방영 레시피를 한 곳에서 만나보세요." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>

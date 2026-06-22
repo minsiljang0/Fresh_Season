@@ -39,7 +39,7 @@ export default function IngredientPage({ ingredientName }) {
   return (
     <>
       <Head>
-        <title>{ingredientName} 제철 레시피 & 효능 — 제철밥상</title>
+        <title>{ingredientName} 제철 레시피 & 효능 — Fresh Season</title>
         <meta name="description" content={`${ingredientName}의 제철 시기, 건강 효능, TV 방영 레시피를 확인하세요.`} />
       </Head>
       <Header />

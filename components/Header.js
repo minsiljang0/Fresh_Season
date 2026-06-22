@@ -9,7 +9,7 @@ export default function Header() {
       <div className="header-inner">
         <Link href="/" className="logo">
           <div className="logo-icon">🥬</div>
-          <span className="logo-text"><span>제철</span>밥상</span>
+          <span className="logo-text"><span>Fresh</span> Season</span>
         </Link>
         <nav className="header-nav">
           <Link href="/" className={`nav-link${router.pathname === '/' ? ' active' : ''}`}>홈</Link>

@@ -19,8 +19,8 @@ export default function BlogIndex() {
   return (
     <>
       <Head>
-        <title>블로그 — 제철밥상</title>
-        <meta name="description" content="제철 식재료와 TV 레시피 블로그" />
+        <title>블로그 — Fresh Season</title>
+        <meta name="description" content="신선한 제철 식재료와 TV 레시피 블로그" />
       </Head>
       <Header />
       <main className="wrap">
