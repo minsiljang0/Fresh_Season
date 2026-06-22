@@ -10,9 +10,10 @@ import SeasonalFoodPanel from '../components/admin/SeasonalFoodPanel'
 import AdsensePanel from '../components/admin/AdsensePanel'
 import BoardAdminPanel from '../components/admin/BoardAdminPanel'
 import LegalPanel from '../components/admin/LegalPanel'
-import { S, Toast } from '../components/admin/AdminUI'
+import { S, Toast, Toggle } from '../components/admin/AdminUI'
 
 const TAB_LABELS = {
+  settings:    '🔧 서비스 설정',
   blog_write:  '✍️ 글쓰기',
   blog_admin:  '📝 글 관리',
   blog_menu:   '📋 메뉴 관리',
@@ -85,6 +86,9 @@ export default function Admin() {
   const [pwMsg, setPwMsg] = useState(null)
 
   // 광고/약관 설정
+  const [cooldownDur, setCooldownDur] = useState(12)
+  const [adsOn, setAdsOn] = useState(true)
+  const [saved, setSaved] = useState(false)
   const [adSlots, setAdSlots] = useState([])
   const [terms, setTerms] = useState('')
   const [privacy, setPrivacy] = useState('')
@@ -97,6 +101,8 @@ export default function Admin() {
     try {
       const res = await fetch('/api/settings/get', { headers: { 'x-admin-token': token } })
       const data = await res.json()
+      if (data.cooldown !== undefined) setCooldownDur(data.cooldown)
+      if (data.adsOn !== undefined) setAdsOn(data.adsOn)
       if (data.adSlots) setAdSlots(data.adSlots)
       if (data.terms) setTerms(data.terms)
       if (data.privacy) setPrivacy(data.privacy)
@@ -116,6 +122,17 @@ export default function Admin() {
     }
     setLoading(false)
   }, [])
+
+  const saveSettings = async () => {
+    try {
+      await fetch('/api/settings/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ cooldown: cooldownDur, adsOn }),
+      })
+      setSaved(true); setTimeout(() => setSaved(false), 2000)
+    } catch { showToast('❌ 저장 실패') }
+  }
 
   const changePw = async () => {
     if (!newPw) { setPwMsg({ ok: false, msg: '새 비밀번호를 입력하세요' }); return }
@@ -173,6 +190,33 @@ export default function Admin() {
 
         <main className="admin-main" style={{ flex: 1, minWidth: 0, padding: '32px 28px 60px' }}>
           <div style={{ maxWidth: 980, margin: '0 auto' }}>
+
+            {activeTab === 'settings' && (
+              <div style={S.card}>
+                <div style={S.cardTitle}>🔧 서비스 기본 설정</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div>
+                    <label style={S.label}>쿨다운 시간 (초) — 다운로드 후 광고 노출 시간</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <input type="range" min={0} max={60} value={cooldownDur}
+                        onChange={e => setCooldownDur(Number(e.target.value))}
+                        style={{ flex: 1 }} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#22c55e', minWidth: 40 }}>{cooldownDur}초</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>광고 전체 노출</div>
+                      <div style={{ fontSize: 12, color: '#666' }}>OFF 시 사이트 전체 광고 영역이 숨겨집니다</div>
+                    </div>
+                    <Toggle value={adsOn} onChange={setAdsOn} />
+                  </div>
+                  <button onClick={saveSettings} style={{ ...S.btn(), alignSelf: 'flex-start' }}>
+                    {saved ? '✅ 저장됨' : '저장하기'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {(activeTab === 'blog_write' || activeTab === 'blog_admin') && (
               <BlogAdminPanel key={activeTab} adminToken={adminToken} initialView={activeTab === 'blog_write' ? 'write' : 'list'} />

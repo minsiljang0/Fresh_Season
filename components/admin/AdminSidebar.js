@@ -1,4 +1,5 @@
 const NAV = [
+  { id: 'settings',    label: '서비스 설정',       icon: '🔧' },
   { id: 'blog_write',  label: '글쓰기',           icon: '✍️' },
   { id: 'blog_admin',  label: '글 관리',           icon: '📝' },
   { id: 'blog_menu',   label: '메뉴 관리',         icon: '📋' },
