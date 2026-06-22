@@ -14,15 +14,15 @@ import { S, Toast, Toggle } from '../components/admin/AdminUI'
 
 const TAB_LABELS = {
   settings:    '🔧 서비스 설정',
-  blog_write:  '✍️ 글쓰기',
-  blog_admin:  '📝 글 관리',
-  blog_menu:   '📋 메뉴 관리',
+  blog_write:  '✍️ 블로그 글쓰기',
+  blog_admin:  '📝 블로그 관리',
+  blog_menu:   '📋 블로그 메뉴관리',
   content_log: '🗂️ 발행 기록',
   keyword:     '🔍 키워드 관리',
   tv_recipes:  '📺 TV 레시피',
   seasonal:    '🌿 제철 식재료',
-  board_free:  '💬 자유게시판',
-  board_req:   '📬 부탁해요',
+  free_board:  '💬 자유게시판',
+  requests:    '📬 부탁해요',
   adsense:     '📢 광고 관리',
   legal:       '📜 약관 관리',
   password:    '🔑 비밀번호 변경',
@@ -226,8 +226,8 @@ export default function Admin() {
             {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
             {activeTab === 'tv_recipes' && <TvRecipePanel adminToken={adminToken} />}
             {activeTab === 'seasonal' && <SeasonalFoodPanel adminToken={adminToken} />}
-            {activeTab === 'board_free' && <BoardAdminPanel adminToken={adminToken} postType="free" />}
-            {activeTab === 'board_req' && <BoardAdminPanel adminToken={adminToken} postType="request" />}
+            {activeTab === 'free_board' && <BoardAdminPanel adminToken={adminToken} postType="free" />}
+            {activeTab === 'requests' && <BoardAdminPanel adminToken={adminToken} postType="request" />}
             {activeTab === 'adsense' && (
               <AdsensePanel adminToken={adminToken} adSlots={adSlots} setAdSlots={setAdSlots} onSaved={() => showToast('✅ 저장됨')} />
             )}
