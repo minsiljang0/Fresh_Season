@@ -1,190 +1,220 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
-import Header from '../components/Header'
-import Footer from '../components/Footer'
-import { REGIONS } from '../lib/regions'
+import AdminSidebar from '../components/admin/AdminSidebar'
+import BlogAdminPanel from '../components/admin/BlogAdminPanel'
+import BlogMenuPanel from '../components/admin/BlogMenuPanel'
+import ContentLogPanel from '../components/admin/ContentLogPanel'
+import KeywordPanel from '../components/admin/KeywordPanel'
+import TvRecipePanel from '../components/admin/TvRecipePanel'
+import SeasonalFoodPanel from '../components/admin/SeasonalFoodPanel'
+import AdsensePanel from '../components/admin/AdsensePanel'
+import BoardAdminPanel from '../components/admin/BoardAdminPanel'
+import LegalPanel from '../components/admin/LegalPanel'
+import { S, Toast } from '../components/admin/AdminUI'
+
+const TAB_LABELS = {
+  blog_write:  '✍️ 글쓰기',
+  blog_admin:  '📝 글 관리',
+  blog_menu:   '📋 메뉴 관리',
+  content_log: '🗂️ 발행 기록',
+  keyword:     '🔍 키워드 관리',
+  tv_recipes:  '📺 TV 레시피',
+  seasonal:    '🌿 제철 식재료',
+  board_free:  '💬 자유게시판',
+  board_req:   '📬 부탁해요',
+  adsense:     '📢 광고 관리',
+  legal:       '📜 약관 관리',
+  password:    '🔑 비밀번호 변경',
+}
+
+function LoginScreen({ onLogin }) {
+  const [pw, setPw] = useState('')
+  const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    setLoading(true); setErr('')
+    try {
+      const res = await fetch('/api/settings/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErr(data.error || '비밀번호가 틀렸습니다'); setTimeout(() => setErr(''), 2500) }
+      else { sessionStorage.setItem('admin_token', data.token); onLogin(data.token) }
+    } catch { setErr('서버 연결 실패') }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#0c0c0c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Outfit', sans-serif" }}>
+      <div style={{ background: '#161616', border: '1px solid #2a2a2a', borderRadius: 14, padding: 40, width: 360 }}>
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ width: 44, height: 44, background: '#22c55e', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16 }}>🌿</div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#f0f0f0' }}>Admin</h1>
+          <p style={{ color: '#666', fontSize: 14, marginTop: 4 }}>Fresh Season 관리자</p>
+        </div>
+        <form onSubmit={submit}>
+          <input type="password" placeholder="비밀번호" value={pw} onChange={e => setPw(e.target.value)}
+            style={{ ...S.input, borderColor: err ? '#f87171' : '#333', marginBottom: 8 }} />
+          {err && <p style={{ color: '#f87171', fontSize: 13, marginBottom: 8 }}>{err}</p>}
+          <button type="submit" disabled={loading} style={{ ...S.btn(), width: '100%', marginTop: 8, opacity: loading ? 0.6 : 1 }}>
+            {loading ? '확인 중...' : '로그인'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 export default function Admin() {
-  const [token, setToken] = useState('')
-  const [pw, setPw] = useState('')
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [tab, setTab] = useState('posts')
-  const [posts, setPosts] = useState([])
-  const [recipes, setRecipes] = useState([])
-  const [form, setForm] = useState({ title: '', slug: '', content: '', category: '', status: 'published' })
-  const [recipeForm, setRecipeForm] = useState({ ingredient: '', program: '', episode: '', title: '', summary: '', source_url: '' })
-  const [msg, setMsg] = useState('')
+  const [authed, setAuthed] = useState(false)
+  const [adminToken, setAdminToken] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTabState] = useState('blog_write')
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab)
+    try { sessionStorage.setItem('admin_active_tab', tab) } catch {}
+  }
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [toast, setToast] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [newPwConfirm, setNewPwConfirm] = useState('')
+  const [pwMsg, setPwMsg] = useState(null)
+
+  // 광고/약관 설정
+  const [adSlots, setAdSlots] = useState([])
+  const [terms, setTerms] = useState('')
+  const [privacy, setPrivacy] = useState('')
+  const [termsEn, setTermsEn] = useState('')
+  const [privacyEn, setPrivacyEn] = useState('')
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+
+  const loadSettings = async (token) => {
+    try {
+      const res = await fetch('/api/settings/get', { headers: { 'x-admin-token': token } })
+      const data = await res.json()
+      if (data.adSlots) setAdSlots(data.adSlots)
+      if (data.terms) setTerms(data.terms)
+      if (data.privacy) setPrivacy(data.privacy)
+      if (data.termsEn) setTermsEn(data.termsEn)
+      if (data.privacyEn) setPrivacyEn(data.privacyEn)
+    } catch {}
+  }
 
   useEffect(() => {
-    const saved = localStorage.getItem('sf_admin_token')
-    if (saved) { setToken(saved); setLoggedIn(true) }
+    const token = sessionStorage.getItem('admin_token')
+    const savedTab = sessionStorage.getItem('admin_active_tab')
+    if (savedTab && TAB_LABELS[savedTab]) setActiveTabState(savedTab)
+    if (token) {
+      setAuthed(true)
+      setAdminToken(token)
+      loadSettings(token)
+    }
+    setLoading(false)
   }, [])
 
-  function flash(m) { setMsg(m); setTimeout(() => setMsg(''), 3000) }
-
-  async function login() {
-    const r = await fetch('/api/settings/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
-    const d = await r.json()
-    if (d.ok) { setToken(d.token); setLoggedIn(true); localStorage.setItem('sf_admin_token', d.token) }
-    else flash('비밀번호 오류')
+  const changePw = async () => {
+    if (!newPw) { setPwMsg({ ok: false, msg: '새 비밀번호를 입력하세요' }); return }
+    if (newPw !== newPwConfirm) { setPwMsg({ ok: false, msg: '비밀번호가 일치하지 않습니다' }); return }
+    try {
+      const res = await fetch('/api/settings/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ newPassword: newPw }),
+      })
+      if (!res.ok) throw new Error()
+      setPwMsg({ ok: true, msg: '✅ 비밀번호가 변경되었습니다' })
+      setNewPw(''); setNewPwConfirm('')
+    } catch { setPwMsg({ ok: false, msg: '변경 실패' }) }
+    setTimeout(() => setPwMsg(null), 3000)
   }
 
-  function headers() { return { 'Content-Type': 'application/json', 'x-admin-token': token } }
-
-  async function loadPosts() {
-    const d = await fetch('/api/blog/posts?limit=50', { headers: { 'x-admin-token': token } }).then(r => r.json())
-    setPosts(Array.isArray(d) ? d : [])
-  }
-  async function loadRecipes() {
-    const d = await fetch('/api/admin/tv-recipes', { headers: { 'x-admin-token': token } }).then(r => r.json())
-    setRecipes(Array.isArray(d) ? d : [])
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_token')
+    sessionStorage.removeItem('admin_active_tab')
+    setAuthed(false)
   }
 
-  useEffect(() => { if (loggedIn) { loadPosts(); loadRecipes() } }, [loggedIn])
-
-  async function submitPost(e) {
-    e.preventDefault()
-    const r = await fetch('/api/blog/posts', { method: 'POST', headers: headers(), body: JSON.stringify(form) })
-    const d = await r.json()
-    if (d.id) { flash('✅ 발행 완료'); setForm({ title: '', slug: '', content: '', category: '', status: 'published' }); loadPosts() }
-    else flash('❌ 오류: ' + d.error)
-  }
-
-  async function deletePost(id) {
-    if (!confirm('삭제할까요?')) return
-    await fetch(`/api/blog/posts?id=${id}`, { method: 'DELETE', headers: headers() })
-    loadPosts(); flash('삭제됨')
-  }
-
-  async function submitRecipe(e) {
-    e.preventDefault()
-    const r = await fetch('/api/admin/tv-recipes', { method: 'POST', headers: headers(), body: JSON.stringify(recipeForm) })
-    const d = await r.json()
-    if (d.ok) { flash('✅ 레시피 등록 완료'); setRecipeForm({ ingredient: '', program: '', episode: '', title: '', summary: '', source_url: '' }); loadRecipes() }
-    else flash('❌ 오류: ' + d.error)
-  }
-
-  async function deleteRecipe(id) {
-    if (!confirm('삭제할까요?')) return
-    await fetch(`/api/admin/tv-recipes?id=${id}`, { method: 'DELETE', headers: headers() })
-    loadRecipes(); flash('삭제됨')
-  }
-
-  const inputStyle = { width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }
-  const btnStyle = { padding: '8px 18px', borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }
-  const tabStyle = (t) => ({ padding: '7px 16px', borderRadius: 8, border: `1.5px solid ${tab === t ? 'var(--accent)' : 'var(--border)'}`, background: tab === t ? 'rgba(34,197,94,0.1)' : 'var(--surface)', color: tab === t ? 'var(--accent)' : 'var(--text2)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' })
-
-  if (!loggedIn) return (
-    <>
-      <Head><title>관리자 — Fresh Season</title></Head>
-      <Header />
-      <main className="wrap" style={{ maxWidth: 400, paddingTop: 80 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 24 }}>Fresh Season 관리자 로그인</h1>
-        <input type="password" placeholder="관리자 비밀번호" value={pw} onChange={e => setPw(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && login()} style={{ ...inputStyle, marginBottom: 10 }} />
-        <button onClick={login} style={btnStyle}>로그인</button>
-        {msg && <p style={{ marginTop: 10, fontSize: 13, color: 'var(--accent)' }}>{msg}</p>}
-      </main>
-    </>
-  )
+  if (loading) return null
+  if (!authed) return <LoginScreen onLogin={(t) => { setAuthed(true); setAdminToken(t); loadSettings(t) }} />
 
   return (
     <>
-      <Head><title>관리자 — Fresh Season</title></Head>
-      <Header />
-      <main className="wrap" style={{ paddingTop: 32, paddingBottom: 64 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 900 }}>관리자</h1>
-          <button onClick={() => { setLoggedIn(false); localStorage.removeItem('sf_admin_token') }}
-            style={{ ...btnStyle, background: 'var(--surface2)', color: 'var(--text2)' }}>로그아웃</button>
-        </div>
-        {msg && <p style={{ marginBottom: 16, fontSize: 13, color: 'var(--accent)', fontWeight: 700 }}>{msg}</p>}
+      <Head>
+        <title>Admin — Fresh Season</title>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
+      </Head>
 
-        {/* 탭 */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
-          <button style={tabStyle('posts')} onClick={() => setTab('posts')}>📝 글 관리</button>
-          <button style={tabStyle('write')} onClick={() => setTab('write')}>✏️ 글 쓰기</button>
-          <button style={tabStyle('recipes')} onClick={() => setTab('recipes')}>📺 TV 레시피</button>
-          <button style={tabStyle('addRecipe')} onClick={() => setTab('addRecipe')}>➕ 레시피 등록</button>
+      <div style={{ minHeight: '100vh', background: '#0c0c0c', fontFamily: "'Outfit', sans-serif", color: '#f0f0f0', display: 'flex' }}>
+
+        <div style={{ display: 'none', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, background: '#161616', borderBottom: '1px solid #2a2a2a', padding: '14px 16px', alignItems: 'center', justifyContent: 'space-between' }} className="admin-mobile-bar">
+          <button onClick={() => setMobileNavOpen(true)} style={{ background: 'none', border: 'none', color: '#f0f0f0', fontSize: 20, cursor: 'pointer' }}>☰</button>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>{TAB_LABELS[activeTab]}</span>
+          <span style={{ width: 20 }} />
         </div>
 
-        {/* 글 관리 */}
-        {tab === 'posts' && (
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 14 }}>발행된 글 ({posts.length})</h2>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {posts.map(p => {
-                const r = REGIONS.find(x => x.id === p.category)
-                return (
-                  <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                    <div>
-                      {r && <span className="badge" style={{ fontSize: 10, marginBottom: 4, display: 'inline-block', background: `${r.color}22`, color: r.color }}>{r.icon} {r.name}</span>}
-                      <p style={{ fontSize: 14, fontWeight: 600 }}>{p.title}</p>
-                      <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{p.slug} · {p.status}</p>
-                    </div>
-                    <button onClick={() => deletePost(p.id)} style={{ ...btnStyle, background: '#ef444422', color: '#ef4444', padding: '5px 12px', fontSize: 12 }}>삭제</button>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        <style>{`
+          @media (max-width: 880px) {
+            .admin-desktop-sidebar { display: none !important; }
+            .admin-mobile-bar { display: flex !important; }
+            .admin-main { padding-top: 64px !important; }
+          }
+        `}</style>
 
-        {/* 글 쓰기 */}
-        {tab === 'write' && (
-          <form onSubmit={submitPost} style={{ display: 'grid', gap: 12, maxWidth: 680 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 800 }}>새 글 쓰기</h2>
-            <input placeholder="제목" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={inputStyle} required />
-            <input placeholder="슬러그 (영문, 하이픈)" value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} style={inputStyle} required />
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={inputStyle}>
-              <option value="">지역 선택</option>
-              {REGIONS.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
-            </select>
-            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} style={inputStyle}>
-              <option value="published">발행</option>
-              <option value="draft">임시저장</option>
-            </select>
-            <textarea placeholder="본문 (HTML 가능)" value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-              style={{ ...inputStyle, minHeight: 200, resize: 'vertical' }} required />
-            <button type="submit" style={btnStyle}>발행하기</button>
-          </form>
-        )}
+        <div className="admin-desktop-sidebar">
+          <AdminSidebar activeTab={activeTab} onNav={setActiveTab} onLogout={handleLogout} />
+        </div>
+        <AdminSidebar activeTab={activeTab} onNav={setActiveTab} onLogout={handleLogout}
+          mobile open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
-        {/* TV 레시피 목록 */}
-        {tab === 'recipes' && (
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 14 }}>등록된 TV 레시피 ({recipes.length})</h2>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {recipes.map(r => (
-                <div key={r.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <main className="admin-main" style={{ flex: 1, minWidth: 0, padding: '32px 28px 60px' }}>
+          <div style={{ maxWidth: 980, margin: '0 auto' }}>
+
+            {(activeTab === 'blog_write' || activeTab === 'blog_admin') && (
+              <BlogAdminPanel key={activeTab} adminToken={adminToken} initialView={activeTab === 'blog_write' ? 'write' : 'list'} />
+            )}
+            {activeTab === 'blog_menu' && <BlogMenuPanel adminToken={adminToken} />}
+            {activeTab === 'content_log' && <ContentLogPanel adminToken={adminToken} />}
+            {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
+            {activeTab === 'tv_recipes' && <TvRecipePanel adminToken={adminToken} />}
+            {activeTab === 'seasonal' && <SeasonalFoodPanel adminToken={adminToken} />}
+            {activeTab === 'board_free' && <BoardAdminPanel adminToken={adminToken} postType="free" />}
+            {activeTab === 'board_req' && <BoardAdminPanel adminToken={adminToken} postType="request" />}
+            {activeTab === 'adsense' && (
+              <AdsensePanel adminToken={adminToken} adSlots={adSlots} setAdSlots={setAdSlots} onSaved={() => showToast('✅ 저장됨')} />
+            )}
+            {activeTab === 'legal' && (
+              <LegalPanel adminToken={adminToken}
+                terms={terms} privacy={privacy} setTerms={setTerms} setPrivacy={setPrivacy}
+                termsEn={termsEn} privacyEn={privacyEn} setTermsEn={setTermsEn} setPrivacyEn={setPrivacyEn}
+                onSaved={() => showToast('✅ 저장됨')} />
+            )}
+            {activeTab === 'password' && (
+              <div style={S.card}>
+                <div style={S.cardTitle}>🔑 비밀번호 변경</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 360 }}>
                   <div>
-                    <span className="tag" style={{ marginBottom: 4, display: 'inline-block' }}>📺 {r.program}</span>
-                    <p style={{ fontSize: 14, fontWeight: 600 }}>{r.title}</p>
-                    <p style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>재료: {r.ingredient} {r.episode && `· ${r.episode}`}</p>
-                    {r.summary && <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{r.summary.slice(0, 60)}...</p>}
+                    <label style={S.label}>새 비밀번호</label>
+                    <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} style={S.input} />
                   </div>
-                  <button onClick={() => deleteRecipe(r.id)} style={{ ...btnStyle, background: '#ef444422', color: '#ef4444', padding: '5px 12px', fontSize: 12 }}>삭제</button>
+                  <div>
+                    <label style={S.label}>새 비밀번호 확인</label>
+                    <input type="password" value={newPwConfirm} onChange={e => setNewPwConfirm(e.target.value)} style={S.input} />
+                  </div>
+                  {pwMsg && <p style={{ color: pwMsg.ok ? '#4ade80' : '#f87171', fontSize: 13 }}>{pwMsg.msg}</p>}
+                  <button onClick={changePw} style={{ ...S.btn(), alignSelf: 'flex-start' }}>변경하기</button>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* 레시피 등록 */}
-        {tab === 'addRecipe' && (
-          <form onSubmit={submitRecipe} style={{ display: 'grid', gap: 12, maxWidth: 680 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 800 }}>TV 레시피 등록</h2>
-            <input placeholder="재료명 (예: 오징어)" value={recipeForm.ingredient} onChange={e => setRecipeForm(f => ({ ...f, ingredient: e.target.value }))} style={inputStyle} required />
-            <input placeholder="TV 프로그램 (예: 생활의달인)" value={recipeForm.program} onChange={e => setRecipeForm(f => ({ ...f, program: e.target.value }))} style={inputStyle} required />
-            <input placeholder="방영 회차/날짜 (선택)" value={recipeForm.episode} onChange={e => setRecipeForm(f => ({ ...f, episode: e.target.value }))} style={inputStyle} />
-            <input placeholder="레시피 제목" value={recipeForm.title} onChange={e => setRecipeForm(f => ({ ...f, title: e.target.value }))} style={inputStyle} required />
-            <textarea placeholder="레시피 요약" value={recipeForm.summary} onChange={e => setRecipeForm(f => ({ ...f, summary: e.target.value }))} style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }} />
-            <input placeholder="출처 URL (선택)" value={recipeForm.source_url} onChange={e => setRecipeForm(f => ({ ...f, source_url: e.target.value }))} style={inputStyle} />
-            <button type="submit" style={btnStyle}>등록하기</button>
-          </form>
-        )}
-      </main>
-      <Footer />
+          </div>
+        </main>
+      </div>
+      <Toast msg={toast} />
     </>
   )
 }
