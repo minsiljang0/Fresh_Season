@@ -52,11 +52,11 @@ export default function RegionPage({ regionId }) {
 
           <button onClick={() => setShowCities(!showCities)}
             style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 12px', fontSize: 12, color: 'var(--text2)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {showCities ? '▲' : '▼'} 포함 시군구 ({region.cities.length}개)
+            {showCities ? '▲' : '▼'} 포함 시군구 ({region.districts.length}개)
           </button>
           {showCities && (
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 10 }}>
-              {region.cities.map(c => <span key={c} className="tag" style={{ fontSize: 11 }}>{c}</span>)}
+              {region.districts.map(c => <span key={c} className="tag" style={{ fontSize: 11 }}>{c}</span>)}
             </div>
           )}
         </section>
