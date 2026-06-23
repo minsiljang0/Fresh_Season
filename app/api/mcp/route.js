@@ -282,13 +282,12 @@ const baseHandler = createMcpHandler(
     server.registerTool(
       'naver_keyword_volume',
       {
-        title: '네이버 키워드 실시간 검색량 조회',
+        title: '네이버 키워드 실시간 검색량 조회 + 자동 저장',
         description:
           '네이버 검색광고 키워드도구로 키워드별 월간 검색량(PC/모바일 합산)과 경쟁정도를 ' +
-          '실시간으로 조회한다. NAVER_CLIENT_ID/SECRET 환경변수가 설정되어 있으면 네이버 블로그 ' +
-          '문서수(docCount)도 함께 반환된다. 캐시에 없는 새 후보 키워드를 즉석에서 비교할 때 사용한다. ' +
-          '조회 결과 중 나중에도 쓸만한 키워드가 있으면 save_keyword_data로 캐시에 저장해두면, ' +
-          '다음 글 작성 때 get_keyword_data로 다시 불러와 재활용할 수 있다.',
+          '실시간으로 조회한다. 조회 결과는 keyword_stats 테이블에 hint=입력키워드로 자동 저장되어 ' +
+          'admin 키워드 관리 화면의 "오늘 실시간 조회" 탭에서 바로 확인할 수 있다. ' +
+          'NAVER_CLIENT_ID/SECRET 환경변수가 설정되어 있으면 네이버 블로그 문서수(docCount)도 함께 반환된다.',
         inputSchema: {
           hintKeywords: z.string().describe('쉼표로 구분된 한글 키워드 문자열, 최대 5개. 예: "유튜브썸네일,온라인타이머,포모도로타이머"'),
         },
@@ -300,60 +299,29 @@ const baseHandler = createMcpHandler(
         }
         try {
           const results = await fetchNaverKeywordData(keywords)
-          return { content: [{ type: 'text', text: JSON.stringify({ query: keywords, results }, null, 2) }] }
+
+          // keyword_stats에 자동 저장 (hint = 조회한 키워드명, created_at = 지금)
+          const nowIso = new Date().toISOString()
+          for (const hint of keywords) {
+            const rows = results
+              .filter(r => r.keyword)
+              .map(r => ({
+                hint,
+                keyword: r.keyword,
+                pc: r.monthlySearchPc || 0,
+                mobile: r.monthlySearchMobile || 0,
+                total: r.monthlySearchTotal || 0,
+                competition: r.competition || '-',
+                created_at: nowIso,
+              }))
+            if (rows.length > 0) {
+              await supabase.from('keyword_stats').upsert(rows, { onConflict: 'hint,keyword' })
+            }
+          }
+
+          return { content: [{ type: 'text', text: JSON.stringify({ query: keywords, saved: results.length, results }, null, 2) }] }
         } catch (err) {
           return { content: [{ type: 'text', text: `오류: ${err.message || '키워드 조회 중 오류가 발생했습니다.'}` }], isError: true }
-        }
-      }
-    )
-
-    server.registerTool(
-      'save_keyword_data',
-      {
-        title: '키워드 검색량 데이터 저장 (TOP 키워드 캐시)',
-        description:
-          'naver_keyword_volume으로 실시간 조회한 키워드 검색량 결과를 도구(tool_id)의 TOP 키워드 ' +
-          '캐시(keyword_stats)에 저장한다. naver_keyword_volume의 응답에 있는 results 배열을 그대로 ' +
-          '넘기면 된다. 같은 도구·키워드 조합은 최신 값으로 덮어쓴다(upsert) — 여러 번 호출해도 안전하다. ' +
-          '저장해두면 다음 글 작성 때 get_keyword_data로 바로 불러와 재사용할 수 있어, 매번 실시간 조회를 ' +
-          '반복하지 않아도 된다. 도구와 직접 관련 없어 보이는 키워드까지 전부 저장해도 무방하다 — ' +
-          '연결고리·각도 판단은 글 작성 시점에 get_keyword_data를 다시 호출해서 한다.',
-        inputSchema: {
-          region: z.enum(REGION_CODES).describe('시도 코드. 예: gangwon'),
-          keywords: z.array(z.object({
-            keyword: z.string(),
-            monthlySearchPc: z.number().optional(),
-            monthlySearchMobile: z.number().optional(),
-            monthlySearchTotal: z.number().optional(),
-            competition: z.string().optional(),
-          })).min(1).describe('naver_keyword_volume 응답의 results 배열을 그대로 전달'),
-        },
-        annotations: { destructiveHint: false, idempotentHint: true },
-      },
-      async ({ region, keywords }) => {
-        const hint = region
-        const rows = keywords.map(k => {
-          const pc = k.monthlySearchPc || 0
-          const mobile = k.monthlySearchMobile || 0
-          const total = k.monthlySearchTotal != null ? k.monthlySearchTotal : pc + mobile
-          return {
-            hint,
-            keyword: k.keyword,
-            pc,
-            mobile,
-            total,
-            competition: k.competition || '-',
-          }
-        })
-        const { error } = await supabase
-          .from('keyword_stats')
-          .upsert(rows, { onConflict: 'hint,keyword' })
-        if (error) return { content: [{ type: 'text', text: `오류: ${error.message}` }], isError: true }
-        return {
-          content: [{
-            type: 'text',
-            text: `✅ [${region}] TOP 키워드 캐시에 ${rows.length}개 저장됨. 다음 글 작성 때 get_keyword_data로 바로 조회 가능.`,
-          }],
         }
       }
     )
