@@ -23,6 +23,7 @@ const TOOL_PANELS = {
           { done:false, text:'사이트 URL 등록 및 소유권 확인', desc:'애드센스 가입 후 사이트 주소 등록, <head>에 메타태그 삽입' },
           { done:false, text:'ads.txt 파일 루트에 업로드', desc:'google.com, pub-XXXXXXX, DIRECT, f08c47fec0942fa0 형식' },
           { done:false, text:'자동 광고 ON 또는 광고 단위 수동 생성', desc:'자동 광고는 구글이 최적 위치 자동 배치' },
+          { done:false, text:'광고 코드를 <head> 또는 본문에 삽입', desc:'_app.js의 <Head>에 Script 컴포넌트로 로드' },
           { done:false, text:'광고 코드 <head> 또는 본문에 삽입', desc:'_app.js의 <Head>에 Script 컴포넌트로 로드' },
         ]},
       { title:'📋 주기적으로 확인', color:'#f59e0b', bg:'#1a1200', border:'#5a3a00',
@@ -41,7 +42,7 @@ const TOOL_PANELS = {
       { title:'🚀 최초 셋팅', color:'#4ade80', bg:'#0f2a0f', border:'#166534',
         items:[
           { done:false, text:'속성 추가 및 소유권 인증', desc:'URL 접두사 방식 권장' },
-          { done:false, text:'sitemap.xml 제출', desc:'설정 → Sitemaps → sitemap.xml 제출' },
+          { done:true, text:'sitemap.xml 제출 완료', desc:'설정 → Sitemaps → sitemap.xml 제출 완료 ✅' },
           { done:false, text:'robots.txt 확인', desc:'크롤링 차단 규칙 없는지 확인' },
           { done:false, text:'Google Analytics 연결', desc:'설정 → 연결 → Analytics 연동' },
         ]},
@@ -49,8 +50,10 @@ const TOOL_PANELS = {
         items:[
           { done:false, text:'[월간] 색인 생성 현황 확인', desc:'색인이 생성되지 않은 페이지 원인 파악' },
           { done:false, text:'[월간] 검색 성과 (클릭수·노출수·CTR)', desc:'어떤 키워드로 유입되는지 확인' },
-          { done:false, text:'[글 발행 시] URL 즉시 검사 요청', desc:'URL 검사 → 색인 생성 요청' },
+          { done:false, text:'[글 발행 시] 새 글 발행 후 URL 즉시 검사 요청', desc:'URL 검사 → 색인 생성 요청 — 구글이 빠르게 크롤링하도록 유도' },
+          { done:false, text:'[분기] 모바일 사용성 오류 확인', desc:'경험 → 모바일 사용성 — 터치 요소 간격·뷰포트 설정 등 오류 수정' },
           { done:false, text:'[분기] Core Web Vitals 점수 확인', desc:'LCP·INP·CLS 점수 확인 및 개선' },
+          { done:true, text:'🤖 [매일 자동] 사이트맵 URL 자동 색인 요청', desc:'GitHub Actions로 매일 오전 9시(KST) 자동 실행 — Indexing API로 전체 URL 색인 요청 ✅' },
         ]}
     ]
   },
@@ -60,7 +63,7 @@ const TOOL_PANELS = {
     sections:[
       { title:'🚀 최초 셋팅', color:'#60a5fa', bg:'#0d1525', border:'#1e3a8a',
         items:[
-          { done:false, text:'GA4 속성 생성 및 데이터 스트림 추가', desc:'관리 → 속성 만들기 → 웹 스트림 추가 → G-XXXXXXXX 발급' },
+          { done:true, text:'GA4 속성 생성 및 데이터 스트림 추가 완료', desc:'관리 → 속성 만들기 → 웹 스트림 추가 → 측정 ID(G-XXXXXXXX) 발급 ✅' },
           { done:false, text:'측정 ID를 사이트 <head>에 삽입', desc:'_app.js에 Script 컴포넌트로 gtag.js 로드' },
           { done:false, text:'Search Console 연결', desc:'GA4 관리 → 속성 → Search Console 링크' },
           { done:false, text:'내부 트래픽(내 IP) 필터 설정', desc:'관리 → 데이터 필터 → 내부 트래픽 정의' },
@@ -73,6 +76,8 @@ const TOOL_PANELS = {
           { done:false, text:'[주간] 유입 채널별 트래픽 분석', desc:'획득 → 트래픽 획득' },
           { done:false, text:'[주간] 인기 페이지 TOP 10 확인', desc:'참여 → 페이지 및 화면' },
           { done:false, text:'[월간] 이탈률·평균 참여 시간 확인', desc:'참여 시간 짧으면 도입부 개선' },
+          { done:false, text:'[월간] 기기별·지역별 접속 현황', desc:'모바일 비율이 높으면 모바일 UX를 우선 최적화' },
+          { done:true, text:'🤖 [자동] 주간/월간 리포트 이메일 수신 중', desc:'GA4 이메일 예약 전송으로 자동 발송 중 ✅' },
         ]}
     ]
   },
@@ -82,7 +87,8 @@ const TOOL_PANELS = {
     sections:[
       { title:'🚀 최초 셋팅', color:'#a78bfa', bg:'#150f25', border:'#4c1d95',
         items:[
-          { done:false, text:'og:title / og:description 추가', desc:'각 페이지마다 고유한 제목·설명 설정' },
+          { done:false, text:'index.html에 og:title 추가', desc:'<meta property="og:title" content="방과후 출석부 — 스마트 출석 관리" />' },
+          { done:false, text:'og:description 추가 (80~160자)', desc:'<meta property="og:description" content="방과후 강사를 위한 스마트 출석 관리 서비스..." />' },
           { done:false, text:'og:image 추가 (1200x630px 권장)', desc:'SNS 공유 시 표시되는 썸네일' },
           { done:false, text:'og:url / og:type / og:site_name 추가', desc:'og:type은 website' },
           { done:false, text:'Twitter Card 태그 추가', desc:'<meta name="twitter:card" content="summary_large_image" />' },
@@ -105,6 +111,7 @@ const TOOL_PANELS = {
           { done:false, text:'sitemap.xml 자동 생성 및 제출', desc:'새 글 발행 시 sitemap 자동 갱신 확인' },
           { done:false, text:'robots.txt 정상 설정 확인', desc:'/admin은 Disallow, /blog는 Allow' },
           { done:false, text:'canonical URL 태그 삽입', desc:'중복 페이지 문제 방지' },
+          { done:false, text:'HTTPS 적용 확인', desc:'HTTP 접속 시 자동으로 HTTPS 리다이렉트 되는지 확인' },
           { done:false, text:'모바일 반응형 확인', desc:'구글은 모바일 우선 색인' },
         ]},
       { title:'✍️ 글 작성 시 매번 체크', color:'#06b6d4', bg:'#001a1f', border:'#155e75',
@@ -113,7 +120,9 @@ const TOOL_PANELS = {
           { done:false, text:'메타 description 작성 (80~160자)', desc:'키워드 포함 + 클릭 유도 문구' },
           { done:false, text:'URL 슬러그를 짧고 명확하게', desc:'영문 소문자+하이픈, 한글 금지' },
           { done:false, text:'H2·H3 소제목으로 콘텐츠 구조화', desc:'목차 역할 + 구글이 구조 파악' },
-          { done:false, text:'발행 후 서치콘솔 URL 색인 요청', desc:'URL 검사 → 색인 생성 요청' },
+          { done:false, text:'이미지 alt 텍스트 입력', desc:'모든 이미지에 alt="설명" 추가 — 이미지 검색 유입 + 접근성 향상' },
+          { done:false, text:'내부 링크 2~3개 이상 삽입', desc:'관련 글로 연결 — 체류 시간 증가 + 구글 크롤러가 사이트 구조 파악 가능' },
+          { done:false, text:'발행 후 서치콘솔에서 URL 색인 요청', desc:'URL 검사 → 색인 생성 요청 — 발행 즉시 구글에 알리기' },
         ]}
     ]
   },
@@ -123,14 +132,20 @@ const TOOL_PANELS = {
     sections:[
       { title:'✅ 필수 등록', color:'#34d399', bg:'#002510', border:'#065f46',
         items:[
-          { done:false, text:'구글 서치콘솔 등록', desc:'소유권 인증 + sitemap 제출 + GA4 연결' },
-          { done:false, text:'네이버 서치어드바이저 등록', desc:'소유권 인증 + sitemap 제출' },
-          { done:false, text:'빙 웹마스터 도구 등록', desc:'구글 서치콘솔에서 가져오기 가능' },
+          { done:true, text:'구글 서치콘솔 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 ✅ · GA4 연결 ✅' },
+          { done:true, text:'네이버 서치어드바이저 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 완료 ✅' },
+          { done:true, text:'빙 웹마스터 도구 등록 완료', desc:'구글 서치콘솔에서 수입 · sitemap 자동 연동 완료 ✅' },
+        ]},
+      { title:'✅ 선택 등록 완료', color:'#10b981', bg:'#001a0a', border:'#064e3b',
+        items:[
+          { done:true, text:'다음(카카오) 검색 등록 완료', desc:'사이트 등록 신청 완료 ✅' },
+          { done:true, text:'줌(ZUM) 등록 완료', desc:'구글·다음 등록 시 자동 수집 ✅' },
+          { done:true, text:'얀덱스 웹마스터 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 완료 ✅' },
         ]},
       { title:'🔧 등록 후 해야 할 것', color:'#10b981', bg:'#001a0a', border:'#064e3b',
         items:[
-          { done:false, text:'각 검색엔진에 sitemap.xml 제출', desc:'구글·네이버·빙 모두 제출' },
-          { done:false, text:'소유권 인증 메타태그 삽입', desc:'구글·네이버 인증 메타태그 <head>에 추가' },
+          { done:true, text:'각 검색엔진에 sitemap.xml 제출 완료', desc:'구글·네이버·빙·얀덱스 모두 제출 완료 ✅' },
+          { done:true, text:'소유권 인증 메타태그 index.html에 추가 완료', desc:'구글·네이버 인증 메타태그 <head>에 추가 완료 ✅' },
           { done:false, text:'ads.txt 파일 확인', desc:'/ads.txt 브라우저에서 직접 접근해서 확인' },
         ]}
     ]
