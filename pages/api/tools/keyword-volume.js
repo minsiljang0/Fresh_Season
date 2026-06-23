@@ -266,11 +266,13 @@ export default async function handler(req, res) {
       }
     }
 
+    const nowIso = new Date().toISOString()
     const withDocCount = parsed.map(item => ({
       ...item,
       doc_count: docCountMap[item.keyword] !== undefined
         ? docCountMap[item.keyword]
         : (existingMap[item.keyword] ?? null),
+      created_at: nowIso,
     }))
 
     if (withDocCount.length > 0) {
