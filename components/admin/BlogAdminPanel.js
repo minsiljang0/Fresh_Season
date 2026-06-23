@@ -41,7 +41,7 @@ const TOOL_PANELS = {
       { title:'🚀 최초 셋팅', color:'#4ade80', bg:'#0f2a0f', border:'#166534',
         items:[
           { done:false, text:'속성 추가 및 소유권 인증', desc:'URL 접두사 방식 권장' },
-          { done:true, text:'sitemap.xml 제출 완료', desc:'설정 → Sitemaps → sitemap.xml 제출 완료 ✅' },
+          { done:false, text:'sitemap.xml 제출 완료', desc:'설정 → Sitemaps → sitemap.xml 제출 완료 ✅' },
           { done:false, text:'robots.txt 확인', desc:'크롤링 차단 규칙 없는지 확인' },
           { done:false, text:'Google Analytics 연결', desc:'설정 → 연결 → Analytics 연동' },
         ]},
@@ -52,7 +52,7 @@ const TOOL_PANELS = {
           { done:false, text:'[글 발행 시] 새 글 발행 후 URL 즉시 검사 요청', desc:'URL 검사 → 색인 생성 요청 — 구글이 빠르게 크롤링하도록 유도' },
           { done:false, text:'[분기] 모바일 사용성 오류 확인', desc:'경험 → 모바일 사용성 — 터치 요소 간격·뷰포트 설정 등 오류 수정' },
           { done:false, text:'[분기] Core Web Vitals 점수 확인', desc:'LCP·INP·CLS 점수 확인 및 개선' },
-          { done:true, text:'🤖 [매일 자동] 사이트맵 URL 자동 색인 요청', desc:'GitHub Actions로 매일 오전 9시(KST) 자동 실행 — Indexing API로 전체 URL 색인 요청 ✅' },
+          { done:false, text:'🤖 [매일 자동] 사이트맵 URL 자동 색인 요청', desc:'GitHub Actions로 매일 오전 9시(KST) 자동 실행 — Indexing API로 전체 URL 색인 요청 ✅' },
         ]}
     ]
   },
@@ -62,7 +62,7 @@ const TOOL_PANELS = {
     sections:[
       { title:'🚀 최초 셋팅', color:'#60a5fa', bg:'#0d1525', border:'#1e3a8a',
         items:[
-          { done:true, text:'GA4 속성 생성 및 데이터 스트림 추가 완료', desc:'관리 → 속성 만들기 → 웹 스트림 추가 → 측정 ID(G-XXXXXXXX) 발급 ✅' },
+          { done:false, text:'GA4 속성 생성 및 데이터 스트림 추가 완료', desc:'관리 → 속성 만들기 → 웹 스트림 추가 → 측정 ID(G-XXXXXXXX) 발급 ✅' },
           { done:false, text:'측정 ID를 사이트 <head>에 삽입', desc:'_app.js에 Script 컴포넌트로 gtag.js 로드' },
           { done:false, text:'Search Console 연결', desc:'GA4 관리 → 속성 → Search Console 링크' },
           { done:false, text:'내부 트래픽(내 IP) 필터 설정', desc:'관리 → 데이터 필터 → 내부 트래픽 정의' },
@@ -76,7 +76,7 @@ const TOOL_PANELS = {
           { done:false, text:'[주간] 인기 페이지 TOP 10 확인', desc:'참여 → 페이지 및 화면' },
           { done:false, text:'[월간] 이탈률·평균 참여 시간 확인', desc:'참여 시간 짧으면 도입부 개선' },
           { done:false, text:'[월간] 기기별·지역별 접속 현황', desc:'모바일 비율이 높으면 모바일 UX를 우선 최적화' },
-          { done:true, text:'🤖 [자동] 주간/월간 리포트 이메일 수신 중', desc:'GA4 이메일 예약 전송으로 자동 발송 중 ✅' },
+          { done:false, text:'🤖 [자동] 주간/월간 리포트 이메일 수신 중', desc:'GA4 이메일 예약 전송으로 자동 발송 중 ✅' },
         ]}
     ]
   },
@@ -132,21 +132,21 @@ const TOOL_PANELS = {
     sections:[
       { title:'✅ 필수 등록', color:'#34d399', bg:'#002510', border:'#065f46',
         items:[
-          { done:true, text:'구글 서치콘솔 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 ✅ · GA4 연결 ✅' },
-          { done:true, text:'네이버 서치어드바이저 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 완료 ✅' },
-          { done:true, text:'빙 웹마스터 도구 등록 완료', desc:'구글 서치콘솔에서 수입 · sitemap 자동 연동 완료 ✅' },
+          { done:false, text:'구글 서치콘솔 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 ✅ · GA4 연결 ✅' },
+          { done:false, text:'네이버 서치어드바이저 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 완료 ✅' },
+          { done:false, text:'빙 웹마스터 도구 등록 완료', desc:'구글 서치콘솔에서 수입 · sitemap 자동 연동 완료 ✅' },
         ]},
       { title:'✅ 선택 등록 완료', color:'#10b981', bg:'#001a0a', border:'#064e3b',
         items:[
-          { done:true, text:'다음(카카오) 검색 등록 완료', desc:'사이트 등록 신청 완료 ✅' },
-          { done:true, text:'줌(ZUM) 등록 완료', desc:'구글·다음 등록 시 자동 수집 ✅' },
-          { done:true, text:'얀덱스 웹마스터 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 완료 ✅' },
+          { done:false, text:'다음(카카오) 검색 등록 완료', desc:'사이트 등록 신청 완료 ✅' },
+          { done:false, text:'줌(ZUM) 등록 완료', desc:'구글·다음 등록 시 자동 수집 ✅' },
+          { done:false, text:'얀덱스 웹마스터 등록 완료', desc:'소유권 인증 ✅ · sitemap 제출 완료 ✅' },
         ]},
       { title:'🔧 등록 후 해야 할 것', color:'#10b981', bg:'#001a0a', border:'#064e3b',
         items:[
           { done: false, text: 'IndexNow 키 파일 확인', desc: 'public/9dcc9754863220877605a3ee2763022a.txt 파일 배포됐는지 브라우저에서 직접 확인' },
-          { done:true, text:'각 검색엔진에 sitemap.xml 제출 완료', desc:'구글·네이버·빙·얀덱스 모두 제출 완료 ✅' },
-          { done:true, text:'소유권 인증 메타태그 index.html에 추가 완료', desc:'구글·네이버 인증 메타태그 <head>에 추가 완료 ✅' },
+          { done:false, text:'각 검색엔진에 sitemap.xml 제출 완료', desc:'구글·네이버·빙·얀덱스 모두 제출 완료 ✅' },
+          { done:false, text:'소유권 인증 메타태그 index.html에 추가 완료', desc:'구글·네이버 인증 메타태그 <head>에 추가 완료 ✅' },
         ]}
     ]
   },
