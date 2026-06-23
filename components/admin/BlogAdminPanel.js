@@ -24,11 +24,10 @@ const TOOL_PANELS = {
           { done:false, text:'ads.txt 파일 루트에 업로드', desc:'google.com, pub-XXXXXXX, DIRECT, f08c47fec0942fa0 형식' },
           { done:false, text:'자동 광고 ON 또는 광고 단위 수동 생성', desc:'자동 광고는 구글이 최적 위치 자동 배치' },
           { done:false, text:'광고 코드를 <head> 또는 본문에 삽입', desc:'_app.js의 <Head>에 Script 컴포넌트로 로드' },
-          { done:false, text:'광고 코드 <head> 또는 본문에 삽입', desc:'_app.js의 <Head>에 Script 컴포넌트로 로드' },
         ]},
       { title:'📋 주기적으로 확인', color:'#f59e0b', bg:'#1a1200', border:'#5a3a00',
         items:[
-          { done:false, text:'[주간] 수익 및 RPM 확인', desc:'대시보드 → 보고서에서 날짜별 수익 추이 체크' },
+          { done: false, text: '[주간] 수익 및 RPM(페이지 1000회당 수익) 확인', desc: '대시보드 → 보고서에서 날짜별 수익 추이 체크' },
           { done:false, text:'[수시] 정책 위반 경고 확인', desc:'알림 탭에 빨간 경고 뜨면 즉시 조치' },
           { done:false, text:'[월간] 잘 클릭되는 광고 위치 파악', desc:'본문 상단·목차 아래·본문 중간이 CTR 높음' },
           { done:false, text:'[월간] 모바일 광고 노출 확인', desc:'반응형 광고 단위 사용 여부 체크' },
@@ -48,8 +47,8 @@ const TOOL_PANELS = {
         ]},
       { title:'📋 주기적으로 확인', color:'#22c55e', bg:'#0a1a0a', border:'#14532d',
         items:[
+          { done: false, text: '[월간] 검색 성과 (클릭수·노출수·CTR) 확인', desc: '어떤 키워드로 유입되는지 확인 — CTR 낮은 글은 제목/메타설명 수정 검토' },
           { done:false, text:'[월간] 색인 생성 현황 확인', desc:'색인이 생성되지 않은 페이지 원인 파악' },
-          { done:false, text:'[월간] 검색 성과 (클릭수·노출수·CTR)', desc:'어떤 키워드로 유입되는지 확인' },
           { done:false, text:'[글 발행 시] 새 글 발행 후 URL 즉시 검사 요청', desc:'URL 검사 → 색인 생성 요청 — 구글이 빠르게 크롤링하도록 유도' },
           { done:false, text:'[분기] 모바일 사용성 오류 확인', desc:'경험 → 모바일 사용성 — 터치 요소 간격·뷰포트 설정 등 오류 수정' },
           { done:false, text:'[분기] Core Web Vitals 점수 확인', desc:'LCP·INP·CLS 점수 확인 및 개선' },
@@ -113,6 +112,7 @@ const TOOL_PANELS = {
           { done:false, text:'canonical URL 태그 삽입', desc:'중복 페이지 문제 방지' },
           { done:false, text:'HTTPS 적용 확인', desc:'HTTP 접속 시 자동으로 HTTPS 리다이렉트 되는지 확인' },
           { done:false, text:'모바일 반응형 확인', desc:'구글은 모바일 우선 색인' },
+          { done: false, text: 'Core Web Vitals 점수 확인', desc: '서치콘솔 → 경험 → Core Web Vitals — LCP·INP·CLS 점수 확인 및 개선' },
         ]},
       { title:'✍️ 글 작성 시 매번 체크', color:'#06b6d4', bg:'#001a1f', border:'#155e75',
         items:[
@@ -144,9 +144,9 @@ const TOOL_PANELS = {
         ]},
       { title:'🔧 등록 후 해야 할 것', color:'#10b981', bg:'#001a0a', border:'#064e3b',
         items:[
+          { done: false, text: 'IndexNow 키 파일 확인', desc: 'public/9dcc9754863220877605a3ee2763022a.txt 파일 배포됐는지 브라우저에서 직접 확인' },
           { done:true, text:'각 검색엔진에 sitemap.xml 제출 완료', desc:'구글·네이버·빙·얀덱스 모두 제출 완료 ✅' },
           { done:true, text:'소유권 인증 메타태그 index.html에 추가 완료', desc:'구글·네이버 인증 메타태그 <head>에 추가 완료 ✅' },
-          { done:false, text:'ads.txt 파일 확인', desc:'/ads.txt 브라우저에서 직접 접근해서 확인' },
         ]}
     ]
   },
@@ -158,7 +158,8 @@ const ROUTINES = {
     label:'📝 글 발행할 때마다', color:'#7c3aed', bg:'#0f0a1a', border:'#4c1d95',
     items:[
       { text:'서치콘솔 URL 색인 요청', link:'https://search.google.com/search-console', desc:'URL 검사 → 색인 생성 요청' },
-      { text:'GA4 실시간 트래픽 확인', link:'https://analytics.google.com', desc:'발행 후 GA4 실시간 탭 확인' },
+      { text: 'IndexNow 핑 전송 확인', link: null, desc: '글 발행 시 자동 전송됨 — 발행 후 토스트 메시지에서 확인' },
+      { text: '실시간 트래픽 확인', link: 'https://analytics.google.com', desc: '발행 후 GA4 실시간 탭 확인' },
       { text:'OG태그 디버거 확인', link:'https://developers.facebook.com/tools/debug/', desc:'페이스북 공유 미리보기 테스트' },
     ]
   },
@@ -176,7 +177,9 @@ const ROUTINES = {
     label:'🗓️ 매월 마지막 토요일', color:'#d97706', bg:'#1a1200', border:'#78500a',
     items:[
       { text:'애드센스 광고 위치 CTR 분석', link:'https://www.google.com/adsense', desc:'어떤 위치 광고가 잘 클릭되는지 파악' },
+      { text: '애드센스 모바일 광고 노출 확인', link: 'https://www.google.com/adsense', desc: '반응형 광고 단위 정상 작동 여부' },
       { text:'서치콘솔 색인 현황 확인', link:'https://search.google.com/search-console', desc:'색인 안 된 페이지 원인 파악' },
+      { text: '서치콘솔 모바일 사용성 오류', link: 'https://search.google.com/search-console', desc: '경험 → 모바일 사용성' },
       { text:'Core Web Vitals 점수 확인', link:'https://search.google.com/search-console', desc:'LCP·INP·CLS 점수 개선' },
       { text:'GA4 이탈률·참여 시간 확인', link:'https://analytics.google.com', desc:'참여 시간 짧은 글 도입부 개선' },
       { text:'GA4 기기별·지역별 접속 현황', link:'https://analytics.google.com', desc:'모바일 비율 높으면 UX 우선 최적화' },
