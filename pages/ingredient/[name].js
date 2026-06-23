@@ -40,16 +40,16 @@ export default function IngredientPage({ ingredientName }) {
     <>
       <Head>
         <title>{ingredientName} 제철 레시피 & 효능 — Fresh Season</title>
-        <meta name="description" content={`${ingredientName}의 제철 시기, 건강 효능, TV 방영 레시피를 확인하세요.`} />
+        <meta name="description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
         <meta property="og:title" content={`${ingredientName} 제철 레시피 & 효능 — Fresh Season`} />
-        <meta property="og:description" content={`${ingredientName}의 제철 시기, 건강 효능, TV 방영 레시피를 확인하세요.`} />
+        <meta property="og:description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
         <meta property="og:image" content="https://www.fsfood.kr/og-image.png" />
         <meta property="og:url" content={`https://www.fsfood.kr/ingredient/${encodeURIComponent(ingredientName)}`} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Fresh Season" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${ingredientName} 제철 레시피 & 효능 — Fresh Season`} />
-        <meta name="twitter:description" content={`${ingredientName}의 제철 시기, 건강 효능, TV 방영 레시피를 확인하세요.`} />
+        <meta name="twitter:description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
         <meta name="twitter:image" content="https://www.fsfood.kr/og-image.png" />
       </Head>
       <Header />

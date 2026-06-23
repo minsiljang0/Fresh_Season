@@ -11,9 +11,9 @@ export default function BlogPost({ post }) {
     <>
       <Head>
         <title>{post?.title || '글을 찾을 수 없습니다'} — Fresh Season</title>
-        <meta name="description" content={post?.summary || '제철 식재료와 건강 레시피 블로그'} />
+        <meta name="description" content={post?.summary || 'Fresh Season 블로그 — 제철 식재료와 건강 효능, TV 방영 레시피로 차리는 건강한 밥상 이야기를 전해드립니다.'} />
         <meta property="og:title" content={`${post?.title || 'Fresh Season'} — Fresh Season`} />
-        <meta property="og:description" content={post?.summary || '제철 식재료와 건강 레시피 블로그'} />
+        <meta property="og:description" content={post?.summary || 'Fresh Season 블로그 — 제철 식재료와 건강 효능, TV 방영 레시피로 차리는 건강한 밥상 이야기를 전해드립니다.'} />
         
         <meta property="og:image" content={post?.cover_image || 'https://www.fsfood.kr/og-image.png'} />
         <meta property="og:image:width" content="1200" />
@@ -25,7 +25,7 @@ export default function BlogPost({ post }) {
         
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={post?.title || 'Fresh Season'} />
-        <meta name="twitter:description" content={post?.summary || '제철 식재료와 건강 레시피 블로그'} />
+        <meta name="twitter:description" content={post?.summary || 'Fresh Season 블로그 — 제철 식재료와 건강 효능, TV 방영 레시피로 차리는 건강한 밥상 이야기를 전해드립니다.'} />
         <meta name="twitter:image" content={post?.cover_image || 'https://www.fsfood.kr/og-image.png'} />
       </Head>
       
