@@ -1,0 +1,62 @@
+name: 사이트맵 URL 자동 색인 요청
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 매일 오전 9시 KST (UTC 00:00)
+  workflow_dispatch:      # 수동 실행 가능
+
+jobs:
+  indexing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: google-auth-library 설치
+        run: npm install google-auth-library
+
+      - name: 사이트맵 URL 가져오기 및 색인 요청
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          node << 'SCRIPT'
+          const { GoogleAuth } = require('google-auth-library')
+
+          async function main() {
+            // 1. 사이트맵에서 URL 목록 가져오기
+            const xml = await fetch('https://www.fsfood.kr/api/sitemap.xml').then(r => r.text())
+            const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1])
+            console.log(`총 ${urls.length}개 URL 발견`)
+
+            // 2. Google 서비스 계정으로 인증
+            const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
+            const auth = new GoogleAuth({
+              credentials,
+              scopes: ['https://www.googleapis.com/auth/indexing'],
+            })
+            const client = await auth.getClient()
+            const { token } = await client.getAccessToken()
+
+            // 3. Indexing API로 각 URL 색인 요청
+            let success = 0, fail = 0
+            for (const url of urls) {
+              try {
+                const res = await fetch('https://indexing.googleapis.com/v3/urlNotifications:publish', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ url, type: 'URL_UPDATED' }),
+                })
+                if (res.ok) { success++; console.log(`✅ ${url}`) }
+                else { fail++; console.log(`❌ ${url} — ${res.status}`) }
+                await new Promise(r => setTimeout(r, 200))
+              } catch (e) {
+                fail++
+                console.log(`❌ ${url} — ${e.message}`)
+              }
+            }
+            console.log(`\n완료: 성공 ${success}개 / 실패 ${fail}개`)
+          }
+
+          main().catch(e => { console.error(e); process.exit(1) })
+          SCRIPT
