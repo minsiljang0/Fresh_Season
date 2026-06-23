@@ -21,6 +21,16 @@ export default function Home() {
         <title>Fresh Season — 지역별 제철 먹거리 & TV 레시피</title>
         <meta name="description" content="전국 지역별 제철 식재료, 건강 효능, TV 방영 레시피를 한 곳에서 만나보세요." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content="Fresh Season — 지역별 제철 먹거리 & TV 레시피" />
+        <meta property="og:description" content="전국 지역별 제철 식재료, 건강 효능, TV 방영 레시피를 한 곳에서 만나보세요." />
+        <meta property="og:image" content="https://www.fsfood.kr/og-image.png" />
+        <meta property="og:url" content="https://www.fsfood.kr/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Fresh Season" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Fresh Season — 지역별 제철 먹거리 & TV 레시피" />
+        <meta name="twitter:description" content="전국 지역별 제철 식재료, 건강 효능, TV 방영 레시피를 한 곳에서 만나보세요." />
+        <meta name="twitter:image" content="https://www.fsfood.kr/og-image.png" />
       </Head>
       <Header />
       <main className="wrap">

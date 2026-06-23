@@ -22,6 +22,17 @@ export default function BlogPost({ slug: initialSlug }) {
     <>
       <Head>
         <title>{post?.title || '로딩 중'} — Fresh Season</title>
+        <meta name="description" content={post?.summary || '제철 식재료와 건강 레시피 블로그'} />
+        <meta property="og:title" content={`${post?.title || 'Fresh Season'} — Fresh Season`} />
+        <meta property="og:description" content={post?.summary || '제철 식재료와 건강 레시피 블로그'} />
+        <meta property="og:image" content={post?.cover_image || 'https://www.fsfood.kr/og-image.png'} />
+        <meta property="og:url" content={`https://www.fsfood.kr/blog/${post?.slug || ''}`} />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Fresh Season" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={post?.title || 'Fresh Season'} />
+        <meta name="twitter:description" content={post?.summary || '제철 식재료와 건강 레시피 블로그'} />
+        <meta name="twitter:image" content={post?.cover_image || 'https://www.fsfood.kr/og-image.png'} />
       </Head>
       <Header />
       <main className="wrap" style={{ maxWidth: 780 }}>
