@@ -64,6 +64,8 @@ const TOOL_PANELS = {
           { done:false, text:'측정 ID를 사이트 <head>에 삽입', desc:'_app.js에 Script 컴포넌트로 gtag.js 로드' },
           { done:false, text:'Search Console 연결', desc:'GA4 관리 → 속성 → Search Console 링크' },
           { done:false, text:'내부 트래픽(내 IP) 필터 설정', desc:'관리 → 데이터 필터 → 내부 트래픽 정의' },
+          { done:false, text:'목표/전환 이벤트 설정', desc:'뉴스레터 구독, 문의하기 클릭 등 중요 액션을 전환으로 표시' },
+          { done:false, text:'주간/월간 리포트 이메일 자동 발송 설정 완료', desc:'GA4 → 리포트 → 공유 → 이메일 예약 전송 설정 완료' },
         ]},
       { title:'📋 주기적으로 확인', color:'#3b82f6', bg:'#0a0f1a', border:'#1e3a8a',
         items:[
