@@ -51,6 +51,7 @@ export default function IngredientPage({ ingredientName }) {
         <meta name="twitter:title" content={`${ingredientName} 제철 레시피 & 효능 — Fresh Season`} />
         <meta name="twitter:description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
         <meta name="twitter:image" content="https://www.fsfood.kr/og-image.png" />
+        <link rel="canonical" href={`https://www.fsfood.kr/ingredient/${encodeURIComponent(ingredientName)}`} />
       </Head>
       <Header />
       <main className="wrap" style={{ maxWidth: 860 }}>

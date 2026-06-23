@@ -44,6 +44,7 @@ export default function RegionPage({ regionId }) {
         <meta name="twitter:title" content={`${region.name} 제철 먹거리 — Fresh Season`} />
         <meta name="twitter:description" content={`${region.name} 지역의 제철 식재료와 건강 효능, TV 방영 레시피를 확인하세요. 지역 특산물로 차리는 건강한 제철 밥상을 만나보세요.`} />
         <meta name="twitter:image" content="https://www.fsfood.kr/og-image.png" />
+        <link rel="canonical" href={`https://www.fsfood.kr/region/${regionId}`} />
       </Head>
       <Header />
       <main className="wrap">

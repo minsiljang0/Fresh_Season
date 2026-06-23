@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
 
-Sitemap: https://www.fsfood.kr/sitemap.xml
+Sitemap: https://www.fsfood.kr/api/sitemap.xml

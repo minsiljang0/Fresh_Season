@@ -31,6 +31,7 @@ export default function Home() {
         <meta name="twitter:title" content="Fresh Season — 지역별 제철 먹거리 &amp; TV 레시피" />
         <meta name="twitter:description" content="전국 17개 지역별 제철 식재료, 건강 효능, TV 방영 레시피를 한 곳에서 만나보세요. 지금 제철인 식재료를 확인하고 건강한 밥상을 차려보세요." />
         <meta name="twitter:image" content="https://www.fsfood.kr/og-image.png" />
+        <link rel="canonical" href="https://www.fsfood.kr/" />
       </Head>
       <Header />
       <main className="wrap">
