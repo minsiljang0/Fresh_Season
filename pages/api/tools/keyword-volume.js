@@ -24,10 +24,6 @@ function makeSignature(timestamp, method, path, secretKey) {
   return crypto.createHmac('sha256', secretKey).update(message).digest('base64')
 }
 
-function encodeKeyword(kw) {
-  return kw.split(' ').map(part => encodeURIComponent(part)).join('+')
-}
-
 function parseCount(val) {
   if (val === '< 10' || val === '<10') return 5
   return Number(val) || 0
@@ -88,8 +84,7 @@ export default async function handler(req, res) {
   const timestamp = Date.now().toString()
   const signature = makeSignature(timestamp, method, path, secretKey)
 
-  const encoded = encodeKeyword(keyword)
-  const requestUrl = `${BASE_URL}${path}?hintKeywords=${encoded}&showDetail=1`
+  const requestUrl = `${BASE_URL}${path}?hintKeywords=${encodeURIComponent(keyword)}&showDetail=1`
 
   try {
     // 1. 네이버 검색광고 API — 전체 키워드 검색량 조회
