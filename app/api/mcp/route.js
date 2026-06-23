@@ -551,6 +551,59 @@ const baseHandler = createMcpHandler(
     )
 
     server.registerTool(
+      'update_blog_post',
+      {
+        title: '발행된 글 수정',
+        description:
+          '발행된 블로그 글의 특정 필드를 수정한다. slug로 대상 글을 찾고, 전달된 필드만 업데이트한다 — ' +
+          '넘기지 않은 필드는 기존 값 그대로 유지된다. 수정 즉시 사이트에 반영되므로 호출 전 ' +
+          '변경 내용을 사용자에게 한 번 확인받는 것을 권장한다. 커버 이미지 교체, 본문·제목·태그·요약 수정, ' +
+          '상태 변경 등 모든 글 수정 작업에 사용한다.',
+        inputSchema: {
+          slug: z.string().describe('수정할 글의 URL 슬러그 (필수, 대상 글 식별자)'),
+          title: z.string().optional().describe('새 제목'),
+          summary: z.string().optional().describe('새 SEO 요약'),
+          content: z.string().optional().describe('새 본문 마크다운 전체'),
+          cover_image: z.string().optional().describe('새 커버 이미지 URL'),
+          tags: z.array(z.string()).optional().describe('새 태그 배열'),
+          status: z.enum(['published', 'draft']).optional().describe('글 상태 변경'),
+        },
+        annotations: { destructiveHint: false, idempotentHint: true },
+      },
+      async ({ slug, title, summary, content, cover_image, tags, status }) => {
+        const patch = {}
+        if (title !== undefined)       patch.title = title
+        if (summary !== undefined)     patch.summary = summary
+        if (content !== undefined)     patch.content = content
+        if (cover_image !== undefined) patch.cover_image = cover_image
+        if (tags !== undefined)        patch.tags = tags
+        if (status !== undefined)      patch.status = status
+        if (Object.keys(patch).length === 0) {
+          return { content: [{ type: 'text', text: '오류: 수정할 필드가 없습니다. title/summary/content/cover_image/tags/status 중 하나 이상을 전달해주세요.' }], isError: true }
+        }
+        patch.updated_at = new Date().toISOString()
+
+        const { data, error } = await supabase
+          .from('blog_posts')
+          .update(patch)
+          .eq('slug', slug)
+          .select('slug, title, status')
+          .single()
+        if (error) return { content: [{ type: 'text', text: `오류: ${error.message}` }], isError: true }
+        if (!data) return { content: [{ type: 'text', text: `슬러그 '${slug}'에 해당하는 글을 찾을 수 없습니다.` }], isError: true }
+
+        const changedFields = Object.keys(patch).filter(k => k !== 'updated_at').join(', ')
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ 수정 완료\n제목: ${data.title}\nslug: ${data.slug}\n변경 필드: ${changedFields}\n라이브 URL: https://fresh-season.vercel.app/blog/${data.slug}`,
+          }],
+        }
+      }
+    )
+
+
+    server.registerTool(
       'get_tool_info',
       {
         title: '도구 기능 설명 조회',
