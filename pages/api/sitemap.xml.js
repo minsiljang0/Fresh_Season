@@ -1,6 +1,11 @@
 import { REGIONS } from '../../lib/regions'
 import { SEASONAL_FOODS_SEED } from '../../lib/seasonalFoods'
 
+/** 현재 시각을 KST(UTC+9) 기준 ISO 문자열로 반환 */
+function nowKST() {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+}
+
 const BASE_URL = 'https://www.fsfood.kr'
 
 function generateSitemap() {

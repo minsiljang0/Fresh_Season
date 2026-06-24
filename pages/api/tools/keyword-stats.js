@@ -1,5 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
+/** KST 기준 오늘 자정(00:00:00) ISO 문자열 반환 */
+function todayKSTStart() {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+  const yyyy = kst.getUTCFullYear(), mm = kst.getUTCMonth(), dd = kst.getUTCDate()
+  // KST 자정 = UTC 전날 15시 (UTC-offset 반영)
+  return new Date(Date.UTC(yyyy, mm, dd, 0, 0, 0) - 9 * 60 * 60 * 1000).toISOString()
+}
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -14,12 +22,11 @@ export default async function handler(req, res) {
   // ?mode=today → 오늘 실시간 조회 기록 반환
   if (req.query.mode === 'today') {
     try {
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
+      const todayStart = todayKSTStart()
       const { data, error } = await supabase
         .from('keyword_stats')
         .select('hint, keyword, pc, mobile, total, competition, doc_count, created_at')
-        .gte('created_at', todayStart.toISOString())
+        .gte('created_at', todayStart)
         .order('created_at', { ascending: false })
       if (error) throw new Error(error.message)
 

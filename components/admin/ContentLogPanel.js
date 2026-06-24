@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { S, Toast } from './AdminUI'
 import { DEFAULT_CATEGORIES, categoryLabel } from '../../lib/blogCategories'
 
+/** 현재 시각을 KST(UTC+9) 기준 ISO 문자열로 반환 */
+function nowKST() {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+}
+
 const ANGLE_ORDER = ['제철 소개', 'TV 레시피 연계', '건강 효능 심화', '구입·보관 팁', '산지 탐방']
 
 export default function ContentLogPanel({ adminToken }) {
@@ -11,7 +16,7 @@ export default function ContentLogPanel({ adminToken }) {
   const [toast, setToast] = useState('')
   const [promptText, setPromptText] = useState('')
   const [promptOpen, setPromptOpen] = useState(false)
-  const [form, setForm] = useState({ category: 'seoul', angle: '', title: '', slug: '', memo: '', targetKeyword: '', searchPc: '', searchMobile: '', searchTotal: '', competition: '', publishedAt: new Date().toISOString().slice(0, 10) })
+  const [form, setForm] = useState({ category: 'seoul', angle: '', title: '', slug: '', memo: '', targetKeyword: '', searchPc: '', searchMobile: '', searchTotal: '', competition: '', publishedAt: nowKST().slice(0, 10) })
   const [saving, setSaving] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [parseMsg, setParseMsg] = useState('')
@@ -121,7 +126,7 @@ export default function ContentLogPanel({ adminToken }) {
         body: JSON.stringify(form),
       })
       if (!res.ok) throw new Error()
-      setForm(f => ({ ...f, angle: '', title: '', slug: '', memo: '', targetKeyword: '', searchPc: '', searchMobile: '', searchTotal: '', competition: '', publishedAt: new Date().toISOString().slice(0, 10) }))
+      setForm(f => ({ ...f, angle: '', title: '', slug: '', memo: '', targetKeyword: '', searchPc: '', searchMobile: '', searchTotal: '', competition: '', publishedAt: nowKST().slice(0, 10) }))
       setPasteText(''); setParseMsg('')
       showToast('✅ 기록 추가됨'); load()
     } catch { showToast('❌ 저장 실패') }

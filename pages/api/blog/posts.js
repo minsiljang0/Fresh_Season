@@ -1,11 +1,16 @@
 import { supabase, genId } from '../../../lib/supabase'
 
+/** 현재 시각을 KST(UTC+9) 기준 ISO 문자열로 반환 */
+function nowKST() {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+}
+
 export default async function handler(req, res) {
   const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_SECRET_TOKEN
 
   // 예약 발행 자동 전환
   try {
-    const now = new Date().toISOString()
+    const now = nowKST()
     await supabase.from('blog_posts').update({ status: 'published', published_at: now })
       .eq('status', 'scheduled').lte('scheduled_at', now)
   } catch {}
@@ -39,8 +44,8 @@ export default async function handler(req, res) {
       id: genId(), title, slug, content, category: category || '',
       status, post_type: 'blog',
       scheduled_at: scheduled_at || null,
-      published_at: status === 'published' ? new Date().toISOString() : null,
-      created_at: new Date().toISOString(),
+      published_at: status === 'published' ? nowKST() : null,
+      created_at: nowKST(),
     }]).select().single()
     if (error) return res.status(500).json({ error: error.message })
     return res.status(200).json(data)
