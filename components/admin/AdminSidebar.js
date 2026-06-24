@@ -5,6 +5,7 @@ const NAV = [
   { id: 'blog_menu',   label: '블로그 메뉴관리',  icon: '📋' },
   { id: 'content_log', label: '발행 기록',         icon: '🗂️' },
   { id: 'keyword',     label: '키워드 관리',       icon: '🔍' },
+  { id: 'system_prompt', label: 'Claude 지침',    icon: '🤖' },
   { id: 'tv_recipes',  label: 'TV 레시피',         icon: '📺' },
   { id: 'seasonal',    label: '제철 식재료',       icon: '🌿' },
   { id: 'free_board',  label: '자유게시판',       icon: '💬' },
