@@ -22,8 +22,8 @@ const BASE_TOOLS = [
 
 function formatDate(iso) {
   if (!iso) return '기록 없음'
-  const d = new Date(iso)
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
+  const d = new Date(new Date(iso).getTime() + 9*60*60*1000)
+  return `${d.getUTCFullYear()}년 ${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`
 }
 
 function daysSince(iso) {
@@ -134,7 +134,7 @@ function FeatureIdeasTab({ token, showToast }) {
                     )}
                     <div style={{ fontSize: 13, color: '#a1a1aa', lineHeight: 1.7 }}>{idea.notes}</div>
                     <div style={{ fontSize: 11, color: '#3f3f46', marginTop: 8 }}>
-                      {idea.created_at ? new Date(idea.created_at).toLocaleDateString('ko-KR') : ''}
+                      {idea.created_at ? new Date(new Date(idea.created_at).getTime() + 9*60*60*1000).toISOString().slice(0,10).replace(/-/g,'. ') + '.' : ''}
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>

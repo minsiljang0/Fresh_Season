@@ -46,7 +46,7 @@ export default function BlogPost({ post }) {
             )}
             <h1 style={{ fontSize: 'clamp(22px,4vw,32px)', fontWeight: 900, lineHeight: 1.3, marginBottom: 12 }}>{post.title}</h1>
             <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 36 }}>
-              {new Date(post.published_at).toLocaleDateString('ko-KR')}
+              {new Date(new Date(post.published_at).getTime() + 9*60*60*1000).toISOString().slice(0,10).replace(/-/g,'. ') + '.'}
             </p>
             <div style={{ fontSize: 15, lineHeight: 1.85, color: 'var(--text)' }}
               dangerouslySetInnerHTML={{ __html: post.content }} />

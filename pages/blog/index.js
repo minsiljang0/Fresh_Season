@@ -70,7 +70,7 @@ export default function BlogIndex() {
                     {post.content?.replace(/<[^>]+>/g, '').slice(0, 80)}...
                   </p>
                   <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
-                    {new Date(post.published_at).toLocaleDateString('ko-KR')}
+                    {new Date(new Date(post.published_at).getTime() + 9*60*60*1000).toISOString().slice(0,10).replace(/-/g,'. ') + '.'}
                   </p>
                 </Link>
               )
