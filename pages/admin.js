@@ -10,6 +10,7 @@ import SeasonalFoodPanel from '../components/admin/SeasonalFoodPanel'
 import AdsensePanel from '../components/admin/AdsensePanel'
 import BoardAdminPanel from '../components/admin/BoardAdminPanel'
 import LegalPanel from '../components/admin/LegalPanel'
+import SystemPromptPanel from '../components/admin/SystemPromptPanel'
 import { S, Toast, Toggle } from '../components/admin/AdminUI'
 
 const TAB_LABELS = {
@@ -18,7 +19,8 @@ const TAB_LABELS = {
   blog_admin:  '📝 블로그 관리',
   blog_menu:   '📋 블로그 메뉴관리',
   content_log: '🗂️ 발행 기록',
-  keyword:     '🔍 키워드 관리',
+  keyword:       '🔍 키워드 관리',
+  system_prompt: '🤖 Claude 지침',
   tv_recipes:  '📺 TV 레시피',
   seasonal:    '🌿 제철 식재료',
   free_board:  '💬 자유게시판',
@@ -224,6 +226,7 @@ export default function Admin() {
             {activeTab === 'blog_menu' && <BlogMenuPanel adminToken={adminToken} />}
             {activeTab === 'content_log' && <ContentLogPanel adminToken={adminToken} />}
             {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
+            {activeTab === 'system_prompt' && <SystemPromptPanel adminToken={adminToken} />}
             {activeTab === 'tv_recipes' && <TvRecipePanel adminToken={adminToken} />}
             {activeTab === 'seasonal' && <SeasonalFoodPanel adminToken={adminToken} />}
             {activeTab === 'free_board' && <BoardAdminPanel adminToken={adminToken} postType="free" />}

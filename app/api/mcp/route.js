@@ -752,6 +752,64 @@ const baseHandler = createMcpHandler(
       }
     )
 
+    server.registerTool(
+      'get_system_prompt',
+      {
+        title: 'Claude 시스템 프롬프트(지침) 조회',
+        description:
+          'admin에 저장된 Claude 프로젝트 지침 전문을 가져온다. ' +
+          '대화를 시작할 때 가장 먼저 호출해서 지침을 로드하고, 그 내용대로 행동한다. ' +
+          '지침은 admin → 🤖 Claude 지침 메뉴에서 수정할 수 있다.',
+        inputSchema: {},
+      },
+      async () => {
+        const { data, error } = await supabase
+          .from('system_prompts')
+          .select('content, updated_at')
+          .eq('id', 'main')
+          .single()
+        if (error || !data) {
+          return { content: [{ type: 'text', text: '❌ 시스템 프롬프트를 불러오지 못했습니다. admin에서 저장했는지 확인해주세요.' }], isError: true }
+        }
+        return {
+          content: [{
+            type: 'text',
+            text: '# 시스템 프롬프트 로드 완료 (저장일시: ' + data.updated_at + ')\n\n' + data.content,
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'update_system_prompt',
+      {
+        title: 'Claude 시스템 프롬프트(지침) 저장/수정',
+        description:
+          'admin에 저장된 Claude 프로젝트 지침을 덮어쓴다. ' +
+          '사용자가 대화 중 지침 수정을 요청할 때만 호출한다. ' +
+          '호출 전 반드시 변경 내용을 사용자에게 확인받는다. ' +
+          '저장 즉시 다음 대화부터 새 지침이 적용된다.',
+        inputSchema: {
+          content: z.string().describe('저장할 지침 전문'),
+        },
+        annotations: { destructiveHint: true, idempotentHint: true },
+      },
+      async ({ content }) => {
+        const { error } = await supabase
+          .from('system_prompts')
+          .upsert({ id: 'main', content, updated_at: nowKST() }, { onConflict: 'id' })
+        if (error) {
+          return { content: [{ type: 'text', text: `❌ 저장 실패: ${error.message}` }], isError: true }
+        }
+        return {
+          content: [{
+            type: 'text',
+            text: '✅ 시스템 프롬프트 저장 완료 (' + nowKST() + ')\n저장된 내용:\n\n' + content,
+          }],
+        }
+      }
+    )
+
   },
   {},
   { basePath: '/api', maxDuration: 30, verboseLogs: true }
