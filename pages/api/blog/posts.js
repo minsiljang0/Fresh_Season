@@ -48,6 +48,46 @@ export default async function handler(req, res) {
       created_at: nowKST(),
     }]).select().single()
     if (error) return res.status(500).json({ error: error.message })
+
+    // Google Indexing API + IndexNow — 발행 즉시 색인 요청
+    if (status === 'published') {
+      const pageUrl = `https://www.fsfood.kr/blog/${data.slug}`
+
+      // 1) Google Indexing API
+      try {
+        const { GoogleAuth } = require('google-auth-library')
+        const auth = new GoogleAuth({
+          credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+          scopes: ['https://www.googleapis.com/auth/indexing'],
+        })
+        const client = await auth.getClient()
+        await client.request({
+          url: 'https://indexing.googleapis.com/v3/urlNotifications:publish',
+          method: 'POST',
+          data: { url: pageUrl, type: 'URL_UPDATED' },
+        })
+      } catch (e) {
+        console.error('[Indexing API] 오류:', e.message)
+      }
+
+      // 2) IndexNow — Bing·Naver·Yandex 색인 요청
+      try {
+        const INDEXNOW_KEY = process.env.INDEXNOW_KEY
+        await fetch('https://api.indexnow.org/indexnow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            host: 'www.fsfood.kr',
+            key: INDEXNOW_KEY,
+            keyLocation: `https://www.fsfood.kr/${INDEXNOW_KEY}.txt`,
+            urlList: [pageUrl],
+          }),
+        })
+      } catch (e) {
+        console.error('[IndexNow] 오류:', e.message)
+      }
+    }
+
     return res.status(200).json(data)
   }
 
