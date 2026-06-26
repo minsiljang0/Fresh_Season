@@ -1497,7 +1497,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
   }
   const autoLabel = (ingName, regionId, district) => {
     const rShort = district ? district.replace(/(시|군|구)$/, '') : shortRegion(regionId)
-    return ingName && rShort ? \`\${ingName}-\${rShort}\` : ''
+    return ingName && rShort ? `${ingName}-${rShort}` : ''
   }
 
   const formAddRegion = () => {
