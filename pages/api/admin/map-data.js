@@ -142,7 +142,7 @@ export default async function handler(req, res) {
       }
       if (type === 'tv_shows') {
         const { data, error } = await supabase.from('tv_shows')
-          .insert([{ id: genId(), name: body.name, broadcaster: body.broadcaster || '', category: body.category || '', description: body.description || '' }])
+          .insert([{ id: genId(), name: body.name, broadcaster: body.broadcaster || '', category: body.category || '', description: body.description || '', started_at: body.started_at || null, ended_at: body.ended_at || null, air_days: body.air_days || [] }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)
