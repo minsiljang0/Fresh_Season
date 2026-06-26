@@ -121,6 +121,22 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data || [])
       }
+      if (type === 'recipe_tools') {
+        const { recipe_id } = req.query
+        let q = supabase.from('recipe_tools').select('*').order('name')
+        if (recipe_id) q = q.eq('recipe_id', recipe_id)
+        const { data, error } = await q
+        if (error) throw error
+        return res.status(200).json(data || [])
+      }
+      if (type === 'recipe_steps') {
+        const { recipe_id } = req.query
+        let q = supabase.from('recipe_steps').select('*').order('order_num')
+        if (recipe_id) q = q.eq('recipe_id', recipe_id)
+        const { data, error } = await q
+        if (error) throw error
+        return res.status(200).json(data || [])
+      }
       return res.status(400).json({ error: 'type 파라미터 필요' })
     } catch (e) {
       return res.status(500).json({ error: e.message })
@@ -263,6 +279,20 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data)
       }
+      if (type === 'recipe_tools') {
+        const { data, error } = await supabase.from('recipe_tools')
+          .insert([{ id: genId(), recipe_id: body.recipe_id, name: body.name }])
+          .select().single()
+        if (error) throw error
+        return res.status(200).json(data)
+      }
+      if (type === 'recipe_steps') {
+        const { data, error } = await supabase.from('recipe_steps')
+          .insert([{ id: genId(), recipe_id: body.recipe_id, order_num: body.order_num || 1, description: body.description || '', photo_url: body.photo_url || '' }])
+          .select().single()
+        if (error) throw error
+        return res.status(200).json(data)
+      }
       // 기존 tv_recipes
       if (type === 'tv_recipes') {
         const recipeId = genId()
@@ -316,6 +346,8 @@ export default async function handler(req, res) {
         health_tv_shows: 'health_tv_shows',
         ingredient_health: 'ingredient_health',
         ingredient_regions: 'ingredient_regions',
+        recipe_tools: 'recipe_tools',
+        recipe_steps: 'recipe_steps',
         dishes: 'dishes',
         dish_ingredients: 'dish_ingredients',
         recipes: 'recipes',
