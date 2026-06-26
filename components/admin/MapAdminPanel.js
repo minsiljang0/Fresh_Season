@@ -15,6 +15,8 @@ const ING_CATEGORIES = [
 ]
 
 const DISH_CATEGORIES = ['한식','양식','중식','일식','분식','디저트','퓨전','기타']
+const AIR_DAYS = ['월','화','수','목','금','토','일']
+
 const CHEF_ROLES = ['셰프','MC','심사위원','요리연구가','파티시에','참가자']
 const SHOW_CATEGORIES = ['요리경연','다큐','예능','생활정보','쿠킹쇼','기타']
 const HEALTH_CATEGORIES = [
@@ -806,7 +808,7 @@ function TvShowTab({ adminToken, showToast }) {
   const [showIngs, setShowIngs] = useState([])
   const [activeSection, setActiveSection] = useState('chef')
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', broadcaster:'', category:'', description:'' })
+  const [form, setForm] = useState({ name:'', broadcaster:'', category:'', description:'', started_at:'', ended_at:'', air_days:[] })
   const [saving, setSaving] = useState(false)
   const [selShow, setSelShow] = useState(null)
   const [linkChefId, setLinkChefId] = useState('')
@@ -814,23 +816,18 @@ function TvShowTab({ adminToken, showToast }) {
   const [linkIngId, setLinkIngId] = useState('')
   const [editTvId, setEditTvId] = useState(null)
   const [editTvForm, setEditTvForm] = useState({})
-  const [tvRecipes, setTvRecipes] = useState([])
-  const [tvForm, setTvForm] = useState({ ingredient:'', program:'', episode:'', title:'', summary:'', source_url:'' })
-  const [tvSaving, setTvSaving] = useState(false)
-  const [tvQ, setTvQ] = useState('')
 
   const ING_CAT = { fish:'🐟', veg:'🥬', fruit:'🍎', grain:'🌾', meat:'🥩', mushroom:'🍄' }
 
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, c, tv, i] = await Promise.all([
+      const [s, c, i] = await Promise.all([
         apiFetch(api('tv_shows')),
         apiFetch(api('chefs')),
-        apiFetch(api('tv_recipes')),
         apiFetch(api('ingredients')),
       ])
-      setShows(s); setChefs(c); setTvRecipes(tv); setIngredients(i)
+      setShows(s); setChefs(c); setIngredients(i)
     } catch(e) { showToast('❌ '+e.message) }
     setLoading(false)
   }, [])
@@ -917,26 +914,7 @@ function TvShowTab({ adminToken, showToast }) {
     } catch(e) { showToast('❌ '+e.message) }
   }
 
-  const addTvRecipe = async () => {
-    if (!tvForm.ingredient.trim()||!tvForm.program||!tvForm.title.trim()) { showToast('⚠️ 재료·프로그램·제목 필수'); return }
-    setTvSaving(true)
-    try {
-      await apiFetch(api('tv_recipes'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(tvForm) })
-      setTvForm({ ingredient:'', program:'', episode:'', title:'', summary:'', source_url:'' })
-      showToast('✅ 등록 완료'); loadAll()
-    } catch(e) { showToast('❌ '+e.message) }
-    setTvSaving(false)
-  }
 
-  const delTvRecipe = async (id) => {
-    if (!confirm('삭제?')) return
-    try {
-      await apiFetch(`${api('tv_recipes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      showToast('🗑 삭제됨'); loadAll()
-    } catch(e) { showToast('❌ '+e.message) }
-  }
-
-  const filteredRecipes = tvQ ? tvRecipes.filter(r=>r.title?.includes(tvQ)||r.ingredient?.includes(tvQ)) : tvRecipes
 
   return (
     <div>
@@ -962,6 +940,31 @@ function TvShowTab({ adminToken, showToast }) {
           <div>
             <label style={S.label}>설명</label>
             <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="간단 설명" style={S.input} />
+          </div>
+          <div>
+            <label style={S.label}>📅 방송 시작일</label>
+            <input type="date" value={form.started_at} onChange={e=>setForm(f=>({...f,started_at:e.target.value}))} style={S.input} />
+          </div>
+          <div>
+            <label style={S.label}>📅 방송 종료일 (방송 중이면 비워두세요)</label>
+            <input type="date" value={form.ended_at} onChange={e=>setForm(f=>({...f,ended_at:e.target.value}))} style={S.input} />
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>📡 방송 요일 (복수 선택)</label>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:6 }}>
+              {AIR_DAYS.map(d => {
+                const on = (form.air_days||[]).includes(d)
+                return (
+                  <button key={d} type="button"
+                    onClick={()=>setForm(f=>({ ...f, air_days: on ? (f.air_days||[]).filter(x=>x!==d) : [...(f.air_days||[]), d] }))}
+                    style={{ width:38, height:38, borderRadius:8, border:`1.5px solid ${on?'#f59e0b':'#d1e8d1'}`,
+                      background: on?'#fef3c7':'#f5f9f5', color: on?'#92400e':'#4b6e4b',
+                      fontSize:13, fontWeight: on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                    {d}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
         <button onClick={addShow} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
@@ -1003,6 +1006,31 @@ function TvShowTab({ adminToken, showToast }) {
                       <label style={S.label}>설명</label>
                       <input value={editTvForm.description||''} onChange={e=>setEditTvForm(f=>({...f,description:e.target.value}))} style={S.input} />
                     </div>
+                    <div>
+                      <label style={S.label}>📅 방송 시작일</label>
+                      <input type="date" value={editTvForm.started_at||''} onChange={e=>setEditTvForm(f=>({...f,started_at:e.target.value}))} style={S.input} />
+                    </div>
+                    <div>
+                      <label style={S.label}>📅 종료일 (방송 중이면 비워두세요)</label>
+                      <input type="date" value={editTvForm.ended_at||''} onChange={e=>setEditTvForm(f=>({...f,ended_at:e.target.value}))} style={S.input} />
+                    </div>
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={S.label}>📡 방송 요일</label>
+                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:6 }}>
+                        {AIR_DAYS.map(d => {
+                          const on = (editTvForm.air_days||[]).includes(d)
+                          return (
+                            <button key={d} type="button"
+                              onClick={()=>setEditTvForm(f=>({ ...f, air_days: on ? (f.air_days||[]).filter(x=>x!==d) : [...(f.air_days||[]), d] }))}
+                              style={{ width:36, height:36, borderRadius:7, border:`1.5px solid ${on?'#f59e0b':'#d1e8d1'}`,
+                                background: on?'#fef3c7':'#f5f9f5', color: on?'#92400e':'#4b6e4b',
+                                fontSize:12, fontWeight: on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                              {d}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                   <div style={{ display:'flex', gap:6 }}>
                     <button onClick={()=>saveShow(s.id)} style={S.btn()}>저장</button>
@@ -1013,12 +1041,33 @@ function TvShowTab({ adminToken, showToast }) {
                 /* ── 보기 모드 ── */
                 <div key={s.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'flex-start', background:'#f5f9f5', border:'1px solid #d1e8d1' }}>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:3 }}>📺 {s.name}</div>
-                    <div style={{ fontSize:11, color:'#4b6e4b' }}>{s.broadcaster}{s.category && ` · ${s.category}`}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap' }}>
+                      <span style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>📺 {s.name}</span>
+                      {s.ended_at ? (
+                        <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#f1f5f9', border:'1px solid #cbd5e1', color:'#64748b', fontWeight:600 }}>방송종료</span>
+                      ) : (
+                        <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#dcfce7', border:'1px solid #86efac', color:'#16a34a', fontWeight:700 }}>🔴 방송중</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize:11, color:'#4b6e4b', marginBottom:2 }}>
+                      {s.broadcaster}{s.category && ` · ${s.category}`}
+                    </div>
+                    {(s.started_at || s.ended_at) && (
+                      <div style={{ fontSize:11, color:'#6b7280', marginBottom:2 }}>
+                        📅 {s.started_at ? s.started_at.slice(0,7) : '?'} ~ {s.ended_at ? s.ended_at.slice(0,7) : '현재'}
+                      </div>
+                    )}
+                    {s.air_days?.length > 0 && (
+                      <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:2 }}>
+                        {s.air_days.map(d => (
+                          <span key={d} style={{ fontSize:10, padding:'1px 6px', borderRadius:6, background:'#fef3c7', border:'1px solid #fde68a', color:'#92400e', fontWeight:600 }}>{d}요일</span>
+                        ))}
+                      </div>
+                    )}
                     {s.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.description}</div>}
                   </div>
                   <div style={{ display:'flex', gap:4, flexShrink:0, marginLeft:8 }}>
-                    <button onClick={()=>{ setEditTvId(s.id); setEditTvForm({name:s.name,broadcaster:s.broadcaster||'',category:s.category||'',description:s.description||''}) }}
+                    <button onClick={()=>{ setEditTvId(s.id); setEditTvForm({name:s.name,broadcaster:s.broadcaster||'',category:s.category||'',description:s.description||'',started_at:s.started_at||'',ended_at:s.ended_at||'',air_days:s.air_days||[]}) }}
                       style={{ padding:'4px 9px', borderRadius:6, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
                     <button onClick={()=>delShow(s.id)}
                       style={{ padding:'4px 9px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
@@ -1030,65 +1079,6 @@ function TvShowTab({ adminToken, showToast }) {
         )}
       </div>
 
-      {/* 기존 TV 레시피 */}
-      <div style={S.card}>
-        <div style={S.cardTitle}>🍳 TV 레시피 등록 (기존)</div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
-          <div>
-            <label style={S.label}>재료명 *</label>
-            <input value={tvForm.ingredient} onChange={e=>setTvForm(f=>({...f,ingredient:e.target.value}))} placeholder="예: 오징어" style={S.input} />
-          </div>
-          <div>
-            <label style={S.label}>TV 프로그램 *</label>
-            <select value={tvForm.program} onChange={e=>setTvForm(f=>({...f,program:e.target.value}))} style={S.input}>
-              <option value="">선택</option>
-              {shows.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={S.label}>방영 회차/날짜</label>
-            <input value={tvForm.episode} onChange={e=>setTvForm(f=>({...f,episode:e.target.value}))} placeholder="예: 302회, 2026-06-01" style={S.input} />
-          </div>
-          <div>
-            <label style={S.label}>레시피 제목 *</label>
-            <input value={tvForm.title} onChange={e=>setTvForm(f=>({...f,title:e.target.value}))} placeholder="예: 오징어볶음 황금 레시피" style={S.input} />
-          </div>
-          <div style={{ gridColumn:'1/-1' }}>
-            <label style={S.label}>레시피 요약</label>
-            <textarea value={tvForm.summary} onChange={e=>setTvForm(f=>({...f,summary:e.target.value}))} rows={2}
-              style={{ ...S.textarea, fontFamily:"'Outfit',sans-serif" }} placeholder="레시피 내용 요약" />
-          </div>
-          <div style={{ gridColumn:'1/-1' }}>
-            <label style={S.label}>출처 URL</label>
-            <input value={tvForm.source_url} onChange={e=>setTvForm(f=>({...f,source_url:e.target.value}))} placeholder="https://..." style={S.input} />
-          </div>
-        </div>
-        <button onClick={addTvRecipe} disabled={tvSaving} style={{ ...S.btn(), opacity:tvSaving?.6:1 }}>+ 레시피 등록</button>
-
-        <div style={{ marginTop:20, borderTop:'1px solid #d1e8d1', paddingTop:16 }}>
-          <div style={{ display:'flex', gap:8, marginBottom:12, alignItems:'center' }}>
-            <span style={{ fontSize:13, fontWeight:700, color:'#aaa' }}>등록된 레시피 ({tvRecipes.length})</span>
-            <input value={tvQ} onChange={e=>setTvQ(e.target.value)} placeholder="제목·재료 검색" style={{ ...S.input, flex:1, maxWidth:240 }} />
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-            {filteredRecipes.map(r => (
-              <div key={r.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-                <div>
-                  <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:3 }}>
-                    <span style={{ fontSize:11, padding:'2px 7px', borderRadius:20, background:'#f59e0b18', border:'1px solid #f59e0b44', color:'#f59e0b' }}>📺 {r.program}</span>
-                    <span style={{ fontSize:11, color:'#4b6e4b' }}>재료: {r.ingredient}</span>
-                    {r.episode && <span style={{ fontSize:11, color:'#8aaa8a' }}>{r.episode}</span>}
-                  </div>
-                  <div style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>{r.title}</div>
-                  {r.summary && <div style={{ fontSize:11, color:'#4b6e4b', marginTop:2 }}>{r.summary.slice(0,60)}...</div>}
-                </div>
-                <button onClick={()=>delTvRecipe(r.id)}
-                  style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>삭제</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
