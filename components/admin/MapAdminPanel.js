@@ -812,6 +812,8 @@ function TvShowTab({ adminToken, showToast }) {
   const [linkChefId, setLinkChefId] = useState('')
   const [linkRole, setLinkRole] = useState('')
   const [linkIngId, setLinkIngId] = useState('')
+  const [editTvId, setEditTvId] = useState(null)
+  const [editTvForm, setEditTvForm] = useState({})
   const [tvRecipes, setTvRecipes] = useState([])
   const [tvForm, setTvForm] = useState({ ingredient:'', program:'', episode:'', title:'', summary:'', source_url:'' })
   const [tvSaving, setTvSaving] = useState(false)
@@ -868,6 +870,17 @@ function TvShowTab({ adminToken, showToast }) {
       await apiFetch(`${api('tv_shows')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
       if (selShow?.id===id) setSelShow(null)
       showToast('🗑 삭제됨'); loadAll()
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const saveShow = async (id) => {
+    try {
+      await apiFetch(`${api('tv_shows')}&id=${id}`, {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify(editTvForm)
+      })
+      setEditTvId(null); showToast('✅ 저장됨'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
   }
 
@@ -958,17 +971,60 @@ function TvShowTab({ adminToken, showToast }) {
       <div style={S.card}>
         <div style={S.cardTitle}>📋 방송 목록 ({shows.length})</div>
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:8 }}>
-            {shows.map(s => (
-              <div key={s.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:3 }}>📺 {s.name}</div>
-                  <div style={{ fontSize:11, color:'#4b6e4b' }}>{s.broadcaster}{s.category && ` · ${s.category}`}</div>
-                  {s.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{s.description}</div>}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:8 }}>
+            {[...shows].sort((a,b) => a.name.localeCompare(b.name, 'ko')).map(s => (
+              editTvId===s.id ? (
+                /* ── 수정 모드 ── */
+                <div key={s.id} style={{ ...S.row, border:'1.5px solid #f59e0b', gridColumn:'1/-1' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:12, borderBottom:'1px solid #fde68a' }}>
+                    <div style={{ width:34, height:34, borderRadius:9, background:'#fef3c7', border:'1.5px solid #f59e0b', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✏️</div>
+                    <div>
+                      <div style={{ fontSize:11, color:'#f59e0b', fontWeight:700, letterSpacing:1, marginBottom:2 }}>수정 중</div>
+                      <div style={{ fontSize:15, fontWeight:900, color:'#0f1f0f' }}>📺 {s.name}</div>
+                    </div>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
+                    <div>
+                      <label style={S.label}>방송명 *</label>
+                      <input value={editTvForm.name||''} onChange={e=>setEditTvForm(f=>({...f,name:e.target.value}))} style={S.input} />
+                    </div>
+                    <div>
+                      <label style={S.label}>방송사</label>
+                      <input value={editTvForm.broadcaster||''} onChange={e=>setEditTvForm(f=>({...f,broadcaster:e.target.value}))} style={S.input} />
+                    </div>
+                    <div>
+                      <label style={S.label}>장르</label>
+                      <select value={editTvForm.category||''} onChange={e=>setEditTvForm(f=>({...f,category:e.target.value}))} style={S.input}>
+                        <option value="">선택</option>
+                        {SHOW_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>설명</label>
+                      <input value={editTvForm.description||''} onChange={e=>setEditTvForm(f=>({...f,description:e.target.value}))} style={S.input} />
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={()=>saveShow(s.id)} style={S.btn()}>저장</button>
+                    <button onClick={()=>setEditTvId(null)} style={S.btnGhost}>취소</button>
+                  </div>
                 </div>
-                <button onClick={e=>{ e.stopPropagation(); delShow(s.id) }}
-                  style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0, marginLeft:8 }}>삭제</button>
-              </div>
+              ) : (
+                /* ── 보기 모드 ── */
+                <div key={s.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'flex-start', background:'#f5f9f5', border:'1px solid #d1e8d1' }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:3 }}>📺 {s.name}</div>
+                    <div style={{ fontSize:11, color:'#4b6e4b' }}>{s.broadcaster}{s.category && ` · ${s.category}`}</div>
+                    {s.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.description}</div>}
+                  </div>
+                  <div style={{ display:'flex', gap:4, flexShrink:0, marginLeft:8 }}>
+                    <button onClick={()=>{ setEditTvId(s.id); setEditTvForm({name:s.name,broadcaster:s.broadcaster||'',category:s.category||'',description:s.description||''}) }}
+                      style={{ padding:'4px 9px', borderRadius:6, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
+                    <button onClick={()=>delShow(s.id)}
+                      style={{ padding:'4px 9px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                  </div>
+                </div>
+              )
             ))}
           </div>
         )}
