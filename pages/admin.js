@@ -4,6 +4,7 @@ import AdminSidebar from '../components/admin/AdminSidebar'
 import BlogAdminPanel from '../components/admin/BlogAdminPanel'
 import BlogMenuPanel from '../components/admin/BlogMenuPanel'
 import ContentLogPanel from '../components/admin/ContentLogPanel'
+import ContentIdeaPanel from '../components/admin/ContentIdeaPanel'
 import KeywordPanel from '../components/admin/KeywordPanel'
 import TvRecipePanel from '../components/admin/TvRecipePanel'
 import SeasonalFoodPanel from '../components/admin/SeasonalFoodPanel'
@@ -14,20 +15,21 @@ import SystemPromptPanel from '../components/admin/SystemPromptPanel'
 import { S, Toast, Toggle } from '../components/admin/AdminUI'
 
 const TAB_LABELS = {
-  settings:    '🔧 서비스 설정',
-  blog_write:  '✍️ 블로그 글쓰기',
-  blog_admin:  '📝 블로그 관리',
-  blog_menu:   '📋 블로그 메뉴관리',
-  content_log: '🗂️ 발행 기록',
+  settings:      '🔧 서비스 설정',
+  blog_write:    '✍️ 블로그 글쓰기',
+  blog_admin:    '📝 블로그 관리',
+  blog_menu:     '📋 블로그 메뉴관리',
+  content_log:   '🗂️ 발행 기록',
+  content_ideas: '💡 글감 관리',
   keyword:       '🔍 키워드 관리',
   system_prompt: '🤖 Claude 지침',
-  tv_recipes:  '📺 TV 레시피',
-  seasonal:    '🌿 제철 식재료',
-  free_board:  '💬 자유게시판',
-  requests:    '📬 부탁해요',
-  adsense:     '📢 광고 관리',
-  legal:       '📜 약관 관리',
-  password:    '🔑 비밀번호 변경',
+  tv_recipes:    '📺 TV 레시피',
+  seasonal:      '🌿 제철 식재료',
+  free_board:    '💬 자유게시판',
+  requests:      '📬 부탁해요',
+  adsense:       '📢 광고 관리',
+  legal:         '📜 약관 관리',
+  password:      '🔑 비밀번호 변경',
 }
 
 function LoginScreen({ onLogin }) {
@@ -225,6 +227,8 @@ export default function Admin() {
             )}
             {activeTab === 'blog_menu' && <BlogMenuPanel adminToken={adminToken} />}
             {activeTab === 'content_log' && <ContentLogPanel adminToken={adminToken} />}
+
+            {activeTab === 'content_ideas' && <ContentIdeaPanel adminToken={adminToken} />}
             {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
             {activeTab === 'system_prompt' && <SystemPromptPanel adminToken={adminToken} />}
             {activeTab === 'tv_recipes' && <TvRecipePanel adminToken={adminToken} />}
