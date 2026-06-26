@@ -99,14 +99,14 @@ export default function TvRecipePanel({ adminToken }) {
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={filterIngredient} onChange={e => setFilterIngredient(e.target.value)}
               placeholder="재료명 검색" style={{ ...S.input, width: 160 }} />
-            <button onClick={load} style={{ ...S.btn('#333'), padding: '8px 14px' }}>🔄</button>
+            <button onClick={load} style={{ ...S.btn('#d1e8d1'), padding: '8px 14px' }}>🔄</button>
           </div>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#555' }}>불러오는 중...</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#8aaa8a' }}>불러오는 중...</div>
         ) : !recipes.length ? (
-          <div style={{ textAlign: 'center', padding: '50px 20px', color: '#555' }}>
+          <div style={{ textAlign: 'center', padding: '50px 20px', color: '#8aaa8a' }}>
             <div style={{ fontSize: 36, marginBottom: 10 }}>📺</div>
             <div>등록된 레시피가 없습니다</div>
           </div>
@@ -119,11 +119,11 @@ export default function TvRecipePanel({ adminToken }) {
                     <span style={{ fontSize: 11, fontWeight: 700, background: '#0a2a0a', border: '1px solid #166534', borderRadius: 4, padding: '2px 8px', color: '#4ade80' }}>
                       📺 {r.program}
                     </span>
-                    <span style={{ fontSize: 11, color: '#888' }}>재료: {r.ingredient}</span>
-                    {r.episode && <span style={{ fontSize: 11, color: '#555' }}>{r.episode}</span>}
+                    <span style={{ fontSize: 11, color: '#4b6e4b' }}>재료: {r.ingredient}</span>
+                    {r.episode && <span style={{ fontSize: 11, color: '#8aaa8a' }}>{r.episode}</span>}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#f0f0f0', marginBottom: 2 }}>{r.title}</div>
-                  {r.summary && <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>{r.summary.slice(0, 80)}...</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f1f0f', marginBottom: 2 }}>{r.title}</div>
+                  {r.summary && <div style={{ fontSize: 12, color: '#4b6e4b', lineHeight: 1.6 }}>{r.summary.slice(0, 80)}...</div>}
                   {r.source_url && <a href={r.source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#60a5fa' }}>출처 →</a>}
                 </div>
                 <button onClick={() => deleteRecipe(r.id)}

@@ -39,8 +39,8 @@ function MonthPills({ value, onChange }) {
         const on = value.includes(m)
         return (
           <button key={m} type="button" onClick={() => onChange(on ? value.filter(x=>x!==m) : [...value,m].sort((a,b)=>a-b))}
-            style={{ width:34, height:34, borderRadius:7, border:`1.5px solid ${on?'#22c55e':'#333'}`,
-              background:on?'#0a2a0a':'#1f1f1f', color:on?'#22c55e':'#888',
+            style={{ width:34, height:34, borderRadius:7, border:`1.5px solid ${on?'#16a34a':'#d1e8d1'}`,
+              background:on?'#dcfce7':'#f5f9f5', color:on?'#15803d':'#4b6e4b',
               fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
             {m}
           </button>
@@ -74,12 +74,12 @@ function SearchSelect({ label, items, value, onChange, placeholder, nameKey='nam
           />
           {open && filtered.length > 0 && (
             <div style={{ position:'absolute', top:'100%', left:0, right:0, zIndex:100,
-              background:'#1f1f1f', border:'1px solid #333', borderRadius:8, maxHeight:200, overflowY:'auto', marginTop:2 }}>
+              background:'#f5f9f5', border:'1px solid #333', borderRadius:8, maxHeight:200, overflowY:'auto', marginTop:2 }}>
               {filtered.map(item => (
                 <div key={item.id} onMouseDown={() => { onChange(item.id); setQ(''); setOpen(false) }}
-                  style={{ padding:'8px 12px', cursor:'pointer', fontSize:13, color:'#f0f0f0',
-                    borderBottom:'1px solid #2a2a2a' }}
-                  onMouseEnter={e=>e.currentTarget.style.background='#2a2a2a'}
+                  style={{ padding:'8px 12px', cursor:'pointer', fontSize:13, color:'#0f1f0f',
+                    borderBottom:'1px solid #d1e8d1' }}
+                  onMouseEnter={e=>e.currentTarget.style.background='#d1e8d1'}
                   onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
                   {item[nameKey]}
                   {item.category && <span style={{ fontSize:11, color:'#666', marginLeft:6 }}>{item.category}</span>}
@@ -89,16 +89,16 @@ function SearchSelect({ label, items, value, onChange, placeholder, nameKey='nam
           )}
         </div>
         {value && <button type="button" onClick={()=>onChange('')}
-          style={{ padding:'0 10px', background:'none', border:'1px solid #333', borderRadius:7, color:'#888', cursor:'pointer' }}>✕</button>}
+          style={{ padding:'0 10px', background:'none', border:'1px solid #333', borderRadius:7, color:'#4b6e4b', cursor:'pointer' }}>✕</button>}
         {onAddNew && <button type="button" onClick={onAddNew}
-          style={{ padding:'0 12px', background:'#0a2a0a', border:'1px solid #22c55e44', borderRadius:7, color:'#22c55e', cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' }}>+ 신규</button>}
+          style={{ padding:'0 12px', background:'#dcfce7', border:'1px solid #86efac', borderRadius:7, color:'#22c55e', cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' }}>+ 신규</button>}
       </div>
     </div>
   )
 }
 
 function TagRow({ items, onRemove, color='#22c55e' }) {
-  if (!items?.length) return <p style={{ fontSize:12, color:'#555', margin:'6px 0' }}>없음</p>
+  if (!items?.length) return <p style={{ fontSize:12, color:'#8aaa8a', margin:'6px 0' }}>없음</p>
   return (
     <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:6 }}>
       {items.map((item, i) => (
@@ -115,7 +115,7 @@ function TagRow({ items, onRemove, color='#22c55e' }) {
 
 function SectionCard({ title, children }) {
   return (
-    <div style={{ background:'#1a1a1a', border:'1px solid #2a2a2a', borderRadius:12, padding:18, marginBottom:14 }}>
+    <div style={{ background:'#1a1a1a', border:'1px solid #d1e8d1', borderRadius:12, padding:18, marginBottom:14 }}>
       <div style={{ fontSize:14, fontWeight:700, color:'#aaa', marginBottom:14 }}>{title}</div>
       {children}
     </div>
@@ -128,7 +128,7 @@ function SectionCard({ title, children }) {
 function HealthTab({ adminToken, showToast }) {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', description:'', category:'' })
+  const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'' })
   const [saving, setSaving] = useState(false)
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({})
@@ -189,6 +189,10 @@ function HealthTab({ adminToken, showToast }) {
             <label style={S.label}>설명</label>
             <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="예: 활성산소 제거, 노화 방지" style={S.input} />
           </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>🛒 쿠팡 파트너스 URL (5단계 — 상품 연결)</label>
+            <input value={form.coupang_url||''} onChange={e=>setForm(f=>({...f,coupang_url:e.target.value}))} placeholder="예: https://coupa.ng/xxxxx" style={S.input} />
+          </div>
         </div>
         <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
       </div>
@@ -201,7 +205,7 @@ function HealthTab({ adminToken, showToast }) {
             {HEALTH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        {loading ? <p style={{ color:'#555', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:8 }}>
             {filtered.map(h => editId===h.id ? (
               <div key={h.id} style={{ ...S.row, border:'1.5px solid #22c55e44' }}>
@@ -210,7 +214,8 @@ function HealthTab({ adminToken, showToast }) {
                   <option value="">카테고리</option>
                   {HEALTH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
-                <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} placeholder="설명" style={{ ...S.input, marginBottom:8 }} />
+                <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} placeholder="설명" style={{ ...S.input, marginBottom:6 }} />
+                <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="🛒 쿠팡 URL" style={{ ...S.input, marginBottom:8 }} />
                 <div style={{ display:'flex', gap:6 }}>
                   <button onClick={()=>save(h.id)} style={S.btn()}>저장</button>
                   <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
@@ -220,15 +225,16 @@ function HealthTab({ adminToken, showToast }) {
               <div key={h.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                 <div>
                   <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:3 }}>
-                    <span style={{ fontWeight:700, color:'#f0f0f0' }}>💊 {h.name}</span>
+                    <span style={{ fontWeight:700, color:'#0f1f0f' }}>💊 {h.name}</span>
                     {h.category && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#22c55e18', color:'#22c55e', border:'1px solid #22c55e33' }}>{h.category}</span>}
                   </div>
-                  {h.description && <p style={{ fontSize:12, color:'#888', margin:0 }}>{h.description}</p>}
+                  {h.description && <p style={{ fontSize:12, color:'#4b6e4b', margin:0 }}>{h.description}</p>}
+                  {h.coupang_url && <a href={h.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none', marginTop:3, display:'inline-block' }}>🛒 쿠팡 링크 ↗</a>}
                 </div>
                 <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-                  <button onClick={()=>{ setEditId(h.id); setEditForm({name:h.name,description:h.description,category:h.category}) }}
+                  <button onClick={()=>{ setEditId(h.id); setEditForm({name:h.name,description:h.description,category:h.category,coupang_url:h.coupang_url||''}) }}
                     style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
-                  <button onClick={()=>del(h.id)} style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                  <button onClick={()=>del(h.id)} style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                 </div>
               </div>
             ))}
@@ -367,19 +373,19 @@ function TvShowTab({ adminToken, showToast }) {
       {/* 방송 목록 + 셰프 연결 */}
       <div style={S.card}>
         <div style={S.cardTitle}>📋 방송 목록 ({shows.length}) — 클릭하면 셰프 연결</div>
-        {loading ? <p style={{ color:'#555', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:8, marginBottom: selShow ? 20 : 0 }}>
             {shows.map(s => (
               <div key={s.id} onClick={()=>setSelShow(selShow?.id===s.id ? null : s)}
-                style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${selShow?.id===s.id?'#f59e0b':'#2a2a2a'}`,
-                  background: selShow?.id===s.id?'#1a1500':'#1f1f1f' }}>
+                style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${selShow?.id===s.id?'#f59e0b':'#d1e8d1'}`,
+                  background: selShow?.id===s.id?'#1a1500':'#f5f9f5' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div>
-                    <div style={{ fontWeight:700, color:'#f0f0f0', marginBottom:3 }}>📺 {s.name}</div>
-                    <div style={{ fontSize:11, color:'#888' }}>{s.broadcaster} {s.category && `· ${s.category}`}</div>
+                    <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:3 }}>📺 {s.name}</div>
+                    <div style={{ fontSize:11, color:'#4b6e4b' }}>{s.broadcaster} {s.category && `· ${s.category}`}</div>
                   </div>
                   <button onClick={e=>{ e.stopPropagation(); delShow(s.id) }}
-                    style={{ padding:'3px 8px', borderRadius:6, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                    style={{ padding:'3px 8px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                 </div>
               </div>
             ))}
@@ -450,7 +456,7 @@ function TvShowTab({ adminToken, showToast }) {
         </div>
         <button onClick={addTvRecipe} disabled={tvSaving} style={{ ...S.btn(), opacity:tvSaving?.6:1 }}>+ 레시피 등록</button>
 
-        <div style={{ marginTop:20, borderTop:'1px solid #2a2a2a', paddingTop:16 }}>
+        <div style={{ marginTop:20, borderTop:'1px solid #d1e8d1', paddingTop:16 }}>
           <div style={{ display:'flex', gap:8, marginBottom:12, alignItems:'center' }}>
             <span style={{ fontSize:13, fontWeight:700, color:'#aaa' }}>등록된 레시피 ({tvRecipes.length})</span>
             <input value={tvQ} onChange={e=>setTvQ(e.target.value)} placeholder="제목·재료 검색" style={{ ...S.input, flex:1, maxWidth:240 }} />
@@ -461,14 +467,14 @@ function TvShowTab({ adminToken, showToast }) {
                 <div>
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:3 }}>
                     <span style={{ fontSize:11, padding:'2px 7px', borderRadius:20, background:'#f59e0b18', border:'1px solid #f59e0b44', color:'#f59e0b' }}>📺 {r.program}</span>
-                    <span style={{ fontSize:11, color:'#888' }}>재료: {r.ingredient}</span>
-                    {r.episode && <span style={{ fontSize:11, color:'#555' }}>{r.episode}</span>}
+                    <span style={{ fontSize:11, color:'#4b6e4b' }}>재료: {r.ingredient}</span>
+                    {r.episode && <span style={{ fontSize:11, color:'#8aaa8a' }}>{r.episode}</span>}
                   </div>
-                  <div style={{ fontSize:13, fontWeight:700, color:'#f0f0f0' }}>{r.title}</div>
-                  {r.summary && <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{r.summary.slice(0,60)}...</div>}
+                  <div style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>{r.title}</div>
+                  {r.summary && <div style={{ fontSize:11, color:'#4b6e4b', marginTop:2 }}>{r.summary.slice(0,60)}...</div>}
                 </div>
                 <button onClick={()=>delTvRecipe(r.id)}
-                  style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>삭제</button>
+                  style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>삭제</button>
               </div>
             ))}
           </div>
@@ -552,7 +558,7 @@ function ChefTab({ adminToken, showToast }) {
 
       <div style={S.card}>
         <div style={S.cardTitle}>📋 셰프 목록 ({list.length})</div>
-        {loading ? <p style={{ color:'#555', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:8 }}>
             {list.map(c => editId===c.id ? (
               <div key={c.id} style={{ ...S.row, border:'1.5px solid #22c55e44' }}>
@@ -571,10 +577,10 @@ function ChefTab({ adminToken, showToast }) {
             ) : (
               <div key={c.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                 <div>
-                  <div style={{ fontWeight:700, color:'#f0f0f0', marginBottom:3 }}>👨‍🍳 {c.name}</div>
+                  <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:3 }}>👨‍🍳 {c.name}</div>
                   <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
                     {c.role && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#f59e0b18', color:'#f59e0b', border:'1px solid #f59e0b33' }}>{c.role}</span>}
-                    {c.specialty && <span style={{ fontSize:11, color:'#888' }}>{c.specialty}</span>}
+                    {c.specialty && <span style={{ fontSize:11, color:'#4b6e4b' }}>{c.specialty}</span>}
                   </div>
                   {c.description && <p style={{ fontSize:11, color:'#666', margin:'3px 0 0' }}>{c.description}</p>}
                 </div>
@@ -582,7 +588,7 @@ function ChefTab({ adminToken, showToast }) {
                   <button onClick={()=>{ setEditId(c.id); setEditForm({name:c.name,role:c.role,specialty:c.specialty,description:c.description}) }}
                     style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
                   <button onClick={()=>del(c.id)}
-                    style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                    style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                 </div>
               </div>
             ))}
@@ -600,7 +606,7 @@ function IngredientTab({ adminToken, showToast }) {
   const [list, setList] = useState([])
   const [healths, setHealths] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', category:'fish', description:'' })
+  const [form, setForm] = useState({ name:'', category:'fish', description:'', coupang_url:'' })
   const [saving, setSaving] = useState(false)
   const [selIng, setSelIng] = useState(null)
   const [ingHealths, setIngHealths] = useState([])
@@ -636,7 +642,7 @@ function IngredientTab({ adminToken, showToast }) {
     setSaving(true)
     try {
       await apiFetch(api('ingredients'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      setForm({ name:'', category:'fish', description:'' })
+      setForm({ name:'', category:'fish', description:'', coupang_url:'' })
       showToast('✅ 등록 완료'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
@@ -702,7 +708,7 @@ function IngredientTab({ adminToken, showToast }) {
               {ING_CATEGORIES.map(c=>(
                 <button key={c.id} type="button" onClick={()=>setForm(f=>({...f,category:c.id}))}
                   style={{ padding:'4px 10px', borderRadius:20, border:`1.5px solid ${form.category===c.id?'#a855f7':'#333'}`,
-                    background:form.category===c.id?'#1a0a2a':'#1f1f1f', color:form.category===c.id?'#a855f7':'#888',
+                    background:form.category===c.id?'#f5f0ff':'#f5f9f5', color:form.category===c.id?'#a855f7':'#888',
                     fontSize:12, fontWeight:form.category===c.id?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
                   {c.emoji} {c.label}
                 </button>
@@ -722,21 +728,21 @@ function IngredientTab({ adminToken, showToast }) {
           <div style={S.cardTitle}>📋 식재료 목록 ({filtered.length}) — 클릭하면 효능·지역 연결</div>
           <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 검색" style={{ ...S.input, width:160 }} />
         </div>
-        {loading ? <p style={{ color:'#555', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:6, marginBottom: selIng?20:0 }}>
             {filtered.map(i => {
               const c = cat(i.category)
               const on = selIng?.id===i.id
               return (
                 <div key={i.id} onClick={()=>setSelIng(on?null:i)}
-                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#a855f7':'#2a2a2a'}`, background:on?'#120a1a':'#1f1f1f' }}>
+                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#a855f7':'#d1e8d1'}`, background:on?'#120a1a':'#f5f9f5' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <div>
-                      <div style={{ fontWeight:700, color:'#f0f0f0', fontSize:13 }}>{c?.emoji} {i.name}</div>
-                      <div style={{ fontSize:11, color:'#888' }}>{c?.label}</div>
+                      <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{c?.emoji} {i.name}</div>
+                      <div style={{ fontSize:11, color:'#4b6e4b' }}>{c?.label}</div>
                     </div>
                     <button onClick={e=>{ e.stopPropagation(); del(i.id) }}
-                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 </div>
               )
@@ -770,11 +776,11 @@ function IngredientTab({ adminToken, showToast }) {
                 <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
                   {ingRegions.map(r=>(
                     <div key={r.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                      background:'#1f1f1f', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
-                      <span style={{ color:'#f0f0f0' }}>📍 {categoryLabel(r.region)} {r.district && `· ${r.district}`}</span>
-                      <span style={{ color:'#888' }}>{(r.months||[]).join('·')}월</span>
+                      background:'#f5f9f5', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
+                      <span style={{ color:'#0f1f0f' }}>📍 {categoryLabel(r.region)} {r.district && `· ${r.district}`}</span>
+                      <span style={{ color:'#4b6e4b' }}>{(r.months||[]).join('·')}월</span>
                       <button onClick={()=>delRegion(r.id)}
-                        style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                        style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                     </div>
                   ))}
                 </div>
@@ -811,7 +817,7 @@ function DishTab({ adminToken, showToast }) {
   const [dishes, setDishes] = useState([])
   const [ingredients, setIngredients] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', category:'', description:'' })
+  const [form, setForm] = useState({ name:'', category:'', description:'', coupang_url:'' })
   const [saving, setSaving] = useState(false)
   const [selDish, setSelDish] = useState(null)
   const [dishIngs, setDishIngs] = useState([])
@@ -841,7 +847,7 @@ function DishTab({ adminToken, showToast }) {
     setSaving(true)
     try {
       await apiFetch(api('dishes'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      setForm({ name:'', category:'', description:'' })
+      setForm({ name:'', category:'', description:'', coupang_url:'' })
       showToast('✅ 등록 완료'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
@@ -895,6 +901,10 @@ function DishTab({ adminToken, showToast }) {
             <label style={S.label}>설명</label>
             <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="간단 설명" style={S.input} />
           </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>🛒 쿠팡 파트너스 URL (5단계 — 밀키트/상품 연결)</label>
+            <input value={form.coupang_url||''} onChange={e=>setForm(f=>({...f,coupang_url:e.target.value}))} placeholder="예: https://coupa.ng/xxxxx" style={S.input} />
+          </div>
         </div>
         <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
       </div>
@@ -904,20 +914,20 @@ function DishTab({ adminToken, showToast }) {
           <div style={S.cardTitle}>📋 요리 목록 ({filtered.length}) — 클릭하면 재료 연결</div>
           <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 검색" style={{ ...S.input, width:160 }} />
         </div>
-        {loading ? <p style={{ color:'#555', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:6, marginBottom:selDish?20:0 }}>
             {filtered.map(d => {
               const on = selDish?.id===d.id
               return (
                 <div key={d.id} onClick={()=>setSelDish(on?null:d)}
-                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#f97316':'#2a2a2a'}`, background:on?'#1a0a00':'#1f1f1f' }}>
+                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#f97316':'#d1e8d1'}`, background:on?'#fff7ed':'#f5f9f5' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <div>
-                      <div style={{ fontWeight:700, color:'#f0f0f0', fontSize:13 }}>🍽 {d.name}</div>
-                      {d.category && <div style={{ fontSize:11, color:'#888' }}>{d.category}</div>}
+                      <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>🍽 {d.name}</div>
+                      {d.category && <div style={{ fontSize:11, color:'#4b6e4b' }}>{d.category}</div>}
                     </div>
                     <button onClick={e=>{ e.stopPropagation(); del(d.id) }}
-                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 </div>
               )
@@ -931,12 +941,12 @@ function DishTab({ adminToken, showToast }) {
               <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:14 }}>
                 {dishIngs.map(di=>(
                   <div key={di.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                    background:'#1f1f1f', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
-                    <span style={{ color:'#f0f0f0', fontWeight:600 }}>{di.ingredients?.name}</span>
-                    <span style={{ color:'#888' }}>{di.amount}</span>
+                    background:'#f5f9f5', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
+                    <span style={{ color:'#0f1f0f', fontWeight:600 }}>{di.ingredients?.name}</span>
+                    <span style={{ color:'#4b6e4b' }}>{di.amount}</span>
                     {di.memo && <span style={{ color:'#666', fontSize:11 }}>{di.memo}</span>}
                     <button onClick={()=>unlinkIng(di.id)}
-                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 ))}
               </div>
@@ -1083,25 +1093,25 @@ function RecipeTab({ adminToken, showToast }) {
           <div style={S.cardTitle}>📋 레시피 목록 ({filtered.length}) — 클릭하면 재료 연결</div>
           <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 검색" style={{ ...S.input, width:160 }} />
         </div>
-        {loading ? <p style={{ color:'#555', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:selRecipe?20:0 }}>
             {filtered.map(r => {
               const on = selRecipe?.id===r.id
               return (
                 <div key={r.id} onClick={()=>setSelRecipe(on?null:r)}
-                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#22c55e':'#2a2a2a'}`, background:on?'#0a1a0a':'#1f1f1f' }}>
+                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#22c55e':'#d1e8d1'}`, background:on?'#0a1a0a':'#f5f9f5' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:700, color:'#f0f0f0', marginBottom:4 }}>{r.title}</div>
+                      <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:4 }}>{r.title}</div>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                         {r.dishes?.name && <span style={{ fontSize:11, padding:'1px 7px', borderRadius:20, background:'#f9731618', color:'#f97316', border:'1px solid #f9731633' }}>🍽 {r.dishes.name}</span>}
                         {r.tv_shows?.name && <span style={{ fontSize:11, padding:'1px 7px', borderRadius:20, background:'#f59e0b18', color:'#f59e0b', border:'1px solid #f59e0b33' }}>📺 {r.tv_shows.name}</span>}
-                        {r.chefs?.name && <span style={{ fontSize:11, padding:'1px 7px', borderRadius:20, background:'#a855f718', color:'#a855f7', border:'1px solid #a855f733' }}>👨‍🍳 {r.chefs.name}</span>}
+                        {r.chefs?.name && <span style={{ fontSize:11, padding:'1px 7px', borderRadius:20, background:'#a855f718', color:'#7c3aed', border:'1px solid #a855f733' }}>👨‍🍳 {r.chefs.name}</span>}
                         {r.episode && <span style={{ fontSize:11, color:'#666' }}>{r.episode}</span>}
                       </div>
                     </div>
                     <button onClick={e=>{ e.stopPropagation(); del(r.id) }}
-                      style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>삭제</button>
+                      style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>삭제</button>
                   </div>
                 </div>
               )
@@ -1115,11 +1125,11 @@ function RecipeTab({ adminToken, showToast }) {
               <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:14 }}>
                 {recipeIngs.map(ri=>(
                   <div key={ri.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                    background:'#1f1f1f', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
-                    <span style={{ color:'#f0f0f0', fontWeight:600 }}>{ri.ingredients?.name}</span>
-                    <span style={{ color:'#888' }}>{ri.amount}</span>
+                    background:'#f5f9f5', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
+                    <span style={{ color:'#0f1f0f', fontWeight:600 }}>{ri.ingredients?.name}</span>
+                    <span style={{ color:'#4b6e4b' }}>{ri.amount}</span>
                     <button onClick={()=>unlinkIng(ri.id)}
-                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #7f1d1d', background:'#1a0a0a', color:'#f87171', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 ))}
               </div>
@@ -1161,12 +1171,12 @@ export default function MapAdminPanel({ adminToken }) {
       <Toast msg={toast} />
 
       {/* 서브탭 네비 */}
-      <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:24, borderBottom:'1px solid #2a2a2a', paddingBottom:12 }}>
+      <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:24, borderBottom:'1px solid #d1e8d1', paddingBottom:12 }}>
         {SUBTABS.map(t => (
           <button key={t.id} onClick={()=>setSubTab(t.id)} style={{
             padding:'8px 16px', borderRadius:8, border:'none', cursor:'pointer',
             fontFamily:"'Outfit',sans-serif", fontSize:13, fontWeight: subTab===t.id?700:500,
-            background: subTab===t.id ? '#22c55e' : '#1f1f1f',
+            background: subTab===t.id ? '#22c55e' : '#f5f9f5',
             color: subTab===t.id ? '#000' : '#888',
             transition:'all .15s',
           }}>{t.label}</button>

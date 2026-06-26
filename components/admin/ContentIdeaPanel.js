@@ -13,7 +13,7 @@ const CATEGORY_OPTIONS = [
 ]
 
 const TYPE_LABELS = {
-  keyword: { label: '키워드',   color: '#22c55e', bg: '#052e16' },
+  keyword: { label: '키워드',   color: '#16a34a', bg: '#052e16' },
   idea:    { label: '아이디어', color: '#60a5fa', bg: '#0f1f3d' },
   angle:   { label: '각도',     color: '#f59e0b', bg: '#1c1400' },
   memo:    { label: '메모',     color: '#a78bfa', bg: '#1a0f3d' },
@@ -24,10 +24,10 @@ const STATUS_LABELS = {
   used:    { label: '사용됨', color: '#4ade80', bg: '#052e16' },
 }
 
-const ACCENT = '#22c55e'
+const ACCENT = '#16a34a'
 
 function Badge({ type }) {
-  const t = TYPE_LABELS[type] || { label: type, color: '#888', bg: '#222' }
+  const t = TYPE_LABELS[type] || { label: type, color: '#4b6e4b', bg: '#222' }
   return (
     <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: t.bg, color: t.color }}>
       {t.label}
@@ -67,8 +67,8 @@ function TabManagerModal({ tabs, onClose, onSave }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 14, padding: 28, width: 420, maxHeight: '80vh', overflowY: 'auto' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, color: '#f0f0f0' }}>탭 관리</div>
+      <div style={{ background: '#1a1a1a', border: '1px solid #d1e8d1', borderRadius: 14, padding: 28, width: 420, maxHeight: '80vh', overflowY: 'auto' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, color: '#0f1f0f' }}>탭 관리</div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <input value={newLabel} onChange={e => setNewLabel(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addTab()}
@@ -77,11 +77,11 @@ function TabManagerModal({ tabs, onClose, onSave }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {localTabs.map(tab => (
-            <div key={tab.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 12px' }}>
+            <div key={tab.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#111', border: '1px solid #d1e8d1', borderRadius: 8, padding: '8px 12px' }}>
               <span style={{ fontSize: 16 }}>{tab.icon}</span>
               <input value={tab.label} onChange={e => updateLabel(tab.id, e.target.value)}
                 style={{ ...S.input, flex: 1, padding: '6px 10px', fontSize: 13 }} />
-              <button onClick={() => removeTab(tab.id)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+              <button onClick={() => removeTab(tab.id)} style={{ background: 'none', border: 'none', color: '#8aaa8a', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
             </div>
           ))}
         </div>
@@ -108,8 +108,8 @@ function AddIdeaModal({ tabs, defaultTabId, onClose, onSave }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 14, padding: 28, width: 460, maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, color: '#f0f0f0' }}>아이디어 / 키워드 추가</div>
+      <div style={{ background: '#1a1a1a', border: '1px solid #d1e8d1', borderRadius: 14, padding: 28, width: 460, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, color: '#0f1f0f' }}>아이디어 / 키워드 추가</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <label style={S.label}>탭</label>
@@ -123,7 +123,7 @@ function AddIdeaModal({ tabs, defaultTabId, onClose, onSave }) {
               {Object.entries(TYPE_LABELS).map(([k, v]) => (
                 <button key={k} onClick={() => set('type', k)} style={{
                   padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                  background: form.type === k ? v.bg : '#1f1f1f',
+                  background: form.type === k ? v.bg : '#f5f9f5',
                   color: form.type === k ? v.color : '#666',
                   outline: form.type === k ? `1px solid ${v.color}` : 'none',
                 }}>{v.label}</button>
@@ -257,7 +257,7 @@ export default function ContentIdeaPanel({ adminToken }) {
     <div>
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div style={{ fontSize: 17, fontWeight: 700, color: '#f0f0f0' }}>💡 글감 관리</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: '#0f1f0f' }}>💡 글감 관리</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => setShowTabMgr(true)} style={{ ...S.btnGhost, padding: '8px 14px', fontSize: 13 }}>탭 관리</button>
           <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding: '8px 16px', fontSize: 13 }}>+ 추가</button>
@@ -265,7 +265,7 @@ export default function ContentIdeaPanel({ adminToken }) {
       </div>
 
       {/* 탭 바 */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, flexWrap: 'wrap', borderBottom: '1px solid #2a2a2a' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, flexWrap: 'wrap', borderBottom: '1px solid #d1e8d1' }}>
         {tabs.map(tab => {
           const cnt = ideas.filter(i => i.tab_id === tab.id && i.status !== 'used').length
           const isActive = activeTab === tab.id
@@ -273,7 +273,7 @@ export default function ContentIdeaPanel({ adminToken }) {
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
               padding: '9px 16px', background: 'none', border: 'none',
               borderBottom: isActive ? `2px solid ${ACCENT}` : '2px solid transparent',
-              color: isActive ? ACCENT : '#888',
+              color: isActive ? ACCENT : '#4b6e4b',
               fontSize: 13, fontWeight: isActive ? 700 : 500,
               cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
               display: 'flex', alignItems: 'center', gap: 5,
@@ -312,7 +312,7 @@ export default function ContentIdeaPanel({ adminToken }) {
 
       {/* 목록 */}
       {loading ? (
-        <div style={{ color: '#555', fontSize: 14, padding: '40px 0', textAlign: 'center' }}>불러오는 중...</div>
+        <div style={{ color: '#8aaa8a', fontSize: 14, padding: '40px 0', textAlign: 'center' }}>불러오는 중...</div>
       ) : visibleIdeas.length === 0 ? (
         <div style={{ color: '#444', fontSize: 14, padding: '40px 0', textAlign: 'center' }}>
           {currentTab ? `${currentTab.icon} ${currentTab.label}` : '이 탭'}에 아이디어가 없습니다.
@@ -325,7 +325,7 @@ export default function ContentIdeaPanel({ adminToken }) {
             const catLabel = CATEGORY_OPTIONS.find(c => c.value === idea.tool_id)?.label
             return (
               <div key={idea.id} style={{
-                background: '#161616', border: '1px solid #2a2a2a', borderRadius: 10,
+                background: '#ffffff', border: '1px solid #d1e8d1', borderRadius: 10,
                 padding: '14px 16px', opacity: idea.status === 'used' ? 0.5 : 1,
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -341,17 +341,17 @@ export default function ContentIdeaPanel({ adminToken }) {
                       <span style={{ fontSize: 11, color: '#444', marginLeft: 'auto' }}>{fmtDate(idea.created_at)}</span>
                     </div>
                     <div style={{ fontSize: 14, color: '#e0e0e0', lineHeight: 1.5, wordBreak: 'break-word' }}>{idea.content}</div>
-                    {idea.keyword && <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>🔑 {idea.keyword}</div>}
+                    {idea.keyword && <div style={{ fontSize: 12, color: '#4b6e4b', marginTop: 4 }}>🔑 {idea.keyword}</div>}
                     {idea.memo && <div style={{ fontSize: 12, color: '#666', marginTop: 4, fontStyle: 'italic' }}>📝 {idea.memo}</div>}
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <button onClick={() => toggleStatus(idea.id, idea.status)}
                       title={idea.status === 'used' ? '미사용으로' : '사용 처리'}
-                      style={{ background: 'none', border: '1px solid #333', borderRadius: 7, color: '#888', cursor: 'pointer', padding: '5px 9px', fontSize: 14 }}>
+                      style={{ background: 'none', border: '1px solid #333', borderRadius: 7, color: '#4b6e4b', cursor: 'pointer', padding: '5px 9px', fontSize: 14 }}>
                       {idea.status === 'used' ? '↩' : '✓'}
                     </button>
                     <button onClick={() => deleteIdea(idea.id)} title="삭제"
-                      style={{ background: 'none', border: '1px solid #333', borderRadius: 7, color: '#555', cursor: 'pointer', padding: '5px 9px', fontSize: 14 }}>
+                      style={{ background: 'none', border: '1px solid #333', borderRadius: 7, color: '#8aaa8a', cursor: 'pointer', padding: '5px 9px', fontSize: 14 }}>
                       ×
                     </button>
                   </div>
@@ -368,8 +368,8 @@ export default function ContentIdeaPanel({ adminToken }) {
       {toast && (
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          background: '#1f1f1f', border: '1px solid #333', borderRadius: 10,
-          padding: '12px 22px', fontSize: 14, color: '#f0f0f0', zIndex: 9999,
+          background: '#f5f9f5', border: '1px solid #333', borderRadius: 10,
+          padding: '12px 22px', fontSize: 14, color: '#0f1f0f', zIndex: 9999,
         }}>{toast}</div>
       )}
     </div>

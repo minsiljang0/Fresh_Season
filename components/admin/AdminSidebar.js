@@ -8,8 +8,8 @@ const NAV = [
   { id: 'keyword',       label: '키워드 관리',     icon: '🔍' },
   { id: 'system_prompt', label: 'Claude 지침',    icon: '🤖' },
   { id: 'seasonal',      label: '맵 관리',         icon: '🗺️' },
-  { id: 'free_board',    label: '자유게시판',     icon: '💬' },
-  { id: 'requests',      label: '부탁해요',       icon: '📬' },
+  { id: 'free_board',    label: '자유게시판',      icon: '💬' },
+  { id: 'requests',      label: '부탁해요',        icon: '📬' },
   { id: 'adsense',       label: '광고 관리',       icon: '📢' },
   { id: 'legal',         label: '약관 관리',       icon: '📜' },
   { id: 'password',      label: '비밀번호 변경',   icon: '🔑' },
@@ -19,15 +19,15 @@ function NavItem({ item, active, onClick }) {
   return (
     <button onClick={onClick} style={{
       width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-      padding: '10px 20px', background: active ? '#22c55e18' : 'none',
-      border: 'none', borderLeft: active ? '3px solid #22c55e' : '3px solid transparent',
-      color: active ? '#22c55e' : '#a1a1aa',
+      padding: '10px 20px', background: active ? '#dcfce7' : 'none',
+      border: 'none', borderLeft: active ? '3px solid #16a34a' : '3px solid transparent',
+      color: active ? '#15803d' : '#4b6e4b',
       fontSize: 14, fontWeight: active ? 700 : 500,
       cursor: 'pointer', textAlign: 'left', transition: 'all .15s',
       fontFamily: "'Outfit', sans-serif",
     }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = '#27272a' } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#a1a1aa'; e.currentTarget.style.background = 'none' } }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#0f1f0f'; e.currentTarget.style.background = '#eef6ee' } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#4b6e4b'; e.currentTarget.style.background = 'none' } }}
     >
       <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{item.icon}</span>
       <span style={{ flex: 1 }}>{item.label}</span>
@@ -46,22 +46,22 @@ export default function AdminSidebar({ activeTab, onNav, onLogout, mobile, open,
   )
 
   const Header = (
-    <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #27272a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #d1e8d1', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 32, height: 32, background: '#22c55e', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌿</div>
+        <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg,#16a34a,#22c55e)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌿</div>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Admin Panel</div>
-          <div style={{ fontSize: 11, color: '#71717a', marginTop: 2 }}>Fresh Season</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0f1f0f' }}>Admin Panel</div>
+          <div style={{ fontSize: 11, color: '#8aaa8a', marginTop: 2 }}>Fresh Season</div>
         </div>
       </div>
-      {mobile && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#71717a', fontSize: 22, cursor: 'pointer' }}>✕</button>}
+      {mobile && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#8aaa8a', fontSize: 22, cursor: 'pointer' }}>✕</button>}
     </div>
   )
 
   const Footer = (
-    <div style={{ padding: '12px 20px', borderTop: '1px solid #27272a', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <a href="/" style={{ color: '#71717a', fontSize: 13, textDecoration: 'none', padding: '6px 0' }}>← 사이트로</a>
-      <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#71717a', fontSize: 14, padding: '6px 0', display: 'flex', alignItems: 'center', gap: 8, fontFamily: "'Outfit', sans-serif" }}>
+    <div style={{ padding: '12px 20px', borderTop: '1px solid #d1e8d1', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <a href="/" style={{ color: '#4b6e4b', fontSize: 13, textDecoration: 'none', padding: '6px 0' }}>← 사이트로</a>
+      <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b6e4b', fontSize: 14, padding: '6px 0', display: 'flex', alignItems: 'center', gap: 8, fontFamily: "'Outfit', sans-serif" }}>
         <span>🚪</span> 로그아웃
       </button>
     </div>
@@ -70,12 +70,13 @@ export default function AdminSidebar({ activeTab, onNav, onLogout, mobile, open,
   if (mobile) {
     return (
       <>
-        {open && <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)' }} />}
+        {open && <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.3)' }} />}
         <aside style={{
           position: 'fixed', top: 0, left: open ? 0 : '-260px', zIndex: 1100,
-          width: 240, height: '100vh', background: '#18181b',
+          width: 240, height: '100vh', background: '#fff',
+          borderRight: '1px solid #d1e8d1',
           display: 'flex', flexDirection: 'column', transition: 'left .25s ease',
-          boxShadow: open ? '4px 0 24px rgba(0,0,0,0.35)' : 'none',
+          boxShadow: open ? '4px 0 24px rgba(22,163,74,0.15)' : 'none',
         }}>
           {Header}{renderNav()}{Footer}
         </aside>
@@ -85,7 +86,8 @@ export default function AdminSidebar({ activeTab, onNav, onLogout, mobile, open,
 
   return (
     <aside style={{
-      width: 220, minWidth: 220, background: '#18181b',
+      width: 220, minWidth: 220, background: '#fff',
+      borderRight: '1px solid #d1e8d1',
       display: 'flex', flexDirection: 'column', height: '100vh',
       position: 'sticky', top: 0, overflow: 'hidden',
     }}>

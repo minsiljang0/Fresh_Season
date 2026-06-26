@@ -79,14 +79,14 @@ function FeatureIdeasTab({ token, showToast }) {
   return (
     <div>
       <div style={{ marginBottom: 16, fontSize: 13, color: '#71717a', lineHeight: 1.7 }}>
-        MCP <code style={{ color: '#22c55e' }}>suggest_feature</code> 툴로 기록된 기능 추가 제안 목록입니다.<br />
+        MCP <code style={{ color: '#16a34a' }}>suggest_feature</code> 툴로 기록된 기능 추가 제안 목록입니다.<br />
         Claude가 황금키워드를 발견했을 때 기존 도구에 기능으로 추가하면 좋겠다고 판단하면 여기에 쌓입니다.
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {[['all', '전체'], ['proposed', '검토 중'], ['building', '개발 중'], ['done', '완료'], ['rejected', '보류']].map(([v, l]) => (
           <button key={v} onClick={() => setStatusFilter(v)} style={{
             padding: '5px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
-            background: statusFilter === v ? '#22c55e' : '#27272a',
+            background: statusFilter === v ? '#16a34a' : '#27272a',
             color: statusFilter === v ? '#fff' : '#a1a1aa',
             fontSize: 13, fontWeight: 700, fontFamily: "'Outfit', sans-serif",
           }}>{l}</button>
@@ -114,7 +114,7 @@ function FeatureIdeasTab({ token, showToast }) {
             return (
               <div key={idea.id} style={{
                 background: '#1c1c1e', borderRadius: 12, padding: '16px 20px',
-                border: '1px solid #2a2a2a',
+                border: '1px solid #d1e8d1',
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1 }}>
@@ -123,12 +123,12 @@ function FeatureIdeasTab({ token, showToast }) {
                         fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
                         background: '#27272a', color: '#a1a1aa',
                       }}>{idea.tool_id}</span>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: '#f0f0f0' }}>{idea.feature_name}</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: '#0f1f0f' }}>{idea.feature_name}</span>
                     </div>
                     {idea.keyword && (
                       <div style={{ fontSize: 12, color: '#71717a', marginBottom: 6 }}>
                         🔑 키워드: <span style={{ color: '#a1a1aa' }}>{idea.keyword}</span>
-                        {idea.total ? <span style={{ marginLeft: 8 }}>검색수 <strong style={{ color: '#22c55e' }}>{fmtN(idea.total)}</strong></span> : ''}
+                        {idea.total ? <span style={{ marginLeft: 8 }}>검색수 <strong style={{ color: '#16a34a' }}>{fmtN(idea.total)}</strong></span> : ''}
                         {idea.competition ? <span style={{ marginLeft: 8 }}>경쟁도 {idea.competition}</span> : ''}
                       </div>
                     )}
@@ -568,14 +568,14 @@ export default function KeywordPanel({ token }) {
     .sort((a, b) => new Date(b.used_at).getTime() - new Date(a.used_at).getTime())
 
   const S = {
-    th: { fontSize: 12, color: '#71717a', fontWeight: 600, padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #2a2a2a' },
+    th: { fontSize: 12, color: '#71717a', fontWeight: 600, padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #d1e8d1' },
     td: { fontSize: 13, color: '#d4d4d8', padding: '8px 10px', borderBottom: '1px solid #18181b' },
-    tdNum: { fontSize: 13, color: '#f0f0f0', fontWeight: 700, padding: '8px 10px', borderBottom: '1px solid #18181b', textAlign: 'right' },
+    tdNum: { fontSize: 13, color: '#0f1f0f', fontWeight: 700, padding: '8px 10px', borderBottom: '1px solid #18181b', textAlign: 'right' },
   }
 
   return (
     <div style={{ padding: 28, fontFamily: "'Outfit', sans-serif", maxWidth: 780 }}>
-      <h2 style={{ color: '#f0f0f0', fontSize: 20, fontWeight: 800, marginBottom: 6 }}>🔍 키워드 검색량 관리</h2>
+      <h2 style={{ color: '#0f1f0f', fontSize: 20, fontWeight: 800, marginBottom: 6 }}>🔍 키워드 검색량 관리</h2>
       <p style={{ color: '#71717a', fontSize: 13, marginBottom: 12 }}>키워드를 입력하면 네이버 연관 키워드 전체를 수집해서 아래 목록에 추가합니다.</p>
 
       {/* 전체 수집 현황 요약 */}
@@ -601,7 +601,7 @@ export default function KeywordPanel({ token }) {
                 padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <span style={{ fontSize: 13, color: '#71717a' }}>전체 수집 키워드</span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: '#22c55e' }}>{totalKeywords.toLocaleString()}</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#16a34a' }}>{totalKeywords.toLocaleString()}</span>
                 <span style={{ fontSize: 13, color: '#52525b' }}>개</span>
               </div>
               {/* 도구 그룹 */}
@@ -610,7 +610,7 @@ export default function KeywordPanel({ token }) {
                 padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <span style={{ fontSize: 13, color: '#71717a' }}>도구 그룹</span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: '#f0f0f0' }}>{allRows.length}</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#0f1f0f' }}>{allRows.length}</span>
                 <span style={{ fontSize: 13, color: '#52525b' }}>개</span>
               </div>
               {/* 오늘 남은 API 한도 */}
@@ -638,7 +638,7 @@ export default function KeywordPanel({ token }) {
                       <div style={{
                         height: '100%',
                         width: `${usedPct}%`,
-                        background: isDanger ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e',
+                        background: isDanger ? '#ef4444' : isWarning ? '#f59e0b' : '#16a34a',
                         borderRadius: 2,
                         transition: 'width 0.4s, background 0.3s',
                       }} />
@@ -676,7 +676,7 @@ export default function KeywordPanel({ token }) {
       })()}
 
       <div style={{ background: '#1c1c1e', border: '1px solid #3f3f46', borderRadius: 10, padding: '16px 18px', marginBottom: 20 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#f0f0f0', marginBottom: 12 }}>➕ 키워드 추가 수집</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#0f1f0f', marginBottom: 12 }}>➕ 키워드 추가 수집</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             value={addKeyword}
@@ -685,12 +685,12 @@ export default function KeywordPanel({ token }) {
             placeholder="예: 유튜브썸네일, 포모도로, 알람"
             style={{
               flex: 1, background: '#27272a', border: '1px solid #3f3f46',
-              borderRadius: 8, color: '#f0f0f0', fontSize: 13, padding: '8px 12px',
+              borderRadius: 8, color: '#0f1f0f', fontSize: 13, padding: '8px 12px',
               fontFamily: "'Outfit', sans-serif", outline: 'none',
             }}
           />
           <button onClick={handleAdd} disabled={addLoading} style={{
-            background: '#22c55e', color: '#fff', border: 'none', borderRadius: 8,
+            background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8,
             padding: '8px 20px', fontSize: 13, fontWeight: 700,
             cursor: addLoading ? 'wait' : 'pointer', opacity: addLoading ? 0.6 : 1,
             fontFamily: "'Outfit', sans-serif",
@@ -703,7 +703,7 @@ export default function KeywordPanel({ token }) {
 
       {/* ── 문서수 전체 자동 배치 카드 ─────────────────────────────── */}
       <div style={{
-        background: '#0f1f10', border: `1px solid ${batchRunning ? '#22c55e' : '#1a3d24'}`,
+        background: '#0f1f10', border: `1px solid ${batchRunning ? '#16a34a' : '#1a3d24'}`,
         borderRadius: 12, padding: '18px 20px', marginBottom: 20,
         transition: 'border-color 0.3s',
       }}>
@@ -732,7 +732,7 @@ export default function KeywordPanel({ token }) {
                 <div style={{
                   height: '100%',
                   width: `${Math.min(100, Math.round(((batchProgress?.dailyUsed ?? batchStatus.today_used) / batchStatus.daily_limit) * 100))}%`,
-                  background: (batchProgress?.dailyUsed ?? batchStatus.today_used) > batchStatus.daily_limit * 0.8 ? '#fbbf24' : '#22c55e',
+                  background: (batchProgress?.dailyUsed ?? batchStatus.today_used) > batchStatus.daily_limit * 0.8 ? '#fbbf24' : '#16a34a',
                   borderRadius: 3, transition: 'width 0.4s',
                 }} />
               </div>
@@ -822,7 +822,7 @@ export default function KeywordPanel({ token }) {
                     const total = (batchProgress.filled || 0) + (batchProgress.stillNull || 0)
                     return total > 0 ? `${Math.round((batchProgress.filled / total) * 100)}%` : '0%'
                   })(),
-                  background: '#22c55e', borderRadius: 3, transition: 'width 0.4s',
+                  background: '#16a34a', borderRadius: 3, transition: 'width 0.4s',
                 }} />
               </div>
             )}
@@ -843,7 +843,7 @@ export default function KeywordPanel({ token }) {
                     <div style={{
                       height: '100%',
                       width: `${Math.round(h.nullRatio * 100)}%`,
-                      background: h.nullRatio > 0.5 ? '#f87171' : '#22c55e',
+                      background: h.nullRatio > 0.5 ? '#f87171' : '#16a34a',
                       borderRadius: 2,
                     }} />
                   </div>
@@ -870,7 +870,7 @@ export default function KeywordPanel({ token }) {
         ].map(([id, label]) => (
           <button key={id} onClick={() => handleTabChange(id)} style={{
             padding: '7px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
-            background: tab === id ? '#22c55e' : '#27272a',
+            background: tab === id ? '#16a34a' : '#27272a',
             color: tab === id ? '#fff' : '#a1a1aa',
             fontSize: 13, fontWeight: 700, fontFamily: "'Outfit', sans-serif",
           }}>{label}</button>
@@ -893,14 +893,14 @@ export default function KeywordPanel({ token }) {
               <div key={row.hint} style={{ marginBottom: 8 }}>
                 <div style={{
                   background: '#1c1c1e',
-                  border: `1px solid ${isExpanded ? '#22c55e' : kwNeedsUpdate ? '#7f1d1d' : docNeedsUpdate ? '#14532d' : '#2a2a2a'}`,
+                  border: `1px solid ${isExpanded ? '#16a34a' : kwNeedsUpdate ? '#7f1d1d' : docNeedsUpdate ? '#14532d' : '#d1e8d1'}`,
                   borderRadius: isExpanded ? '10px 10px 0 0' : 10,
                   padding: '14px 18px',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   cursor: row.count > 0 ? 'pointer' : 'default',
                 }} onClick={() => row.count > 0 && handleExpand(row.hint)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#f0f0f0', minWidth: 120 }}>{row.label}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0f1f0f', minWidth: 120 }}>{row.label}</span>
                     <div>
                       <div style={{ fontSize: 13, color: kwNeedsUpdate ? '#f87171' : '#a1a1aa' }}>
                         네이버 검색일: <b style={{ color: kwNeedsUpdate ? '#fca5a5' : '#d4d4d8' }}>{formatDate(row.collected_at)}</b>
@@ -917,7 +917,7 @@ export default function KeywordPanel({ token }) {
                       </div>
                       {row.count > 0 && (
                         <div style={{ fontSize: 12, color: '#52525b', marginTop: 2 }}>
-                          키워드 <b style={{ color: '#22c55e', fontSize: 13 }}>{fmt(row.count)}개</b>
+                          키워드 <b style={{ color: '#16a34a', fontSize: 13 }}>{fmt(row.count)}개</b>
                           {row.null_doc_count > 0
                             ? <span style={{ color: '#f87171', marginLeft: 6 }}>· 문서수 미수집 <b>{fmt(row.null_doc_count)}개</b> 남음</span>
                             : <span style={{ color: '#4ade80', marginLeft: 6 }}>· 문서수 완료 ✓</span>
@@ -929,7 +929,7 @@ export default function KeywordPanel({ token }) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {row.count > 0 && (
-                      <span style={{ fontSize: 18, color: isExpanded ? '#22c55e' : '#52525b' }}>
+                      <span style={{ fontSize: 18, color: isExpanded ? '#16a34a' : '#52525b' }}>
                         {isExpanded ? '▲' : '▼'}
                       </span>
                     )}
@@ -961,7 +961,7 @@ export default function KeywordPanel({ token }) {
                         style={{
                           background: isLoadingDoc ? '#15803d' : docNeedsUpdate ? '#16a34a' : '#0f2318',
                           color: docNeedsUpdate ? '#fff' : '#374c3a',
-                          border: `1px solid ${docNeedsUpdate ? '#22c55e' : '#1a3d24'}`,
+                          border: `1px solid ${docNeedsUpdate ? '#16a34a' : '#1a3d24'}`,
                           borderRadius: 8, padding: '7px 13px',
                           fontSize: 12, fontWeight: 700,
                           cursor: isLoadingDoc ? 'wait' : docNeedsUpdate ? 'pointer' : 'default',
@@ -984,7 +984,7 @@ export default function KeywordPanel({ token }) {
                           <div style={{
                             height: '100%',
                             width: `${Math.round((docProg.filled / docProg.total) * 100)}%`,
-                            background: '#22c55e',
+                            background: '#16a34a',
                             borderRadius: 2,
                             transition: 'width 0.3s',
                           }} />
@@ -1006,7 +1006,7 @@ export default function KeywordPanel({ token }) {
                 </div>
 
                 {isExpanded && (
-                  <div style={{ background: '#161616', border: '1px solid #22c55e', borderTop: 'none', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
+                  <div style={{ background: '#ffffff', border: '1px solid #22c55e', borderTop: 'none', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
                     {topLoading[row.hint] ? (
                       <div style={{ padding: 20, color: '#71717a', fontSize: 13, textAlign: 'center' }}>로딩 중...</div>
                     ) : (
@@ -1027,10 +1027,10 @@ export default function KeywordPanel({ token }) {
                           {topList.map((item, i) => (
                             <tr key={item.keyword} style={{ background: item.picked ? '#1a1a00' : 'transparent' }}>
                               <td style={{ ...S.td, color: '#52525b' }}>{i + 1}</td>
-                              <td style={{ ...S.td, fontWeight: 600, color: '#f0f0f0' }}>{item.keyword}</td>
+                              <td style={{ ...S.td, fontWeight: 600, color: '#0f1f0f' }}>{item.keyword}</td>
                               <td style={S.tdNum}>{fmt(item.pc)}</td>
                               <td style={S.tdNum}>{fmt(item.mobile)}</td>
-                              <td style={{ ...S.tdNum, color: '#22c55e' }}>{fmt(item.total)}</td>
+                              <td style={{ ...S.tdNum, color: '#16a34a' }}>{fmt(item.total)}</td>
                               <td style={{ ...S.td, fontSize: 12 }}>{item.competition || '-'}</td>
                               <td style={{ ...S.tdNum, fontSize: 12, color: '#71717a' }}>{item.doc_count != null ? fmt(item.doc_count) : '-'}</td>
                               <td style={{ ...S.td, textAlign: 'center' }}>
@@ -1059,7 +1059,7 @@ export default function KeywordPanel({ token }) {
             {[100, 200, 500, 1000].map(n => (
               <button key={n} onClick={() => handleLimitChange(n)} style={{
                 padding: '5px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                background: allKwLimit === n ? '#22c55e' : '#27272a',
+                background: allKwLimit === n ? '#16a34a' : '#27272a',
                 color: allKwLimit === n ? '#fff' : '#a1a1aa',
                 fontSize: 13, fontWeight: 700, fontFamily: "'Outfit', sans-serif",
               }}>{n}개</button>
@@ -1092,10 +1092,10 @@ export default function KeywordPanel({ token }) {
                     <tr key={`${item.hint}-${item.keyword}`} style={{ background: isPicked ? '#1a1a00' : 'transparent' }}>
                       <td style={{ ...S.td, color: '#52525b' }}>{i + 1}</td>
                       <td style={{ ...S.td, fontSize: 12, color: '#71717a' }}>{item.hint}</td>
-                      <td style={{ ...S.td, fontWeight: 700, color: '#f0f0f0' }}>{item.keyword}</td>
+                      <td style={{ ...S.td, fontWeight: 700, color: '#0f1f0f' }}>{item.keyword}</td>
                       <td style={S.tdNum}>{fmt(item.pc)}</td>
                       <td style={S.tdNum}>{fmt(item.mobile)}</td>
-                      <td style={{ ...S.tdNum, color: '#22c55e' }}>{fmt(item.total)}</td>
+                      <td style={{ ...S.tdNum, color: '#16a34a' }}>{fmt(item.total)}</td>
                       <td style={{ ...S.td, fontSize: 12 }}>{item.competition || '-'}</td>
                       <td style={{ ...S.tdNum, fontSize: 12, color: '#71717a' }}>{item.doc_count != null ? fmt(item.doc_count) : '-'}</td>
                       <td style={{ ...S.td, textAlign: 'center' }}>
@@ -1118,13 +1118,13 @@ export default function KeywordPanel({ token }) {
         <div>
           <div style={{ fontSize: 12, color: '#71717a', marginBottom: 12, lineHeight: 1.6 }}>
             검색량은 높고 경쟁은 낮은 키워드를 그룹(도구) 구분 없이 전체에서 찾아 보여줍니다.
-            아래일수록 합계가 낮아지니, <b style={{ color: '#f0f0f0' }}>위쪽일수록 더 좋은 후보</b>예요.
+            아래일수록 합계가 낮아지니, <b style={{ color: '#0f1f0f' }}>위쪽일수록 더 좋은 후보</b>예요.
           </div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
             {['낮음', '중간', '높음', 'all'].map(c => (
               <button key={c} onClick={() => handleGoldenCompetitionChange(c)} style={{
                 padding: '5px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                background: goldenCompetition === c ? '#22c55e' : '#27272a',
+                background: goldenCompetition === c ? '#16a34a' : '#27272a',
                 color: goldenCompetition === c ? '#fff' : '#a1a1aa',
                 fontSize: 13, fontWeight: 700, fontFamily: "'Outfit', sans-serif",
               }}>{c === 'all' ? '전체' : '경쟁 ' + c}</button>
@@ -1161,10 +1161,10 @@ export default function KeywordPanel({ token }) {
                     <tr key={`${item.hint}-${item.keyword}`} style={{ background: isPicked ? '#1a1a00' : 'transparent' }}>
                       <td style={{ ...S.td, color: '#52525b' }}>{i + 1}</td>
                       <td style={{ ...S.td, fontSize: 12, color: '#71717a' }}>{item.hint}</td>
-                      <td style={{ ...S.td, fontWeight: 700, color: '#f0f0f0' }}>{item.keyword}</td>
+                      <td style={{ ...S.td, fontWeight: 700, color: '#0f1f0f' }}>{item.keyword}</td>
                       <td style={S.tdNum}>{fmt(item.pc)}</td>
                       <td style={S.tdNum}>{fmt(item.mobile)}</td>
-                      <td style={{ ...S.tdNum, color: '#22c55e' }}>{fmt(item.total)}</td>
+                      <td style={{ ...S.tdNum, color: '#16a34a' }}>{fmt(item.total)}</td>
                       <td style={{ ...S.td, fontSize: 12 }}>{item.competition || '-'}</td>
                       <td style={{ ...S.tdNum, fontSize: 12, color: '#71717a' }}>{item.doc_count != null ? fmt(item.doc_count) : '-'}</td>
                       <td style={{ ...S.td, textAlign: 'center' }}>
@@ -1211,10 +1211,10 @@ export default function KeywordPanel({ token }) {
                 {pendingPicks.map(item => (
                   <tr key={`${item.tool_id}-${item.keyword}`}>
                     <td style={{ ...S.td, fontSize: 12, color: '#71717a' }}>{item.tool_id}</td>
-                    <td style={{ ...S.td, fontWeight: 700, color: '#f0f0f0' }}>{item.keyword}</td>
+                    <td style={{ ...S.td, fontWeight: 700, color: '#0f1f0f' }}>{item.keyword}</td>
                     <td style={S.tdNum}>{fmt(item.pc)}</td>
                     <td style={S.tdNum}>{fmt(item.mobile)}</td>
-                    <td style={{ ...S.tdNum, color: '#22c55e' }}>{fmt(item.total)}</td>
+                    <td style={{ ...S.tdNum, color: '#16a34a' }}>{fmt(item.total)}</td>
                     <td style={{ ...S.td, fontSize: 12 }}>{item.competition || '-'}</td>
                     <td style={{ ...S.td, fontSize: 12, color: '#a1a1aa', maxWidth: 200 }}>{item.memo || '-'}</td>
                     <td style={{ ...S.td, textAlign: 'center' }}>
@@ -1241,7 +1241,7 @@ export default function KeywordPanel({ token }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{ fontSize: 12, color: '#71717a', lineHeight: 1.7 }}>
-              오늘 Claude가 <code style={{ color: '#22c55e' }}>naver_keyword_volume</code>으로 실시간 조회한 키워드 목록입니다.<br />
+              오늘 Claude가 <code style={{ color: '#16a34a' }}>naver_keyword_volume</code>으로 실시간 조회한 키워드 목록입니다.<br />
               ☆ 버튼으로 찜해두면 "찜한 키워드" 탭에서 관리할 수 있습니다.
             </div>
             <button onClick={loadToday} style={{
@@ -1266,9 +1266,9 @@ export default function KeywordPanel({ token }) {
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {Object.entries(groups).map(([hint, rows]) => (
-                  <div key={hint} style={{ background: '#1c1c1e', border: '1px solid #2a2a2a', borderRadius: 10, overflow: 'hidden' }}>
-                    <div style={{ padding: '12px 18px', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: '#22c55e' }}>🔍 {hint}</span>
+                  <div key={hint} style={{ background: '#1c1c1e', border: '1px solid #d1e8d1', borderRadius: 10, overflow: 'hidden' }}>
+                    <div style={{ padding: '12px 18px', borderBottom: '1px solid #d1e8d1', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: '#16a34a' }}>🔍 {hint}</span>
                       <span style={{ fontSize: 12, color: '#52525b' }}>연관 키워드 {rows.length}개</span>
                     </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -1284,10 +1284,10 @@ export default function KeywordPanel({ token }) {
                         {rows.map((item, i) => (
                           <tr key={item.keyword} style={{ background: item.picked ? '#1a1a00' : 'transparent' }}>
                             <td style={{ ...S.td, color: '#52525b' }}>{i + 1}</td>
-                            <td style={{ ...S.td, fontWeight: 600, color: '#f0f0f0' }}>{item.keyword}</td>
+                            <td style={{ ...S.td, fontWeight: 600, color: '#0f1f0f' }}>{item.keyword}</td>
                             <td style={S.tdNum}>{fmt(item.pc)}</td>
                             <td style={S.tdNum}>{fmt(item.mobile)}</td>
-                            <td style={{ ...S.tdNum, color: '#22c55e' }}>{fmt(item.total)}</td>
+                            <td style={{ ...S.tdNum, color: '#16a34a' }}>{fmt(item.total)}</td>
                             <td style={{ ...S.td, fontSize: 12 }}>{item.competition || '-'}</td>
                             <td style={{ ...S.td, textAlign: 'center' }}>
                               <button onClick={() => handlePick(item.hint, { ...item, picked: item.picked })} style={{
@@ -1311,7 +1311,7 @@ export default function KeywordPanel({ token }) {
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
             <button onClick={handleSyncFromPublishLog} style={{
-              padding: '8px 18px', background: '#22c55e', color: '#fff',
+              padding: '8px 18px', background: '#16a34a', color: '#fff',
               border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
               cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
             }}>🔄 발행기록으로 업데이트</button>
@@ -1340,8 +1340,8 @@ export default function KeywordPanel({ token }) {
                   <tr key={`${item.tool_id}-${item.keyword}`}>
                     <td style={{ ...S.td, fontSize: 12, color: '#71717a' }}>{formatDate(item.used_at)}</td>
                     <td style={{ ...S.td, fontSize: 12, color: '#71717a' }}>{item.tool_id}</td>
-                    <td style={{ ...S.td, fontWeight: 700, color: '#f0f0f0' }}>{item.keyword}</td>
-                    <td style={{ ...S.tdNum, color: '#22c55e' }}>{fmt(item.total)}</td>
+                    <td style={{ ...S.td, fontWeight: 700, color: '#0f1f0f' }}>{item.keyword}</td>
+                    <td style={{ ...S.tdNum, color: '#16a34a' }}>{fmt(item.total)}</td>
                     <td style={{ ...S.td, fontSize: 13, color: '#d4d4d8' }}>
                       {item.used_in_title || '-'}
                       {item.used_in_slug && (
@@ -1374,22 +1374,22 @@ export default function KeywordPanel({ token }) {
           }} onClick={e => e.stopPropagation()}>
             {confirmDelete.type === 'duplicate' ? (
               <>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#f0f0f0', marginBottom: 10 }}>⚠️ 이미 있는 키워드</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0f1f0f', marginBottom: 10 }}>⚠️ 이미 있는 키워드</div>
                 <div style={{ fontSize: 14, color: '#a1a1aa', marginBottom: 20 }}>
-                  <b style={{ color: '#22c55e' }}>"{confirmDelete.hint}"</b>는 이미 수집된 키워드예요.<br/>
+                  <b style={{ color: '#16a34a' }}>"{confirmDelete.hint}"</b>는 이미 수집된 키워드예요.<br/>
                   업데이트하려면 해당 항목의 업데이트 버튼을 눌러주세요.
                 </div>
                 <button onClick={() => setConfirmDelete(null)} style={{
-                  width: '100%', background: '#27272a', color: '#f0f0f0', border: 'none',
+                  width: '100%', background: '#27272a', color: '#0f1f0f', border: 'none',
                   borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700,
                   cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                 }}>확인</button>
               </>
             ) : (
               <>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#f0f0f0', marginBottom: 10 }}>🗑 키워드 삭제</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0f1f0f', marginBottom: 10 }}>🗑 키워드 삭제</div>
                 <div style={{ fontSize: 14, color: '#a1a1aa', marginBottom: 20 }}>
-                  <b style={{ color: '#22c55e' }}>"{confirmDelete.hint}"</b> 키워드 데이터를 전부 삭제할까요?
+                  <b style={{ color: '#16a34a' }}>"{confirmDelete.hint}"</b> 키워드 데이터를 전부 삭제할까요?
                   <span style={{ fontSize: 12, color: '#52525b', marginTop: 4, display: 'block' }}>삭제 후 복구가 불가능합니다.</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -1403,7 +1403,7 @@ export default function KeywordPanel({ token }) {
                     setConfirmDelete(null)
                     await handleDeleteHint(hint)
                   }} style={{
-                    flex: 1, background: '#22c55e', color: '#fff', border: 'none',
+                    flex: 1, background: '#16a34a', color: '#fff', border: 'none',
                     borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700,
                     cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                   }}>삭제</button>
@@ -1425,7 +1425,7 @@ export default function KeywordPanel({ token }) {
         <div style={{
           position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
           background: '#18181b', border: '1px solid #3f3f46', borderRadius: 10,
-          padding: '12px 24px', fontSize: 14, color: '#f0f0f0',
+          padding: '12px 24px', fontSize: 14, color: '#0f1f0f',
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: 9999,
         }}>{toast}</div>
       )}

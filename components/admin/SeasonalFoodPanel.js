@@ -90,9 +90,9 @@ export default function SeasonalFoodPanel({ adminToken }) {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
               {MONTHS.map(m => (
                 <button key={m} onClick={() => toggleMonth(m)} style={{
-                  width: 36, height: 36, borderRadius: 8, border: `1.5px solid ${form.months.includes(m) ? '#22c55e' : '#333'}`,
-                  background: form.months.includes(m) ? '#0a2a0a' : '#1f1f1f',
-                  color: form.months.includes(m) ? '#22c55e' : '#888',
+                  width: 36, height: 36, borderRadius: 8, border: `1.5px solid ${form.months.includes(m) ? '#16a34a' : '#d1e8d1'}`,
+                  background: form.months.includes(m) ? '#0a2a0a' : '#f5f9f5',
+                  color: form.months.includes(m) ? '#16a34a' : '#4b6e4b',
                   fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                 }}>{m}</button>
               ))}
@@ -126,9 +126,9 @@ export default function SeasonalFoodPanel({ adminToken }) {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#555' }}>불러오는 중...</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#8aaa8a' }}>불러오는 중...</div>
         ) : !foods.length ? (
-          <div style={{ textAlign: 'center', padding: '50px 20px', color: '#555' }}>
+          <div style={{ textAlign: 'center', padding: '50px 20px', color: '#8aaa8a' }}>
             <div style={{ fontSize: 36, marginBottom: 10 }}>🌿</div>
             <div>등록된 식재료가 없습니다</div>
           </div>
@@ -138,18 +138,18 @@ export default function SeasonalFoodPanel({ adminToken }) {
               <div key={f.id} style={{ ...S.row, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: '#f0f0f0' }}>{f.ingredient}</span>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: '#0f1f0f' }}>{f.ingredient}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, background: '#0a2a0a', border: '1px solid #166534', borderRadius: 4, padding: '2px 8px', color: '#4ade80' }}>
                       {categoryLabel(f.region)}
                     </span>
-                    {f.district && <span style={{ fontSize: 11, color: '#555' }}>{f.district}</span>}
+                    {f.district && <span style={{ fontSize: 11, color: '#8aaa8a' }}>{f.district}</span>}
                   </div>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 4 }}>
                     {(f.months || []).map(m => (
-                      <span key={m} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#1f1f1f', border: '1px solid #333', color: '#888' }}>{m}월</span>
+                      <span key={m} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#f5f9f5', border: '1px solid #333', color: '#4b6e4b' }}>{m}월</span>
                     ))}
                   </div>
-                  <div style={{ fontSize: 12, color: '#888' }}>💚 {f.health}</div>
+                  <div style={{ fontSize: 12, color: '#4b6e4b' }}>💚 {f.health}</div>
                 </div>
                 <button onClick={() => deleteFood(f.id)}
                   style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #166534', background: '#052e16', color: '#4ade80', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", flexShrink: 0 }}>
