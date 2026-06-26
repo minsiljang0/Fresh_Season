@@ -7,7 +7,6 @@ const NAV = [
   { id: 'content_ideas', label: '글감 관리',       icon: '💡' },
   { id: 'keyword',       label: '키워드 관리',     icon: '🔍' },
   { id: 'system_prompt', label: 'Claude 지침',    icon: '🤖' },
-  { id: 'tv_recipes',    label: 'TV 레시피',       icon: '📺' },
   { id: 'seasonal',      label: '맵 관리',         icon: '🗺️' },
   { id: 'free_board',    label: '자유게시판',     icon: '💬' },
   { id: 'requests',      label: '부탁해요',       icon: '📬' },
