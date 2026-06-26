@@ -22,7 +22,29 @@ const HEALTH_CATEGORIES = [
   '혈당·당뇨','간·해독','신장·비뇨','소화·장',
   '피부·미용','혈액·빈혈','두뇌·눈','체중·다이어트',
   '호흡기·폐','항암','갱년기·호르몬','수면·신경',
-  '치아·구강','체력·근육','임산부·태아','기타'
+  '치아·구강','체력·근육','임산부·태아',
+  '탈모·모발','아토피·피부염','통풍·요산','콜레스테롤',
+  '전립선·남성건강','신장·저칼륨','알레르기완화',
+  '수험생·집중력','어린이성장','노인·골감소증','기타'
+]
+
+// ── 주의사항 예시 (자동완성 힌트용) ──────────────────────
+const CAUTION_PRESETS = [
+  '⚠️ 견과류 알레르기 주의 (아나필락시스 위험)',
+  '⚠️ 갑각류 알레르기 주의',
+  '⚠️ 복어·자연독 위험 — 전문 조리 필요',
+  '⚠️ 통풍 환자 주의 — 퓨린 함량 높음',
+  '⚠️ 신장 질환자 주의 — 칼륨 함량 높음',
+  '⚠️ 당뇨 환자 주의 — 당분 함량 높음',
+  '⚠️ 임산부 과다섭취 주의',
+  '⚠️ 영아(12개월 미만) 섭취 금지',
+  '⚠️ 항응고제 복용자 주의 — 비타민K 함량 높음',
+  '⚠️ 갑상선 질환자 주의 — 요오드 함량 높음',
+  '⚠️ 과민성장증후군(IBS) 주의',
+  '⚠️ 고혈압약 복용자 주의 — 자몽과 상호작용',
+  '⚠️ 밀 글루텐 알레르기 주의 (셀리악병)',
+  '⚠️ 유당불내증 주의',
+  '⚠️ 생식 금지 — 반드시 익혀서 섭취',
 ]
 
 const AGE_GROUPS = [
@@ -144,7 +166,7 @@ function SectionCard({ title, children }) {
 function HealthTab({ adminToken, showToast }) {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'', age_groups:[] })
+  const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'', age_groups:[], caution:'' })
   const [saving, setSaving] = useState(false)
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({})
@@ -162,7 +184,7 @@ function HealthTab({ adminToken, showToast }) {
     setSaving(true)
     try {
       await apiFetch(api('health_benefits'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      setForm({ name:'', description:'', category:'', coupang_url:'', age_groups:[] })
+      setForm({ name:'', description:'', category:'', coupang_url:'', age_groups:[], caution:'' })
       showToast('✅ 등록 완료'); load()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
@@ -227,6 +249,23 @@ function HealthTab({ adminToken, showToast }) {
             </div>
           </div>
         </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>⚠️ 주의사항 (없으면 비워두세요)</label>
+            <div style={{ position:'relative' }}>
+              <input
+                value={form.caution||''}
+                onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
+                placeholder="예: 견과류 알레르기 주의, 통풍 환자 퓨린 함량 높음"
+                style={S.input}
+                list="caution-presets"
+              />
+              <datalist id="caution-presets">
+                {CAUTION_PRESETS.map(p=><option key={p} value={p} />)}
+              </datalist>
+            </div>
+            <p style={{ fontSize:11, color:'#8aaa8a', marginTop:4 }}>💡 위에 입력창을 클릭하면 자주 쓰는 주의문구가 나와요</p>
+          </div>
+        </div>
         <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
       </div>
 
@@ -268,6 +307,16 @@ function HealthTab({ adminToken, showToast }) {
                     })}
                   </div>
                 </div>
+                <div style={{ marginBottom:8 }}>
+                  <label style={{ ...S.label, marginBottom:4 }}>⚠️ 주의사항</label>
+                  <input
+                    value={editForm.caution||''}
+                    onChange={e=>setEditForm(f=>({...f,caution:e.target.value}))}
+                    placeholder="예: 통풍 환자 주의"
+                    style={{ ...S.input, marginBottom:0 }}
+                    list="caution-presets"
+                  />
+                </div>
                 <div style={{ display:'flex', gap:6 }}>
                   <button onClick={()=>save(h.id)} style={S.btn()}>저장</button>
                   <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
@@ -289,10 +338,15 @@ function HealthTab({ adminToken, showToast }) {
                       })}
                     </div>
                   )}
+                  {h.caution && (
+                    <div style={{ marginTop:5, padding:'4px 8px', borderRadius:6, background:'#fff7ed', border:'1px solid #fed7aa', fontSize:11, color:'#c2410c', lineHeight:1.4 }}>
+                      {h.caution}
+                    </div>
+                  )}
                   {h.coupang_url && <a href={h.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none', marginTop:3, display:'inline-block' }}>🛒 쿠팡 링크 ↗</a>}
                 </div>
                 <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-                  <button onClick={()=>{ setEditId(h.id); setEditForm({name:h.name,description:h.description,category:h.category,coupang_url:h.coupang_url||'',age_groups:h.age_groups||[]}) }}
+                  <button onClick={()=>{ setEditId(h.id); setEditForm({name:h.name,description:h.description,category:h.category,coupang_url:h.coupang_url||'',age_groups:h.age_groups||[],caution:h.caution||''}) }}
                     style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
                   <button onClick={()=>del(h.id)} style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                 </div>
@@ -666,7 +720,7 @@ function IngredientTab({ adminToken, showToast }) {
   const [list, setList] = useState([])
   const [healths, setHealths] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', category:'fish', description:'', coupang_url:'' })
+  const [form, setForm] = useState({ name:'', category:'fish', description:'', coupang_url:'', caution:'' })
   const [saving, setSaving] = useState(false)
   const [selIng, setSelIng] = useState(null)
   const [ingHealths, setIngHealths] = useState([])
@@ -702,7 +756,7 @@ function IngredientTab({ adminToken, showToast }) {
     setSaving(true)
     try {
       await apiFetch(api('ingredients'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      setForm({ name:'', category:'fish', description:'', coupang_url:'' })
+      setForm({ name:'', category:'fish', description:'', coupang_url:'', caution:'' })
       showToast('✅ 등록 완료'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
@@ -779,6 +833,21 @@ function IngredientTab({ adminToken, showToast }) {
             <label style={S.label}>설명</label>
             <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="간단 설명" style={S.input} />
           </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>🛒 쿠팡 파트너스 URL (5단계 — 상품 연결)</label>
+            <input value={form.coupang_url||''} onChange={e=>setForm(f=>({...f,coupang_url:e.target.value}))} placeholder="예: https://coupa.ng/xxxxx" style={S.input} />
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>⚠️ 주의사항 (알레르기·특정질환·섭취제한 등)</label>
+            <input
+              value={form.caution||''}
+              onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
+              placeholder="예: 견과류 알레르기 주의 / 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의"
+              style={S.input}
+              list="caution-presets"
+            />
+            <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 입력창 클릭하면 자주 쓰는 주의문구 나와요</p>
+          </div>
         </div>
         <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
       </div>
@@ -800,6 +869,7 @@ function IngredientTab({ adminToken, showToast }) {
                     <div>
                       <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{c?.emoji} {i.name}</div>
                       <div style={{ fontSize:11, color:'#4b6e4b' }}>{c?.label}</div>
+                      {i.caution && <div style={{ fontSize:10, color:'#c2410c', marginTop:3, padding:'2px 6px', background:'#fff7ed', borderRadius:4, border:'1px solid #fed7aa', lineHeight:1.3 }}>⚠️ {i.caution}</div>}
                     </div>
                     <button onClick={e=>{ e.stopPropagation(); del(i.id) }}
                       style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
