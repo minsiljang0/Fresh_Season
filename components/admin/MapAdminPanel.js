@@ -520,27 +520,34 @@ function HealthTab({ adminToken, showToast }) {
 function TvShowTab({ adminToken, showToast }) {
   const [shows, setShows] = useState([])
   const [chefs, setChefs] = useState([])
+  const [ingredients, setIngredients] = useState([])
   const [showChefs, setShowChefs] = useState([])
+  const [showIngs, setShowIngs] = useState([])
+  const [activeSection, setActiveSection] = useState('chef')
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name:'', broadcaster:'', category:'', description:'' })
   const [saving, setSaving] = useState(false)
   const [selShow, setSelShow] = useState(null)
   const [linkChefId, setLinkChefId] = useState('')
   const [linkRole, setLinkRole] = useState('')
+  const [linkIngId, setLinkIngId] = useState('')
   const [tvRecipes, setTvRecipes] = useState([])
   const [tvForm, setTvForm] = useState({ ingredient:'', program:'', episode:'', title:'', summary:'', source_url:'' })
   const [tvSaving, setTvSaving] = useState(false)
   const [tvQ, setTvQ] = useState('')
 
+  const ING_CAT = { fish:'🐟', veg:'🥬', fruit:'🍎', grain:'🌾', meat:'🥩', mushroom:'🍄' }
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, c, tv] = await Promise.all([
+      const [s, c, tv, i] = await Promise.all([
         apiFetch(api('tv_shows')),
         apiFetch(api('chefs')),
         apiFetch(api('tv_recipes')),
+        apiFetch(api('ingredients')),
       ])
-      setShows(s); setChefs(c); setTvRecipes(tv)
+      setShows(s); setChefs(c); setTvRecipes(tv); setIngredients(i)
     } catch(e) { showToast('❌ '+e.message) }
     setLoading(false)
   }, [])
@@ -549,8 +556,19 @@ function TvShowTab({ adminToken, showToast }) {
     try { setShowChefs(await apiFetch(`${api('show_chefs')}&show_id=${showId}`)) } catch {}
   }, [])
 
+  const loadShowIngs = useCallback(async (showId) => {
+    try { setShowIngs(await apiFetch(`${api('show_ingredients')}&show_id=${showId}`)) } catch { setShowIngs([]) }
+  }, [])
+
   useEffect(()=>{ loadAll() }, [])
-  useEffect(()=>{ if(selShow) loadShowChefs(selShow.id) }, [selShow])
+  useEffect(()=>{
+    if(selShow) {
+      loadShowChefs(selShow.id)
+      loadShowIngs(selShow.id)
+    } else {
+      setShowChefs([]); setShowIngs([])
+    }
+  }, [selShow])
 
   const addShow = async () => {
     if (!form.name.trim()) { showToast('⚠️ 방송명 필수'); return }
@@ -586,6 +604,22 @@ function TvShowTab({ adminToken, showToast }) {
     try {
       await apiFetch(`${api('show_chefs')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
       showToast('🗑 해제됨'); loadShowChefs(selShow.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const linkIng = async () => {
+    if (!selShow || !linkIngId) { showToast('⚠️ 식재료를 선택하세요'); return }
+    try {
+      await apiFetch(api('show_ingredients'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ show_id:selShow.id, ingredient_id:linkIngId }) })
+      setLinkIngId(''); showToast('✅ 식재료 연결됨'); loadShowIngs(selShow.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const unlinkIng = async (id) => {
+    try {
+      await apiFetch(`${api('show_ingredients')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      showToast('🗑 해제됨'); loadShowIngs(selShow.id)
     } catch(e) { showToast('❌ '+e.message) }
   }
 
@@ -639,9 +673,9 @@ function TvShowTab({ adminToken, showToast }) {
         <button onClick={addShow} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
       </div>
 
-      {/* 방송 목록 + 셰프 연결 */}
+      {/* 방송 목록 */}
       <div style={S.card}>
-        <div style={S.cardTitle}>📋 방송 목록 ({shows.length}) — 클릭하면 셰프 연결</div>
+        <div style={S.cardTitle}>📋 방송 목록 ({shows.length}) — 클릭하면 셰프·식재료 연결</div>
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:8, marginBottom: selShow ? 20 : 0 }}>
             {shows.map(s => (
@@ -661,32 +695,98 @@ function TvShowTab({ adminToken, showToast }) {
           </div>
         )}
 
-        {/* 선택된 방송 셰프 연결 */}
+        {/* 선택된 방송 연결 관리 */}
         {selShow && (
-          <SectionCard title={`👨‍🍳 "${selShow.name}" 출연 셰프 관리`}>
-            <TagRow
-              items={showChefs.map(sc=>({ label:`${sc.chefs?.name} (${sc.role||'출연'})`, id:sc.id }))}
-              onRemove={(i)=>unlinkChef(showChefs[i].id)}
-              color="#f59e0b"
-            />
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:8, marginTop:12, alignItems:'flex-end' }}>
-              <SearchSelect
-                label="셰프 선택/검색"
-                items={chefs}
-                value={linkChefId}
-                onChange={setLinkChefId}
-                placeholder="셰프 이름 검색"
-              />
+          <div style={{ border:'1.5px solid #f59e0b', borderRadius:14, overflow:'hidden', marginTop:4 }}>
+            {/* 수정 중 헤더 */}
+            <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 16px', background:'#1a1500', borderBottom:'1px solid #f59e0b44' }}>
+              <div style={{ width:34, height:34, borderRadius:9, background:'#f59e0b22', border:'1.5px solid #f59e0b', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>📺</div>
               <div>
-                <label style={S.label}>역할</label>
-                <select value={linkRole} onChange={e=>setLinkRole(e.target.value)} style={S.input}>
-                  <option value="">선택</option>
-                  {CHEF_ROLES.map(r=><option key={r} value={r}>{r}</option>)}
-                </select>
+                <div style={{ fontSize:10, color:'#f59e0b', fontWeight:700, letterSpacing:1, marginBottom:2 }}>선택됨</div>
+                <div style={{ fontSize:15, fontWeight:900, color:'#fef9c3' }}>{selShow.name}</div>
               </div>
-              <button onClick={linkChef} style={{ ...S.btn('#f59e0b'), padding:'10px 14px', whiteSpace:'nowrap' }}>연결</button>
             </div>
-          </SectionCard>
+
+            {/* 탭 헤더 */}
+            <div style={{ display:'flex', borderBottom:'1px solid #f59e0b33', background:'#111' }}>
+              <button onClick={()=>setActiveSection('chef')}
+                style={{ flex:1, padding:'10px 0', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                  fontWeight:700, fontSize:13,
+                  background: activeSection==='chef' ? '#1a1500' : 'transparent',
+                  color: activeSection==='chef' ? '#f59e0b' : '#888',
+                  borderBottom: activeSection==='chef' ? '2px solid #f59e0b' : '2px solid transparent' }}>
+                👨‍🍳 출연 셰프 ({showChefs.length})
+              </button>
+              <button onClick={()=>setActiveSection('ingredient')}
+                style={{ flex:1, padding:'10px 0', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                  fontWeight:700, fontSize:13,
+                  background: activeSection==='ingredient' ? '#1a1500' : 'transparent',
+                  color: activeSection==='ingredient' ? '#a855f7' : '#888',
+                  borderBottom: activeSection==='ingredient' ? '2px solid #a855f7' : '2px solid transparent' }}>
+                🥕 연결 식재료 ({showIngs.length})
+              </button>
+            </div>
+
+            {/* 셰프 섹션 */}
+            {activeSection === 'chef' && (
+              <div style={{ padding:16 }}>
+                <TagRow
+                  items={showChefs.map(sc=>({ label:`${sc.chefs?.name} (${sc.role||'출연'})`, id:sc.id }))}
+                  onRemove={(i)=>unlinkChef(showChefs[i].id)}
+                  color="#f59e0b"
+                />
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:8, marginTop:12, alignItems:'flex-end' }}>
+                  <SearchSelect
+                    label="셰프 선택/검색"
+                    items={chefs}
+                    value={linkChefId}
+                    onChange={setLinkChefId}
+                    placeholder="셰프 이름 검색"
+                  />
+                  <div>
+                    <label style={S.label}>역할</label>
+                    <select value={linkRole} onChange={e=>setLinkRole(e.target.value)} style={S.input}>
+                      <option value="">선택</option>
+                      {CHEF_ROLES.map(r=><option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <button onClick={linkChef} style={{ ...S.btn('#f59e0b'), padding:'10px 14px', whiteSpace:'nowrap' }}>연결</button>
+                </div>
+              </div>
+            )}
+
+            {/* 식재료 섹션 */}
+            {activeSection === 'ingredient' && (
+              <div style={{ padding:16 }}>
+                {showIngs.length > 0 ? (
+                  <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:12 }}>
+                    {showIngs.map(si => {
+                      const ing = ingredients.find(i=>i.id===si.ingredient_id)
+                      return ing ? (
+                        <span key={si.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                          padding:'3px 10px', borderRadius:20, background:'#a855f718', border:'1px solid #a855f744', color:'#7c3aed' }}>
+                          {ING_CAT[ing.category]||'🥕'} {ing.name}
+                          <button type="button" onClick={()=>unlinkIng(si.id)}
+                            style={{ background:'none', border:'none', color:'#7c3aed', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
+                        </span>
+                      ) : null
+                    })}
+                  </div>
+                ) : (
+                  <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:12 }}>아직 연결된 식재료가 없어요</p>
+                )}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+                  <SearchSelect
+                    items={ingredients}
+                    value={linkIngId}
+                    onChange={setLinkIngId}
+                    placeholder="식재료 검색해서 추가..."
+                  />
+                  <button onClick={linkIng} style={{ ...S.btn('#a855f7'), padding:'10px 14px', whiteSpace:'nowrap' }}>+ 연결</button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
