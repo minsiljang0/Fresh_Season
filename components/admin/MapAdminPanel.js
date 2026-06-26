@@ -165,7 +165,7 @@ function SectionCard({ title, children }) {
 // ══════════════════════════════════════════════════════════
 // 서브탭 1 : 건강효능 관리
 // ══════════════════════════════════════════════════════════
-function HealthTab({ adminToken, showToast }) {
+function HealthTab({ adminToken, showToast, confirmDelete }) {
   const [list, setList] = useState([])
   const [ingredients, setIngredients] = useState([])
   const [tvShows, setTvShows] = useState([])
@@ -184,6 +184,7 @@ function HealthTab({ adminToken, showToast }) {
   const [linkIngId, setLinkIngId] = useState('')
   const [linkTvId, setLinkTvId] = useState('')
   const [showLinkModal, setShowLinkModal] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null) // { id, name, onConfirm }
   const [justCreated, setJustCreated] = useState(null)
   const [modalTab, setModalTab] = useState('ingredient')
   const [modalIngId, setModalIngId] = useState('')
@@ -314,13 +315,17 @@ function HealthTab({ adminToken, showToast }) {
     } catch(e) { showToast('❌ '+e.message) }
   }
 
-  const del = async (id) => {
-    if (!confirm('삭제할까요?')) return
-    try {
-      await apiFetch(`${api('health_benefits')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      if (selHealth?.id===id) setSelHealth(null)
-      showToast('🗑 삭제됨'); load()
-    } catch(e) { showToast('❌ '+e.message) }
+  const del = (id, name) => {
+    setDeleteConfirm({
+      id, name,
+      onConfirm: async () => {
+        try {
+          await apiFetch(`${api('health_benefits')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+          if (selHealth?.id===id) setSelHealth(null)
+          showToast('🗑 삭제됨'); load()
+        } catch(e) { showToast('❌ '+e.message) }
+      }
+    })
   }
 
   const linkIng = async () => {
@@ -437,6 +442,33 @@ function HealthTab({ adminToken, showToast }) {
 
   return (
     <div>
+      {/* ── 삭제 확인 모달 ── */}
+      {deleteConfirm && (
+        <div style={{ position:'fixed', inset:0, zIndex:2000, display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.55)', padding:16 }}>
+          <div style={{ background:'#fff', borderRadius:14, width:'100%', maxWidth:400,
+            boxShadow:'0 20px 60px rgba(0,0,0,0.3)', fontFamily:"'Outfit',sans-serif", overflow:'hidden' }}>
+            <div style={{ padding:'24px 24px 16px' }}>
+              <div style={{ fontSize:32, marginBottom:12, textAlign:'center' }}>🗑️</div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#0f1f0f', textAlign:'center', marginBottom:8 }}>정말 삭제할까요?</div>
+              <div style={{ fontSize:13, color:'#4b6e4b', textAlign:'center', marginBottom:4 }}>
+                <strong style={{ color:'#dc2626' }}>"{deleteConfirm.name}"</strong>
+              </div>
+              <div style={{ fontSize:12, color:'#8aaa8a', textAlign:'center' }}>삭제하면 복구할 수 없어요</div>
+            </div>
+            <div style={{ display:'flex', borderTop:'1px solid #e8f5e8' }}>
+              <button onClick={()=>setDeleteConfirm(null)}
+                style={{ flex:1, padding:'14px 0', border:'none', background:'#f5f9f5', color:'#4b6e4b',
+                  fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                  borderRight:'1px solid #e8f5e8' }}>취소</button>
+              <button onClick={()=>{ deleteConfirm.onConfirm(); setDeleteConfirm(null) }}
+                style={{ flex:1, padding:'14px 0', border:'none', background:'#fff1f2', color:'#dc2626',
+                  fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 등록 후 연결 모달 ── */}
       {showLinkModal && justCreated && (
         <div style={{ position:'fixed', inset:0, zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center',
@@ -711,7 +743,7 @@ function HealthTab({ adminToken, showToast }) {
                   <div style={{ display:'flex', gap:5, flexShrink:0 }}>
                     <button onClick={e=>{ e.stopPropagation(); setEditId(h.id); setSelHealth(h); setEditForm({name:h.name,description:h.description||'',category:h.category||'',coupang_url:h.coupang_url||'',age_groups:h.age_groups||[],caution:h.caution||''}); loadLinks(h.id) }}
                       style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
-                    <button onClick={e=>{ e.stopPropagation(); del(h.id) }}
+                    <button onClick={e=>{ e.stopPropagation(); del(h.id, h.name) }}
                       style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 </div>
@@ -800,7 +832,7 @@ function HealthTab({ adminToken, showToast }) {
 // ══════════════════════════════════════════════════════════
 // 서브탭 2 : TV방송 관리
 // ══════════════════════════════════════════════════════════
-function TvShowTab({ adminToken, showToast }) {
+function TvShowTab({ adminToken, showToast, confirmDelete }) {
   const [shows, setShows] = useState([])
   const [chefs, setChefs] = useState([])
   const [ingredients, setIngredients] = useState([])
@@ -861,13 +893,14 @@ function TvShowTab({ adminToken, showToast }) {
     setSaving(false)
   }
 
-  const delShow = async (id) => {
-    if (!confirm('삭제할까요?')) return
-    try {
-      await apiFetch(`${api('tv_shows')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      if (selShow?.id===id) setSelShow(null)
-      showToast('🗑 삭제됨'); loadAll()
-    } catch(e) { showToast('❌ '+e.message) }
+  const delShow = (id, name) => {
+    confirmDelete(name, async () => {
+      try {
+        await apiFetch(`${api('tv_shows')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        if (selShow?.id===id) setSelShow(null)
+        showToast('🗑 삭제됨'); loadAll()
+      } catch(e) { showToast('❌ '+e.message) }
+    })
   }
 
   const saveShow = async (id) => {
@@ -1069,7 +1102,7 @@ function TvShowTab({ adminToken, showToast }) {
                   <div style={{ display:'flex', gap:4, flexShrink:0, marginLeft:8 }}>
                     <button onClick={()=>{ setEditTvId(s.id); setEditTvForm({name:s.name,broadcaster:s.broadcaster||'',category:s.category||'',description:s.description||'',started_at:s.started_at||'',ended_at:s.ended_at||'',air_days:s.air_days||[]}) }}
                       style={{ padding:'4px 9px', borderRadius:6, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
-                    <button onClick={()=>delShow(s.id)}
+                    <button onClick={()=>delShow(s.id, s.name)}
                       style={{ padding:'4px 9px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 </div>
@@ -1086,7 +1119,7 @@ function TvShowTab({ adminToken, showToast }) {
 // ══════════════════════════════════════════════════════════
 // 서브탭 3 : 셰프 관리
 // ══════════════════════════════════════════════════════════
-function ChefTab({ adminToken, showToast }) {
+function ChefTab({ adminToken, showToast, confirmDelete }) {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name:'', role:'', specialty:'', description:'' })
@@ -1119,12 +1152,13 @@ function ChefTab({ adminToken, showToast }) {
     } catch(e) { showToast('❌ '+e.message) }
   }
 
-  const del = async (id) => {
-    if (!confirm('삭제?')) return
-    try {
-      await apiFetch(`${api('chefs')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      showToast('🗑 삭제됨'); load()
-    } catch(e) { showToast('❌ '+e.message) }
+  const del = (id, name) => {
+    confirmDelete(name, async () => {
+      try {
+        await apiFetch(`${api('chefs')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        showToast('🗑 삭제됨'); load()
+      } catch(e) { showToast('❌ '+e.message) }
+    })
   }
 
   return (
@@ -1186,7 +1220,7 @@ function ChefTab({ adminToken, showToast }) {
                 <div style={{ display:'flex', gap:5, flexShrink:0 }}>
                   <button onClick={()=>{ setEditId(c.id); setEditForm({name:c.name,role:c.role,specialty:c.specialty,description:c.description}) }}
                     style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
-                  <button onClick={()=>del(c.id)}
+                  <button onClick={()=>del(c.id, c.name)}
                     style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                 </div>
               </div>
@@ -1201,7 +1235,7 @@ function ChefTab({ adminToken, showToast }) {
 // ══════════════════════════════════════════════════════════
 // 서브탭 4 : 식재료 관리
 // ══════════════════════════════════════════════════════════
-function IngredientTab({ adminToken, showToast }) {
+function IngredientTab({ adminToken, showToast, confirmDelete }) {
   const [list, setList] = useState([])
   const [healths, setHealths] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1256,13 +1290,14 @@ function IngredientTab({ adminToken, showToast }) {
     } catch(e) { showToast('❌ '+e.message) }
   }
 
-  const del = async (id) => {
-    if (!confirm('삭제?')) return
-    try {
-      await apiFetch(`${api('ingredients')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      if (selIng?.id===id) setSelIng(null)
-      showToast('🗑 삭제됨'); loadAll()
-    } catch(e) { showToast('❌ '+e.message) }
+  const del = (id, name) => {
+    confirmDelete(name, async () => {
+      try {
+        await apiFetch(`${api('ingredients')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        if (selIng?.id===id) setSelIng(null)
+        showToast('🗑 삭제됨'); loadAll()
+      } catch(e) { showToast('❌ '+e.message) }
+    })
   }
 
   const linkHealth = async () => {
@@ -1415,7 +1450,7 @@ function IngredientTab({ adminToken, showToast }) {
                     <div style={{ display:'flex', gap:4, flexShrink:0 }}>
                       <button onClick={e=>{ e.stopPropagation(); setEditId(i.id); setEditForm({name:i.name,category:i.category,description:i.description||'',coupang_url:i.coupang_url||'',caution:i.caution||''}); setSelIng(null) }}
                         style={{ padding:'2px 8px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
-                      <button onClick={e=>{ e.stopPropagation(); del(i.id) }}
+                      <button onClick={e=>{ e.stopPropagation(); del(i.id, i.name) }}
                         style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                     </div>
                   </div>
@@ -1488,7 +1523,7 @@ function IngredientTab({ adminToken, showToast }) {
 // ══════════════════════════════════════════════════════════
 // 서브탭 5 : 요리 관리
 // ══════════════════════════════════════════════════════════
-function DishTab({ adminToken, showToast }) {
+function DishTab({ adminToken, showToast, confirmDelete }) {
   const [dishes, setDishes] = useState([])
   const [ingredients, setIngredients] = useState([])
   const [shows, setShows] = useState([])
@@ -1549,13 +1584,14 @@ function DishTab({ adminToken, showToast }) {
     setSaving(false)
   }
 
-  const del = async (id) => {
-    if (!confirm('삭제?')) return
-    try {
-      await apiFetch(`${api('dishes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      if (selDish?.id===id) setSelDish(null)
-      showToast('🗑 삭제됨'); loadAll()
-    } catch(e) { showToast('❌ '+e.message) }
+  const del = (id, name) => {
+    confirmDelete(name, async () => {
+      try {
+        await apiFetch(`${api('dishes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        if (selDish?.id===id) setSelDish(null)
+        showToast('🗑 삭제됨'); loadAll()
+      } catch(e) { showToast('❌ '+e.message) }
+    })
   }
 
   const linkIng = async () => {
@@ -1631,7 +1667,7 @@ function DishTab({ adminToken, showToast }) {
                       {d.category && <div style={{ fontSize:11, color:'#4b6e4b' }}>{d.category}</div>}
                       {d.caution && <div style={{ fontSize:10, marginTop:3, padding:'2px 6px', background:'#fef2f2', borderRadius:4, border:'1.5px solid #fca5a5' }}><span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ 주의 </span><span style={{ color:'#dc2626', fontWeight:600 }}>{d.caution}</span></div>}
                     </div>
-                    <button onClick={e=>{ e.stopPropagation(); del(d.id) }}
+                    <button onClick={e=>{ e.stopPropagation(); del(d.id, d.name) }}
                       style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 </div>
@@ -1774,7 +1810,7 @@ function DishTab({ adminToken, showToast }) {
 // ══════════════════════════════════════════════════════════
 // 서브탭 6 : 레시피 관리
 // ══════════════════════════════════════════════════════════
-function RecipeTab({ adminToken, showToast }) {
+function RecipeTab({ adminToken, showToast, confirmDelete }) {
   const [recipes, setRecipes] = useState([])
   const [dishes, setDishes] = useState([])
   const [shows, setShows] = useState([])
@@ -1822,13 +1858,14 @@ function RecipeTab({ adminToken, showToast }) {
     setSaving(false)
   }
 
-  const del = async (id) => {
-    if (!confirm('삭제?')) return
-    try {
-      await apiFetch(`${api('recipes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      if (selRecipe?.id===id) setSelRecipe(null)
-      showToast('🗑 삭제됨'); loadAll()
-    } catch(e) { showToast('❌ '+e.message) }
+  const del = (id, name) => {
+    confirmDelete(name, async () => {
+      try {
+        await apiFetch(`${api('recipes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        if (selRecipe?.id===id) setSelRecipe(null)
+        showToast('🗑 삭제됨'); loadAll()
+      } catch(e) { showToast('❌ '+e.message) }
+    })
   }
 
   const linkIng = async () => {
@@ -1905,7 +1942,7 @@ function RecipeTab({ adminToken, showToast }) {
                         {r.episode && <span style={{ fontSize:11, color:'#666' }}>{r.episode}</span>}
                       </div>
                     </div>
-                    <button onClick={e=>{ e.stopPropagation(); del(r.id) }}
+                    <button onClick={e=>{ e.stopPropagation(); del(r.id, r.title) }}
                       style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>삭제</button>
                   </div>
                 </div>
@@ -1960,10 +1997,41 @@ export default function MapAdminPanel({ adminToken }) {
   const [subTab, setSubTab] = useState('ingredient')
   const [toast, setToast] = useState('')
   const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''), 2500) }
+  const [deleteModal, setDeleteModal] = useState(null) // { name, onConfirm }
+  const confirmDelete = (name, onConfirm) => setDeleteModal({ name, onConfirm })
 
   return (
     <div>
       <Toast msg={toast} />
+
+      {/* ── 전역 삭제 확인 모달 ── */}
+      {deleteModal && (
+        <div style={{ position:'fixed', inset:0, zIndex:3000, display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.55)', padding:16 }}>
+          <div style={{ background:'#fff', borderRadius:14, width:'100%', maxWidth:380,
+            boxShadow:'0 20px 60px rgba(0,0,0,0.3)', fontFamily:"'Outfit',sans-serif", overflow:'hidden' }}>
+            <div style={{ padding:'28px 24px 20px', textAlign:'center' }}>
+              <div style={{ fontSize:36, marginBottom:14 }}>🗑️</div>
+              <div style={{ fontSize:17, fontWeight:800, color:'#0f1f0f', marginBottom:10 }}>정말 삭제할까요?</div>
+              <div style={{ fontSize:14, background:'#fff1f2', border:'1px solid #fca5a5', borderRadius:8,
+                padding:'10px 16px', color:'#dc2626', fontWeight:700, marginBottom:8 }}>
+                "{deleteModal.name}"
+              </div>
+              <div style={{ fontSize:12, color:'#8aaa8a' }}>삭제하면 복구할 수 없어요</div>
+            </div>
+            <div style={{ display:'flex', borderTop:'1px solid #f0f0f0' }}>
+              <button onClick={()=>setDeleteModal(null)}
+                style={{ flex:1, padding:'16px 0', border:'none', background:'#f5f9f5', color:'#4b6e4b',
+                  fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                  borderRight:'1px solid #f0f0f0', borderRadius:'0 0 0 14px' }}>취소</button>
+              <button onClick={()=>{ deleteModal.onConfirm(); setDeleteModal(null) }}
+                style={{ flex:1, padding:'16px 0', border:'none', background:'#fee2e2', color:'#dc2626',
+                  fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                  borderRadius:'0 0 14px 0' }}>삭제</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 서브탭 네비 */}
       <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:24, borderBottom:'1px solid #d1e8d1', paddingBottom:12 }}>
@@ -1978,12 +2046,12 @@ export default function MapAdminPanel({ adminToken }) {
         ))}
       </div>
 
-      {subTab === 'health'     && <HealthTab     adminToken={adminToken} showToast={showToast} />}
-      {subTab === 'tv'        && <TvShowTab     adminToken={adminToken} showToast={showToast} />}
-      {subTab === 'chef'      && <ChefTab       adminToken={adminToken} showToast={showToast} />}
-      {subTab === 'ingredient' && <IngredientTab adminToken={adminToken} showToast={showToast} />}
-      {subTab === 'dish'      && <DishTab       adminToken={adminToken} showToast={showToast} />}
-      {subTab === 'recipe'    && <RecipeTab     adminToken={adminToken} showToast={showToast} />}
+      {subTab === 'health'     && <HealthTab     adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
+      {subTab === 'tv'        && <TvShowTab     adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
+      {subTab === 'chef'      && <ChefTab       adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
+      {subTab === 'ingredient' && <IngredientTab adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
+      {subTab === 'dish'      && <DishTab       adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
+      {subTab === 'recipe'    && <RecipeTab     adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
     </div>
   )
 }
