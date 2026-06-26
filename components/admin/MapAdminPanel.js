@@ -1364,7 +1364,7 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
 
 function IngredientTab({ adminToken, showToast, confirmDelete }) {
   const EMPTY_FORM   = { name:'', category:'fish', description:'', coupang_url:'', caution:'' }
-  const EMPTY_REGION = { region:'gangwon', district:'', months:[] }
+  const EMPTY_REGION = { region:'gangwon', district:'', months:[], label:'' }
 
   const [list, setList]         = useState([])
   const [healths, setHealths]   = useState([])
@@ -1398,8 +1398,22 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [i, h] = await Promise.all([apiFetch(api('ingredients')), apiFetch(api('health_benefits'))])
-      setList(i); setHealths(h)
+      const [i, h, ir] = await Promise.all([
+        apiFetch(api('ingredients')),
+        apiFetch(api('health_benefits')),
+        apiFetch(api('ingredient_regions')),
+      ])
+      // 각 식재료에 regions_preview(조합명 배열) 붙이기
+      const regMap = {}
+      ;(ir||[]).forEach(r => {
+        if (!regMap[r.ingredient_id]) regMap[r.ingredient_id] = []
+        if (r.label) regMap[r.ingredient_id].push(r.label)
+      })
+      const enriched = (i||[]).map(ing => ({
+        ...ing,
+        regions_preview: regMap[ing.id] || [],
+      }))
+      setList(enriched); setHealths(h)
     } catch(e) { showToast('❌ '+e.message) }
     setLoading(false)
   }, [])
@@ -1442,7 +1456,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
       for (const r of formRegions) {
         await apiFetch(api('ingredient_regions'), {
           method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-          body:JSON.stringify({ ingredient_id: created.id, region:r.region, district:r.district, months:r.months })
+          body:JSON.stringify({ ingredient_id: created.id, region:r.region, district:r.district, months:r.months, label:r.label||'' })
         }).catch(()=>{})
       }
       setForm(EMPTY_FORM); setFormRegions([]); setFormRegionForm(EMPTY_REGION)
@@ -1451,9 +1465,20 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
     setSaving(false)
   }
 
+  // 지역 단축명 추출 (경기도→경기, 강원특별자치도→강원 등)
+  const shortRegion = (regionId) => {
+    const label = categoryLabel(regionId)
+    return label.replace(/특별자치(도|시)|특별시|광역시|자치시|도$|시$/, '').replace(/[🏙🌊🍎🦀🌿🍢🐟🌾🏡🏔🍇🦪🍚🌊🍎🦐🍊]/u, '').trim()
+  }
+  const autoLabel = (ingName, regionId, district) => {
+    const rShort = district ? district.replace(/(시|군|구)$/, '') : shortRegion(regionId)
+    return ingName && rShort ? \`\${ingName}-\${rShort}\` : ''
+  }
+
   const formAddRegion = () => {
     if (!formRegionForm.region || !formRegionForm.months.length) { showToast('⚠️ 지역·제철월 필수'); return }
-    setFormRegions(prev => [...prev, { ...formRegionForm, _key: Date.now() }])
+    const label = formRegionForm.label || autoLabel(form.name, formRegionForm.region, formRegionForm.district)
+    setFormRegions(prev => [...prev, { ...formRegionForm, label, _key: Date.now() }])
     setFormRegionForm(EMPTY_REGION)
   }
 
@@ -1473,7 +1498,13 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
     try {
       await apiFetch(api('ingredient_regions'), {
         method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body:JSON.stringify({ ingredient_id: editId, ...editRegionForm })
+        body:JSON.stringify({
+        ingredient_id: editId,
+        region: editRegionForm.region,
+        district: editRegionForm.district,
+        months: editRegionForm.months,
+        label: editRegionForm.label || autoLabel(editForm.name, editRegionForm.region, editRegionForm.district),
+      })
       })
       setEditRegionForm(EMPTY_REGION); showToast('✅ 지역 추가됨'); loadEditLinks(editId)
     } catch(e) { showToast('❌ '+e.message) }
@@ -1523,7 +1554,13 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
     try {
       await apiFetch(api('ingredient_regions'), {
         method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body:JSON.stringify({ ingredient_id: selIng.id, ...panelRegionForm })
+        body:JSON.stringify({
+        ingredient_id: selIng.id,
+        region: panelRegionForm.region,
+        district: panelRegionForm.district,
+        months: panelRegionForm.months,
+        label: panelRegionForm.label || autoLabel(selIng.name, panelRegionForm.region, panelRegionForm.district),
+      })
       })
       setPanelRegionForm(EMPTY_REGION); showToast('✅ 지역 추가됨'); loadPanelLinks(selIng.id)
     } catch(e) { showToast('❌ '+e.message) }
@@ -1613,10 +1650,13 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
               {formRegions.map(r=>(
                 <div key={r._key} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                   background:'#fff', borderRadius:7, padding:'6px 10px', fontSize:12, border:'1px solid #bfdbfe' }}>
-                  <span style={{ color:'#1e40af', fontWeight:600 }}>📍 {categoryLabel(r.region)}{r.district?` · ${r.district}`:''}</span>
-                  <span style={{ color:'#2563eb', fontWeight:700 }}>{(r.months||[]).join('·')}월</span>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    {r.label && <div style={{ fontWeight:800, color:'#1d4ed8', fontSize:13, marginBottom:2 }}>{r.label}</div>}
+                    <span style={{ color:'#1e40af', fontWeight:600 }}>📍 {categoryLabel(r.region)}{r.district?` · ${r.district}`:''}</span>
+                    <span style={{ color:'#2563eb', fontWeight:700, marginLeft:8 }}>{(r.months||[]).join('·')}월</span>
+                  </div>
                   <button type="button" onClick={()=>setFormRegions(prev=>prev.filter(x=>x._key!==r._key))}
-                    style={{ padding:'1px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>×</button>
+                    style={{ padding:'1px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0, marginLeft:8 }}>×</button>
                 </div>
               ))}
             </div>
@@ -1635,6 +1675,16 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
             <div style={{ gridColumn:'1/-1' }}>
               <label style={S.label}>제철 월</label>
               <MonthPills value={formRegionForm.months||[]} onChange={v=>setFormRegionForm(f=>({...f,months:v}))} />
+            </div>
+            <div style={{ gridColumn:'1/-1' }}>
+              <label style={S.label}>📌 조합명 (식재료명-지역) — 자동완성, 수정 가능</label>
+              <input
+                value={formRegionForm.label || autoLabel(form.name, formRegionForm.region, formRegionForm.district)}
+                onChange={e=>setFormRegionForm(f=>({...f,label:e.target.value}))}
+                placeholder={autoLabel(form.name, formRegionForm.region, formRegionForm.district) || '예: 감귤-제주'}
+                style={{ ...S.input, fontWeight:700, color:'#1d4ed8' }}
+              />
+              <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 식재료명·지역 선택하면 자동으로 채워져요. 직접 수정도 가능합니다.</p>
             </div>
           </div>
           <button type="button" onClick={formAddRegion} style={{ ...S.btn('#0ea5e9'), marginTop:8, padding:'6px 16px' }}>+ 지역 추가</button>
@@ -1708,6 +1758,14 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{ct?.emoji} {i.name}</div>
+                      {i.regions_preview && (
+                        <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginTop:2 }}>
+                          {i.regions_preview.map((lbl,idx)=>(
+                            <span key={idx} style={{ fontSize:11, padding:'1px 7px', borderRadius:12,
+                              background:'#dbeafe', border:'1px solid #93c5fd', color:'#1d4ed8', fontWeight:700 }}>{lbl}</span>
+                          ))}
+                        </div>
+                      )}
                       <div style={{ fontSize:11, color:'#4b6e4b' }}>{ct?.label}</div>
                       {i.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{i.description.slice(0,40)}{i.description.length>40?'…':''}</div>}
                       {i.caution && (
@@ -1806,6 +1864,15 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                   <div style={{ gridColumn:'1/-1' }}>
                     <label style={S.label}>제철 월</label>
                     <MonthPills value={panelRegionForm.months||[]} onChange={v=>setPanelRegionForm(f=>({...f,months:v}))} />
+                  </div>
+                  <div style={{ gridColumn:'1/-1' }}>
+                    <label style={S.label}>📌 조합명 (식재료명-지역)</label>
+                    <input
+                      value={panelRegionForm.label || autoLabel(selIng?.name||'', panelRegionForm.region, panelRegionForm.district)}
+                      onChange={e=>setPanelRegionForm(f=>({...f,label:e.target.value}))}
+                      placeholder={autoLabel(selIng?.name||'', panelRegionForm.region, panelRegionForm.district) || '예: 감귤-제주'}
+                      style={{ ...S.input, fontWeight:700, color:'#1d4ed8' }}
+                    />
                   </div>
                 </div>
                 <button onClick={panelAddRegion} style={{ ...S.btn('#0ea5e9'), marginTop:12 }}>+ 지역 추가</button>
