@@ -6,7 +6,6 @@ import BlogMenuPanel from '../components/admin/BlogMenuPanel'
 import ContentLogPanel from '../components/admin/ContentLogPanel'
 import ContentIdeaPanel from '../components/admin/ContentIdeaPanel'
 import KeywordPanel from '../components/admin/KeywordPanel'
-import TvRecipePanel from '../components/admin/TvRecipePanel'
 import MapAdminPanel from '../components/admin/MapAdminPanel'
 import AdsensePanel from '../components/admin/AdsensePanel'
 import BoardAdminPanel from '../components/admin/BoardAdminPanel'
@@ -23,7 +22,7 @@ const TAB_LABELS = {
   content_ideas: '💡 글감 관리',
   keyword:       '🔍 키워드 관리',
   system_prompt: '🤖 Claude 지침',
-  tv_recipes:    '📺 TV 레시피',
+  tv_recipes:    '📺 TV 레시피',  // 맵 관리로 통합됨 (하위호환 유지)
   seasonal:      '🌿 제철 식재료',
   free_board:    '💬 자유게시판',
   requests:      '📬 부탁해요',
@@ -231,7 +230,6 @@ export default function Admin() {
             {activeTab === 'content_ideas' && <ContentIdeaPanel adminToken={adminToken} />}
             {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
             {activeTab === 'system_prompt' && <SystemPromptPanel adminToken={adminToken} />}
-            {activeTab === 'tv_recipes' && <TvRecipePanel adminToken={adminToken} />}
             {activeTab === 'seasonal' && <MapAdminPanel adminToken={adminToken} />}
             {activeTab === 'free_board' && <BoardAdminPanel adminToken={adminToken} postType="free" />}
             {activeTab === 'requests' && <BoardAdminPanel adminToken={adminToken} postType="request" />}
