@@ -14,7 +14,7 @@ const ING_CATEGORIES = [
   { id:'mushroom', emoji:'🍄', label:'버섯·산채' },
 ]
 
-const DISH_CATEGORIES = ['한식','양식','중식','일식','분식','디저트','퓨전','기타']
+const DISH_CATEGORIES = ['한식','양식','중식','일식','분식','디저트','퓨전','이슈','기타']
 
 const AIR_DAYS = ['월','화','수','목','금','토','일']
 
