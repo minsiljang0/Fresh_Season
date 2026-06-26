@@ -15,6 +15,7 @@ const ING_CATEGORIES = [
 ]
 
 const DISH_CATEGORIES = ['한식','양식','중식','일식','분식','디저트','퓨전','기타']
+
 const AIR_DAYS = ['월','화','수','목','금','토','일']
 
 const CHEF_ROLES = ['셰프','MC','심사위원','요리연구가','파티시에','참가자']
@@ -1932,10 +1933,208 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
 }
 
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// 서브탭 5 : 요리 관리
+// ══════════════════════════════════════════════════════════
+function DishTab({ adminToken, showToast, confirmDelete }) {
+  const [dishes, setDishes]     = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [searchQ, setSearchQ]   = useState('')
+  const [catFilter, setCatFilter] = useState('전체')
+  const [form, setForm]         = useState({ name:'', category:'한식', description:'', coupang_url:'', caution:'' })
+  const [editId, setEditId]     = useState(null)
+  const [editForm, setEditForm] = useState({})
+
+  const loadAll = useCallback(async () => {
+    setLoading(true)
+    try {
+      const d = await apiFetch(api('dishes'))
+      setDishes(d)
+    } catch(e) { showToast('❌ '+e.message) }
+    setLoading(false)
+  }, [])
+
+  useEffect(()=>{ loadAll() }, [])
+
+  const submit = async () => {
+    if (!form.name.trim()) { showToast('⚠️ 요리명 필수'); return }
+    setSaving(true)
+    try {
+      await apiFetch(api('dishes'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify(form)
+      })
+      setForm({ name:'', category:form.category, description:'', coupang_url:'', caution:'' })
+      showToast('✅ 등록 완료'); loadAll()
+    } catch(e) { showToast('❌ '+e.message) }
+    setSaving(false)
+  }
+
+  const save = async (id) => {
+    try {
+      await apiFetch(`${api('dishes')}&id=${id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify(editForm)
+      })
+      setEditId(null); showToast('✅ 저장됨'); loadAll()
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const del = (id, name) => {
+    confirmDelete(name, async () => {
+      try {
+        await apiFetch(`${api('dishes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        setDishes(prev => prev.filter(d => d.id !== id))
+        showToast('🗑 삭제됨')
+      } catch(e) { showToast('❌ '+e.message) }
+    })
+  }
+
+
+  const CATS = ['전체', ...DISH_CATEGORIES]
+  const byTab = catFilter === '전체' ? dishes : dishes.filter(d => d.category === catFilter)
+  const filtered = searchQ ? byTab.filter(d => d.name.includes(searchQ)) : byTab
+
+  return (
+    <div>
+      {/* ── 등록 폼 ── */}
+      <div style={S.card}>
+        <div style={S.cardTitle}>🍽 요리/음식 등록</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
+          <div>
+            <label style={S.label}>요리명 *</label>
+            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
+              placeholder="예: 된장찌개, 까르보나라"
+              style={S.input}
+              onKeyDown={e=>{ if(e.key==='Enter') submit() }}
+            />
+          </div>
+          <div>
+            <label style={S.label}>종류 *</label>
+            <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} style={S.input}>
+              {DISH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>설명</label>
+            <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="간단 설명" style={S.input} />
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>🛒 쿠팡 파트너스 URL (밀키트·상품 연결)</label>
+            <input value={form.coupang_url||''} onChange={e=>setForm(f=>({...f,coupang_url:e.target.value}))} placeholder="예: https://coupa.ng/xxxxx" style={S.input} />
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>⚠️ 주의사항</label>
+            <input value={form.caution||''} onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
+              placeholder="예: 갑각류 알레르기 주의" style={S.input} list="caution-presets" />
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
+
+        </div>
+      </div>
+
+      {/* ── 목록 ── */}
+      <div style={S.card}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, flexWrap:'wrap', gap:8 }}>
+          <div style={S.cardTitle}>📋 요리 목록 ({filtered.length})</div>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 검색" style={{ ...S.input, width:160 }} />
+        </div>
+
+        {/* 종류 탭 */}
+        <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:14, borderBottom:'1px solid #d1e8d1', paddingBottom:10 }}>
+          {CATS.map(c=>{
+            const on = catFilter === c
+            const cnt = c === '전체' ? dishes.length : dishes.filter(d=>d.category===c).length
+            return (
+              <button key={c} onClick={()=>setCatFilter(c)}
+                style={{ padding:'5px 12px', borderRadius:20, border:`1.5px solid ${on?'#f97316':'#d1e8d1'}`,
+                  background:on?'#fff7ed':'#f5f9f5', color:on?'#ea580c':'#4b6e4b',
+                  fontSize:12, fontWeight:on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif", whiteSpace:'nowrap' }}>
+                {c} <span style={{ opacity:.7, fontSize:11 }}>({cnt})</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:6 }}>
+            {filtered.map(d => {
+              if (editId === d.id) return (
+                <div key={d.id} style={{ ...S.row, border:'1.5px solid #f97316', gridColumn:'1/-1' }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+                    <div>
+                      <label style={S.label}>요리명 *</label>
+                      <input value={editForm.name||''} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={S.input} />
+                    </div>
+                    <div>
+                      <label style={S.label}>종류</label>
+                      <select value={editForm.category||''} onChange={e=>setEditForm(f=>({...f,category:e.target.value}))} style={S.input}>
+                        {DISH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={S.label}>설명</label>
+                      <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} style={S.input} />
+                    </div>
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={S.label}>🛒 쿠팡 URL</label>
+                      <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} style={S.input} />
+                    </div>
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={S.label}>⚠️ 주의사항</label>
+                      <input value={editForm.caution||''} onChange={e=>setEditForm(f=>({...f,caution:e.target.value}))} style={S.input} list="caution-presets" />
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={()=>save(d.id)} style={S.btn()}>저장</button>
+                    <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
+                  </div>
+                </div>
+              )
+              return (
+                <div key={d.id} style={{ ...S.row, background:'#f5f9f5', border:'1px solid #d1e8d1' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>🍽 {d.name}</div>
+                      {d.category && (
+                        <span style={{ fontSize:10, padding:'1px 7px', borderRadius:10, background:'#fff7ed',
+                          border:'1px solid #fed7aa', color:'#ea580c', fontWeight:600, marginTop:3, display:'inline-block' }}>
+                          {d.category}
+                        </span>
+                      )}
+                      {d.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>{d.description}</div>}
+                      {d.caution && (
+                        <div style={{ fontSize:10, marginTop:3, padding:'2px 6px', background:'#fef2f2', borderRadius:4, border:'1px solid #fca5a5' }}>
+                          <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ </span>
+                          <span style={{ color:'#dc2626' }}>{d.caution.slice(0,30)}{d.caution.length>30?'…':''}</span>
+                        </div>
+                      )}
+                      {d.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:2 }}>🛒 쿠팡 링크 있음</div>}
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:3, flexShrink:0, marginLeft:6 }}>
+                      <button onClick={()=>{ setEditId(d.id); setEditForm({name:d.name,category:d.category||'한식',description:d.description||'',coupang_url:d.coupang_url||'',caution:d.caution||''}) }}
+                        style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
+                      <button onClick={()=>del(d.id, d.name)}
+                        style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // 서브탭 5 : 레시피 관리 (개편)
 // ══════════════════════════════════════════════════════════
 function RecipeTab({ adminToken, showToast, confirmDelete }) {
-  const EMPTY_FORM = { title:'', show_id:'', chef_id:'', episode:'', aired_at:'', summary:'', source_url:'' }
+  const EMPTY_FORM = { title:'', dish_id:'', show_id:'', chef_id:'', episode:'', aired_at:'', summary:'', source_url:'' }
 
   const [recipes, setRecipes]     = useState([])
   const [shows, setShows]         = useState([])
@@ -1965,16 +2164,19 @@ function RecipeTab({ adminToken, showToast, confirmDelete }) {
   const [stepForm, setStepForm] = useState({ order_num:1, description:'', photo_url:'' })
 
   // ── 로드 ──
+  const [dishes, setDishes] = useState([])
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [r, s, c, i] = await Promise.all([
+      const [r, s, c, i, d] = await Promise.all([
         apiFetch(api('recipes')),
         apiFetch(api('tv_shows')),
         apiFetch(api('chefs')),
         apiFetch(api('ingredients')),
+        apiFetch(api('dishes')),
       ])
-      setRecipes(r); setShows(s); setChefs(c); setIngredients(i)
+      setRecipes(r); setShows(s); setChefs(c); setIngredients(i); setDishes(d)
     } catch(e) { showToast('❌ '+e.message) }
     setLoading(false)
   }, [])
@@ -2091,10 +2293,11 @@ function RecipeTab({ adminToken, showToast, confirmDelete }) {
         <div style={S.cardTitle}>📋 레시피 등록</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
           <div style={{ gridColumn:'1/-1' }}>
-            <label style={S.label}>레시피 제목 (요리명) *</label>
+            <label style={S.label}>레시피 제목 *</label>
             <input value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}
-              placeholder="예: 백종원표 돈가스, 강레오의 감귤 드레싱" style={S.input} />
+              placeholder="예: 백종원표 된장찌개, 강레오의 감귤 드레싱" style={S.input} />
           </div>
+          <SearchSelect label="🍽 기본 요리 선택" items={dishes} value={form.dish_id} onChange={v=>setForm(f=>({...f,dish_id:v}))} placeholder="요리 검색..." />
           <SearchSelect label="📺 TV 방송" items={shows} value={form.show_id} onChange={v=>setForm(f=>({...f,show_id:v}))} placeholder="방송 검색..." />
           <SearchSelect label="👨‍🍳 셰프/요리사" items={chefs} value={form.chef_id} onChange={v=>setForm(f=>({...f,chef_id:v}))} placeholder="셰프 검색..." />
           <div>
@@ -2136,8 +2339,14 @@ function RecipeTab({ adminToken, showToast, confirmDelete }) {
                     <div style={{ flex:1, minWidth:0 }}>
                       {/* 제목 (요리명) */}
                       <div style={{ fontWeight:800, color:'#0f1f0f', fontSize:14, marginBottom:5 }}>🍳 {r.title}</div>
-                      {/* 요리명 + 요리사 + TV 만 표시 */}
+                      {/* 요리명 + 요리사 + TV 표시 */}
                       <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                        {r.dishes?.name && (
+                          <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                            background:'#fff7ed', border:'1px solid #fed7aa', color:'#ea580c', fontWeight:700 }}>
+                            🍽 {r.dishes.name}{r.dishes.category ? ` · ${r.dishes.category}` : ''}
+                          </span>
+                        )}
                         {r.tv_shows?.name && (
                           <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
                             background:'#fef3c7', border:'1px solid #fde68a', color:'#92400e', fontWeight:700 }}>
@@ -2346,8 +2555,9 @@ function RecipeTab({ adminToken, showToast, confirmDelete }) {
 const SUBTABS = [
   { id:'health',     label:'💊 건강효능' },
   { id:'tv',        label:'📺 TV방송' },
-  { id:'chef',      label:'👨‍🍳 셰프' },
+  { id:'chef',      label:'👨\u200d🍳 셰프' },
   { id:'ingredient', label:'🥕 식재료' },
+  { id:'dish',      label:'🍽 요리' },
   { id:'recipe',    label:'📋 레시피' },
 ]
 
@@ -2408,6 +2618,7 @@ export default function MapAdminPanel({ adminToken }) {
       {subTab === 'tv'        && <TvShowTab     adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
       {subTab === 'chef'      && <ChefTab       adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
       {subTab === 'ingredient' && <IngredientTab adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
+      {subTab === 'dish'      && <DishTab       adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
       {subTab === 'recipe'    && <RecipeTab     adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
     </div>
   )
