@@ -17,7 +17,23 @@ const ING_CATEGORIES = [
 const DISH_CATEGORIES = ['한식','양식','중식','일식','분식','디저트','퓨전','기타']
 const CHEF_ROLES = ['셰프','MC','심사위원','요리연구가','파티시에','참가자']
 const SHOW_CATEGORIES = ['요리경연','다큐','예능','생활정보','쿠킹쇼','기타']
-const HEALTH_CATEGORIES = ['면역','활력','뼈·관절','혈관·심장','장기','소화','피부','혈액','두뇌·눈','체중','체력','기타']
+const HEALTH_CATEGORIES = [
+  '면역·항산화','활력·피로회복','뼈·관절','혈관·심장',
+  '혈당·당뇨','간·해독','신장·비뇨','소화·장',
+  '피부·미용','혈액·빈혈','두뇌·눈','체중·다이어트',
+  '호흡기·폐','항암','갱년기·호르몬','수면·신경',
+  '치아·구강','체력·근육','임산부·태아','기타'
+]
+
+const AGE_GROUPS = [
+  { id:'infant',   label:'👶 유아 (0-6세)',      color:'#f9a8d4' },
+  { id:'child',    label:'🧒 어린이 (7-12세)',    color:'#fdba74' },
+  { id:'teen',     label:'🧑 청소년 (13-18세)',   color:'#fde047' },
+  { id:'adult',    label:'🧑‍💼 성인 (19-39세)',   color:'#86efac' },
+  { id:'middle',   label:'🧑‍🦳 중장년 (40-64세)', color:'#67e8f9' },
+  { id:'senior',   label:'👴 노년 (65세+)',       color:'#c4b5fd' },
+  { id:'all',      label:'✅ 전 연령',            color:'#16a34a' },
+]
 
 // ── 공통 유틸 ─────────────────────────────────────────────
 const api = (type) => `/api/admin/map-data?type=${type}`
@@ -128,7 +144,7 @@ function SectionCard({ title, children }) {
 function HealthTab({ adminToken, showToast }) {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'' })
+  const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'', age_groups:[] })
   const [saving, setSaving] = useState(false)
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({})
@@ -146,7 +162,7 @@ function HealthTab({ adminToken, showToast }) {
     setSaving(true)
     try {
       await apiFetch(api('health_benefits'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      setForm({ name:'', description:'', category:'' })
+      setForm({ name:'', description:'', category:'', coupang_url:'', age_groups:[] })
       showToast('✅ 등록 완료'); load()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
@@ -193,6 +209,23 @@ function HealthTab({ adminToken, showToast }) {
             <label style={S.label}>🛒 쿠팡 파트너스 URL (5단계 — 상품 연결)</label>
             <input value={form.coupang_url||''} onChange={e=>setForm(f=>({...f,coupang_url:e.target.value}))} placeholder="예: https://coupa.ng/xxxxx" style={S.input} />
           </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>👥 권장 연령대 (복수 선택 가능)</label>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:4 }}>
+              {AGE_GROUPS.map(ag => {
+                const on = (form.age_groups||[]).includes(ag.id)
+                return (
+                  <button key={ag.id} type="button"
+                    onClick={() => setForm(f => ({ ...f, age_groups: on ? (f.age_groups||[]).filter(x=>x!==ag.id) : [...(f.age_groups||[]), ag.id] }))}
+                    style={{ padding:'5px 12px', borderRadius:20, border:`1.5px solid ${on ? ag.color : '#d1e8d1'}`,
+                      background: on ? ag.color+'22' : '#f5f9f5', color: on ? '#0f1f0f' : '#4b6e4b',
+                      fontSize:12, fontWeight: on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                    {ag.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
         <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
       </div>
@@ -200,10 +233,12 @@ function HealthTab({ adminToken, showToast }) {
       <div style={S.card}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8 }}>
           <div style={S.cardTitle}>📋 효능 목록 ({filtered.length})</div>
-          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ ...S.input, width:140 }}>
-            <option value="">전체 카테고리</option>
-            {HEALTH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
-          </select>
+          <div style={{ display:'flex', gap:6 }}>
+            <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ ...S.input, width:150 }}>
+              <option value="">전체 카테고리</option>
+              {HEALTH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
         </div>
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:8 }}>
@@ -215,7 +250,24 @@ function HealthTab({ adminToken, showToast }) {
                   {HEALTH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
                 <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} placeholder="설명" style={{ ...S.input, marginBottom:6 }} />
-                <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="🛒 쿠팡 URL" style={{ ...S.input, marginBottom:8 }} />
+                <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="🛒 쿠팡 URL" style={{ ...S.input, marginBottom:6 }} />
+                <div style={{ marginBottom:8 }}>
+                  <label style={{ ...S.label, marginBottom:4 }}>👥 권장 연령대</label>
+                  <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                    {AGE_GROUPS.map(ag => {
+                      const on = (editForm.age_groups||[]).includes(ag.id)
+                      return (
+                        <button key={ag.id} type="button"
+                          onClick={() => setEditForm(f => ({ ...f, age_groups: on ? (f.age_groups||[]).filter(x=>x!==ag.id) : [...(f.age_groups||[]), ag.id] }))}
+                          style={{ padding:'3px 9px', borderRadius:20, border:`1.5px solid ${on ? ag.color : '#d1e8d1'}`,
+                            background: on ? ag.color+'22' : '#f5f9f5', color: on ? '#0f1f0f' : '#4b6e4b',
+                            fontSize:11, fontWeight: on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                          {ag.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
                 <div style={{ display:'flex', gap:6 }}>
                   <button onClick={()=>save(h.id)} style={S.btn()}>저장</button>
                   <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
@@ -229,10 +281,18 @@ function HealthTab({ adminToken, showToast }) {
                     {h.category && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#22c55e18', color:'#22c55e', border:'1px solid #22c55e33' }}>{h.category}</span>}
                   </div>
                   {h.description && <p style={{ fontSize:12, color:'#4b6e4b', margin:0 }}>{h.description}</p>}
+                  {h.age_groups?.length > 0 && (
+                    <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginTop:4 }}>
+                      {h.age_groups.map(ag => {
+                        const info = AGE_GROUPS.find(a=>a.id===ag)
+                        return info ? <span key={ag} style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:info.color+'22', color:'#0f1f0f', border:`1px solid ${info.color}` }}>{info.label}</span> : null
+                      })}
+                    </div>
+                  )}
                   {h.coupang_url && <a href={h.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none', marginTop:3, display:'inline-block' }}>🛒 쿠팡 링크 ↗</a>}
                 </div>
                 <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-                  <button onClick={()=>{ setEditId(h.id); setEditForm({name:h.name,description:h.description,category:h.category,coupang_url:h.coupang_url||''}) }}
+                  <button onClick={()=>{ setEditId(h.id); setEditForm({name:h.name,description:h.description,category:h.category,coupang_url:h.coupang_url||'',age_groups:h.age_groups||[]}) }}
                     style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
                   <button onClick={()=>del(h.id)} style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                 </div>
