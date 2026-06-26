@@ -5,6 +5,7 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { REGIONS } from '../lib/regions'
 import { SEASONAL_FOODS_SEED, CATEGORIES, getAllIngredients } from '../lib/seasonalFoods'
+import { KOREA_PATHS } from '../lib/koreaPaths'
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 
@@ -20,46 +21,25 @@ const REGION_ORDER = [
   'jeonbuk','jeonnam','gwangju','gyeongbuk','gyeongnam','daegu','ulsan','busan','jeju'
 ]
 
-// 한국 지도 SVG 각 지역 path (간략화된 다각형)
-const KOREA_MAP_PATHS = {
-  gangwon:  'M 310,60 L 420,55 L 430,90 L 400,130 L 360,140 L 300,120 L 295,90 Z',
-  gyeonggi: 'M 240,100 L 300,90 L 310,130 L 290,160 L 240,155 L 220,130 Z',
-  incheon:  'M 200,120 L 235,115 L 238,145 L 210,150 Z',
-  seoul:    'M 245,120 L 285,115 L 288,145 L 250,148 Z',
-  sejong:   'M 255,185 L 275,180 L 278,200 L 258,202 Z',
-  daejeon:  'M 255,200 L 285,195 L 288,220 L 258,222 Z',
-  chungnam: 'M 195,160 L 255,155 L 260,200 L 230,220 L 190,210 L 180,180 Z',
-  chungbuk: 'M 280,135 L 340,130 L 345,185 L 285,190 L 275,165 Z',
-  jeonbuk:  'M 200,220 L 280,215 L 285,265 L 240,275 L 195,260 Z',
-  jeonnam:  'M 185,265 L 275,258 L 280,320 L 230,335 L 185,315 Z',
-  gwangju:  'M 228,268 L 255,265 L 257,288 L 230,290 Z',
-  gyeongbuk:'M 340,140 L 430,135 L 435,210 L 375,225 L 340,210 L 335,170 Z',
-  gyeongnam:'M 290,265 L 385,255 L 390,310 L 335,325 L 285,310 Z',
-  daegu:    'M 355,210 L 395,205 L 398,240 L 358,242 Z',
-  ulsan:    'M 400,230 L 435,225 L 438,260 L 402,262 Z',
-  busan:    'M 375,295 L 420,288 L 425,328 L 378,330 Z',
-  jeju:     'M 220,370 L 295,365 L 298,395 L 222,397 Z',
-}
-
-// 지역별 라벨 위치
+// 지역별 라벨 위치 (실제 GeoJSON SVG 500x700 좌표계)
 const REGION_LABEL_POS = {
-  gangwon:  [365, 97],
-  gyeonggi: [263, 133],
-  incheon:  [215, 133],
-  seoul:    [265, 130],
-  sejong:   [264, 193],
-  daejeon:  [268, 212],
-  chungnam: [218, 188],
-  chungbuk: [308, 162],
-  jeonbuk:  [237, 247],
-  jeonnam:  [228, 298],
-  gwangju:  [240, 280],
-  gyeongbuk:[383, 182],
-  gyeongnam:[337, 290],
-  daegu:    [373, 225],
-  ulsan:    [415, 245],
-  busan:    [398, 312],
-  jeju:     [258, 382],
+  gangwon:  [370, 200],
+  gyeonggi: [210, 270],
+  incheon:  [148, 285],
+  seoul:    [210, 248],
+  sejong:   [232, 368],
+  daejeon:  [240, 393],
+  chungnam: [168, 355],
+  chungbuk: [278, 308],
+  jeonbuk:  [195, 445],
+  jeonnam:  [180, 530],
+  gwangju:  [207, 478],
+  gyeongbuk:[328, 308],
+  gyeongnam:[278, 468],
+  daegu:    [295, 398],
+  ulsan:    [358, 412],
+  busan:    [328, 498],
+  jeju:     [175, 648],
 }
 
 function categoryColor(cat) {
@@ -75,7 +55,6 @@ function categoryBg(cat) {
 function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
   const [hovered, setHovered] = useState(null)
 
-  // 지역별 식재료 수 계산
   const regionCounts = useMemo(() => {
     const counts = {}
     REGION_ORDER.forEach(r => { counts[r] = 0 })
@@ -90,9 +69,9 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
     const isSelected = selRegion === regionId
     const isHovered = hovered === regionId
     if (isSelected) return '#22c55e'
-    if (count === 0) return 'var(--surface3, #2a2a2a)'
-    const intensity = 0.15 + (count / maxCount) * 0.55
-    if (isHovered) return `rgba(34,197,94,${intensity + 0.2})`
+    if (count === 0) return '#1e2a1e'
+    const intensity = 0.18 + (count / maxCount) * 0.52
+    if (isHovered) return `rgba(34,197,94,${Math.min(intensity + 0.18, 0.9)})`
     return `rgba(34,197,94,${intensity})`
   }
 
@@ -103,19 +82,23 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
         {selRegion !== 'all' && (
           <button onClick={() => setSelRegion('all')}
             style={{ marginTop:4, fontSize:10, padding:'2px 8px', borderRadius:999, border:'1px solid var(--accent)', background:'rgba(34,197,94,0.12)', color:'var(--accent)', cursor:'pointer', fontFamily:'inherit' }}>
-            {REGION_SHORT[selRegion]} × 해제
+            {REGION_SHORT[selRegion]} ✕ 해제
           </button>
         )}
       </div>
-      <div style={{ flex:1, overflow:'hidden', padding:8 }}>
-        <svg viewBox="160 45 290 370" style={{ width:'100%', height:'100%' }} xmlns="http://www.w3.org/2000/svg">
+      <div style={{ flex:1, overflow:'hidden', padding:'4px 8px' }}>
+        <svg
+          viewBox="90 100 400 580"
+          style={{ width:'100%', height:'100%' }}
+          xmlns="http://www.w3.org/2000/svg"
+        >
           {REGION_ORDER.map(regionId => {
-            const path = KOREA_MAP_PATHS[regionId]
+            const pathD = KOREA_PATHS[regionId]
+            if (!pathD) return null
             const [lx, ly] = REGION_LABEL_POS[regionId]
             const count = regionCounts[regionId]
             const isSelected = selRegion === regionId
             const isHovered = hovered === regionId
-            const regionInfo = REGIONS.find(x => x.id === regionId)
             return (
               <g key={regionId}
                 onClick={() => setSelRegion(selRegion === regionId ? 'all' : regionId)}
@@ -123,23 +106,25 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
                 onMouseLeave={() => setHovered(null)}
                 style={{ cursor:'pointer' }}>
                 <path
-                  d={path}
+                  d={pathD}
                   fill={getRegionColor(regionId)}
-                  stroke={isSelected ? '#22c55e' : isHovered ? 'rgba(34,197,94,0.6)' : 'var(--border, #333)'}
-                  strokeWidth={isSelected ? 2 : 1}
-                  style={{ transition:'all 0.15s' }}
+                  stroke={isSelected ? '#4ade80' : '#2d3a2d'}
+                  strokeWidth={isSelected ? 1.5 : 0.5}
+                  style={{ transition:'fill 0.15s' }}
                 />
                 <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
-                  style={{ fontSize: regionId === 'sejong' || regionId === 'gwangju' || regionId === 'daejeon' || regionId === 'daegu' || regionId === 'ulsan' ? 6 : 7.5,
-                    fill: isSelected ? '#fff' : count > 0 ? '#e2e8f0' : '#666',
+                  style={{
+                    fontSize: ['sejong','gwangju','daejeon','daegu','ulsan'].includes(regionId) ? 7 : 9,
+                    fill: isSelected ? '#fff' : count > 0 ? '#e2e8f0' : '#4b5563',
                     fontWeight: isSelected ? 700 : 600,
                     pointerEvents:'none', userSelect:'none',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
                   }}>
                   {REGION_SHORT[regionId]}
                 </text>
                 {count > 0 && (
-                  <text x={lx} y={ly + 9} textAnchor="middle" dominantBaseline="middle"
-                    style={{ fontSize:6, fill: isSelected ? '#bbf7d0' : '#94a3b8', pointerEvents:'none', userSelect:'none' }}>
+                  <text x={lx} y={ly + 11} textAnchor="middle" dominantBaseline="middle"
+                    style={{ fontSize:7, fill: isSelected ? '#bbf7d0' : '#86efac', pointerEvents:'none', userSelect:'none' }}>
                     {count}개
                   </text>
                 )}
@@ -148,11 +133,10 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
           })}
         </svg>
       </div>
-      {/* 범례 */}
       <div style={{ padding:'6px 14px 10px', borderTop:'1px solid var(--border)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5, justifyContent:'center' }}>
           <span style={{ fontSize:9, color:'var(--text3)' }}>적음</span>
-          {[0.15,0.3,0.45,0.6,0.7].map((op,i) => (
+          {[0.18,0.32,0.46,0.58,0.70].map((op,i) => (
             <div key={i} style={{ width:14, height:10, borderRadius:2, background:`rgba(34,197,94,${op})` }} />
           ))}
           <span style={{ fontSize:9, color:'var(--text3)' }}>많음</span>
