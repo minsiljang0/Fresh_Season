@@ -34,9 +34,29 @@ export default function MapPage() {
   const [selMonth, setSelMonth]     = useState(new Date().getMonth() + 1)
   const [selCategory, setSelCategory] = useState('all')
   const [selRegion, setSelRegion]   = useState('all')
+  const [selTV, setSelTV]           = useState('all')
+  const [selHealth, setSelHealth]   = useState('all')
   const [query, setQuery]           = useState('')
   const [view, setView]             = useState('table')   // 'table' | 'cards' | 'ingredient'
   const searchRef = useRef(null)
+
+  // TV 프로그램 목록
+  const TV_PROGRAMS = ['생활의달인','한국인의밥상','수요미식회','6시내고향','VJ특공대','백종원의골목식당']
+
+  // 건강 효능 대표 카테고리
+  const HEALTH_FILTERS = [
+    { id:'항산화', label:'🛡 항산화', keywords:['항산화','안토시아닌','폴리페놀','레스베라트롤'] },
+    { id:'면역', label:'💪 면역강화', keywords:['면역','면역강화','진세노사이드','사포닌'] },
+    { id:'뼈건강', label:'🦴 뼈·칼슘', keywords:['뼈건강','칼슘','골다공증','성장발육'] },
+    { id:'혈행', label:'❤️ 혈행·심장', keywords:['혈행','혈압','심장','혈압조절','혈압안정','혈행개선'] },
+    { id:'간건강', label:'🫀 간·해독', keywords:['간기능','간 해독','숙취해소','간 해독'] },
+    { id:'피부', label:'✨ 피부미용', keywords:['피부','피부미용','콜라겐','피부탄력'] },
+    { id:'빈혈', label:'🩸 빈혈예방', keywords:['빈혈예방','철분','조혈기능'] },
+    { id:'피로', label:'⚡ 피로회복', keywords:['피로회복','피로해소','원기회복','항피로'] },
+    { id:'소화', label:'🌿 소화·장', keywords:['소화','소화촉진','장건강','식이섬유'] },
+    { id:'두뇌', label:'🧠 두뇌·눈', keywords:['두뇌','두뇌건강','두뇌발달','DHA','뇌건강','눈건강','시력'] },
+    { id:'다이어트', label:'🥗 다이어트', keywords:['다이어트','저지방','포만감'] },
+  ]
 
   // 데이터 필터링
   const filtered = useMemo(() => {
@@ -44,6 +64,11 @@ export default function MapPage() {
     if (selMonth !== 0) data = data.filter(f => f.months.includes(selMonth))
     if (selCategory !== 'all') data = data.filter(f => f.category === selCategory)
     if (selRegion !== 'all') data = data.filter(f => f.region === selRegion)
+    if (selTV !== 'all') data = data.filter(f => f.tvPrograms && f.tvPrograms.includes(selTV))
+    if (selHealth !== 'all') {
+      const hf = HEALTH_FILTERS.find(h => h.id === selHealth)
+      if (hf) data = data.filter(f => hf.keywords.some(kw => f.health.includes(kw)))
+    }
     if (query.trim()) {
       const q = query.toLowerCase()
       data = data.filter(f =>
@@ -54,7 +79,7 @@ export default function MapPage() {
       )
     }
     return data
-  }, [selMonth, selCategory, selRegion, query])
+  }, [selMonth, selCategory, selRegion, selTV, selHealth, query])
 
   // 테이블뷰: 지역별로 그루핑
   const byRegion = useMemo(() => {
@@ -115,7 +140,7 @@ export default function MapPage() {
             <span style={{ color:'var(--accent)' }}>제철 식재료 한눈에</span>
           </h1>
           <p style={{ fontSize:14, color:'var(--text2)' }}>
-            {totalCount}개 데이터 · {regionCount}개 지역 · 지역·월·카테고리·키워드 통합 검색
+            {totalCount}개 데이터 · {regionCount}개 지역 · 지역·월·카테고리·TV·효능 통합 검색
           </p>
         </section>
 
@@ -206,6 +231,50 @@ export default function MapPage() {
             </div>
           </div>
 
+          {/* TV 프로그램 필터 */}
+          <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--border)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>📺 TV 프로그램</p>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+              <button onClick={() => setSelTV('all')}
+                style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                  borderColor: selTV==='all' ? '#888' : 'var(--border)',
+                  background: selTV==='all' ? 'var(--surface3)' : 'var(--surface2)',
+                  color: selTV==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selTV==='all'?700:400,
+                }}>전체</button>
+              {TV_PROGRAMS.map(tv => (
+                <button key={tv} onClick={() => setSelTV(selTV===tv ? 'all' : tv)}
+                  style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                    borderColor: selTV===tv ? '#f59e0b' : 'var(--border)',
+                    background: selTV===tv ? '#f59e0b22' : 'var(--surface2)',
+                    color: selTV===tv ? '#f59e0b' : 'var(--text2)',
+                    fontWeight: selTV===tv ? 700 : 400,
+                  }}>📺 {tv}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* 건강 효능 필터 */}
+          <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--border)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>💊 건강 효능</p>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+              <button onClick={() => setSelHealth('all')}
+                style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                  borderColor: selHealth==='all' ? '#888' : 'var(--border)',
+                  background: selHealth==='all' ? 'var(--surface3)' : 'var(--surface2)',
+                  color: selHealth==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selHealth==='all'?700:400,
+                }}>전체</button>
+              {HEALTH_FILTERS.map(hf => (
+                <button key={hf.id} onClick={() => setSelHealth(selHealth===hf.id ? 'all' : hf.id)}
+                  style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                    borderColor: selHealth===hf.id ? '#10b981' : 'var(--border)',
+                    background: selHealth===hf.id ? '#10b98122' : 'var(--surface2)',
+                    color: selHealth===hf.id ? '#10b981' : 'var(--text2)',
+                    fontWeight: selHealth===hf.id ? 700 : 400,
+                  }}>{hf.label}</button>
+              ))}
+            </div>
+          </div>
+
           {/* 뷰 전환 + 리셋 */}
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14, paddingTop:14, borderTop:'1px solid var(--border)' }}>
             <div style={{ display:'flex', gap:4 }}>
@@ -218,7 +287,7 @@ export default function MapPage() {
                   }}>{label}</button>
               ))}
             </div>
-            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setQuery('') }}
+            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setQuery('') }}
               style={{ padding:'5px 12px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
               🔄 초기화
             </button>
@@ -359,7 +428,18 @@ export default function MapPage() {
                   </div>
 
                   <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.5, marginBottom:8 }}>
-                    💊 {f.health}
+                    💊 {selHealth !== 'all'
+                      ? f.health.split('·').map((part, pi) => {
+                          const hf = HEALTH_FILTERS.find(h => h.id === selHealth)
+                          const isMatch = hf && hf.keywords.some(kw => part.includes(kw))
+                          return (
+                            <span key={pi} style={isMatch ? { color:'#10b981', fontWeight:700 } : {}}>
+                              {pi > 0 ? '·' : ''}{part}
+                            </span>
+                          )
+                        })
+                      : f.health
+                    }
                   </p>
 
                   {f.tvPrograms?.length > 0 && (
