@@ -40,9 +40,10 @@ export default async function handler(req, res) {
         return res.status(200).json(data || [])
       }
       if (type === 'ingredient_health') {
-        const { ingredient_id } = req.query
+        const { ingredient_id, health_id } = req.query
         let q = supabase.from('ingredient_health').select('*, health_benefits(id,name,category)')
         if (ingredient_id) q = q.eq('ingredient_id', ingredient_id)
+        if (health_id) q = q.eq('health_id', health_id)
         const { data, error } = await q
         if (error) throw error
         return res.status(200).json(data || [])
@@ -110,7 +111,7 @@ export default async function handler(req, res) {
     try {
       if (type === 'health_benefits') {
         const { data, error } = await supabase.from('health_benefits')
-          .insert([{ id: genId(), name: body.name, description: body.description || '', category: body.category || '' }])
+          .insert([{ id: genId(), name: body.name, description: body.description || '', category: body.category || '', coupang_url: body.coupang_url || '', age_groups: body.age_groups || [], caution: body.caution || '' }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)
