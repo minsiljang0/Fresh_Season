@@ -39,6 +39,14 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data || [])
       }
+      if (type === 'show_ingredients') {
+        const { show_id } = req.query
+        let q = supabase.from('show_ingredients').select('*, ingredients(id,name,category)')
+        if (show_id) q = q.eq('show_id', show_id)
+        const { data, error } = await q
+        if (error) throw error
+        return res.status(200).json(data || [])
+      }
       if (type === 'ingredient_health') {
         const { ingredient_id, health_id } = req.query
         let q = supabase.from('ingredient_health').select('*, health_benefits(id,name,category)')
@@ -144,6 +152,21 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data)
       }
+      if (type === 'show_ingredients') {
+        const { show_id } = req.query
+        let q = supabase.from('show_ingredients').select('*, ingredients(id,name,category)')
+        if (show_id) q = q.eq('show_id', show_id)
+        const { data, error } = await q
+        if (error) throw error
+        return res.status(200).json(data || [])
+      }
+      if (type === 'show_ingredients') {
+        const { data, error } = await supabase.from('show_ingredients')
+          .insert([{ id: genId(), show_id: body.show_id, ingredient_id: body.ingredient_id }])
+          .select().single()
+        if (error) throw error
+        return res.status(200).json(data)
+      }
       if (type === 'ingredient_health') {
         const { data, error } = await supabase.from('ingredient_health')
           .insert([{ id: genId(), ingredient_id: body.ingredient_id, health_id: body.health_id, memo: body.memo || '' }])
@@ -234,6 +257,7 @@ export default async function handler(req, res) {
         chefs: 'chefs',
         show_chefs: 'show_chefs',
         ingredients: 'ingredients',
+        show_ingredients: 'show_ingredients',
         ingredient_health: 'ingredient_health',
         ingredient_regions: 'ingredient_regions',
         dishes: 'dishes',
