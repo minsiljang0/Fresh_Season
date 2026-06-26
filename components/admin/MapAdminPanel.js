@@ -1240,21 +1240,161 @@ function ChefTab({ adminToken, showToast, confirmDelete }) {
 // ══════════════════════════════════════════════════════════
 // 서브탭 4 : 식재료 관리
 // ══════════════════════════════════════════════════════════
-function IngredientTab({ adminToken, showToast, confirmDelete }) {
-  const [list, setList] = useState([])
-  const [healths, setHealths] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', category:'fish', description:'', coupang_url:'', caution:'' })
-  const [saving, setSaving] = useState(false)
-  const [editId, setEditId] = useState(null)
-  const [editForm, setEditForm] = useState({})
-  const [selIng, setSelIng] = useState(null)
-  const [ingHealths, setIngHealths] = useState([])
-  const [ingRegions, setIngRegions] = useState([])
-  const [linkHealthId, setLinkHealthId] = useState('')
-  const [regionForm, setRegionForm] = useState({ region:'gangwon', district:'', months:[] })
-  const [searchQ, setSearchQ] = useState('')
 
+// 식재료 폼 공통 필드 (등록/수정 공용)
+function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHealth, onUnlinkHealth, regionForm, setRegionForm, linkHealthId, setLinkHealthId, submitLabel, onSubmit, onCancel, saving }) {
+  const ING_CAT = ING_CATEGORIES
+
+  return (
+    <div>
+      {/* ── 기본 정보 ── */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
+        <div>
+          <label style={S.label}>식재료명 *</label>
+          <input value={f.name||''} onChange={e=>setF(p=>({...p,name:e.target.value}))} placeholder="예: 돼지고기, 당근" style={S.input} />
+        </div>
+        <div>
+          <label style={S.label}>카테고리</label>
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:6 }}>
+            {ING_CAT.map(c=>(
+              <button key={c.id} type="button" onClick={()=>setF(p=>({...p,category:c.id}))}
+                style={{ padding:'4px 10px', borderRadius:20, border:`1.5px solid ${f.category===c.id?'#a855f7':'#d1e8d1'}`,
+                  background:f.category===c.id?'#f5f0ff':'#f5f9f5', color:f.category===c.id?'#a855f7':'#4b6e4b',
+                  fontSize:12, fontWeight:f.category===c.id?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                {c.emoji} {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={S.label}>설명 (건강효능 요약)</label>
+          <input value={f.description||''} onChange={e=>setF(p=>({...p,description:e.target.value}))} placeholder="간단 설명" style={S.input} />
+        </div>
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={S.label}>🛒 쿠팡 파트너스 URL</label>
+          <input value={f.coupang_url||''} onChange={e=>setF(p=>({...p,coupang_url:e.target.value}))} placeholder="예: https://coupa.ng/xxxxx" style={S.input} />
+        </div>
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={S.label}>⚠️ 주의사항 (알레르기·특정질환·섭취제한 등)</label>
+          <input value={f.caution||''} onChange={e=>setF(p=>({...p,caution:e.target.value}))}
+            placeholder="예: 견과류 알레르기 주의 / 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의"
+            style={S.input} list="caution-presets" />
+          <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 입력창 클릭하면 자주 쓰는 주의문구 나와요</p>
+        </div>
+      </div>
+
+      {/* ── 건강효능 연결 (수정 모드에서만 — regions/healths prop 있을 때) ── */}
+      {healths && (
+        <div style={{ marginBottom:14, background:'#f0fdf4', borderRadius:10, padding:14, border:'1px solid #bbf7d0' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'#15803d', marginBottom:10 }}>💊 건강효능 연결</div>
+          {/* 연결된 효능 태그 */}
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
+            {(healths.linked||[]).length > 0
+              ? (healths.linked||[]).map(ih=>(
+                  <span key={ih.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                    padding:'3px 10px', borderRadius:20, background:'#dcfce7', border:'1px solid #86efac', color:'#15803d' }}>
+                    {ih.health_benefits?.name}
+                    <button type="button" onClick={()=>onUnlinkHealth(ih.id)}
+                      style={{ background:'none', border:'none', color:'#15803d', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
+                  </span>
+                ))
+              : <p style={{ fontSize:12, color:'#8aaa8a', margin:0 }}>연결된 효능 없음</p>
+            }
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8, alignItems:'flex-end' }}>
+            <SearchSelect items={healths.all||[]} value={linkHealthId} onChange={setLinkHealthId} placeholder="효능 검색해서 추가..." />
+            <button type="button" onClick={onLinkHealth} style={{ ...S.btn('#22c55e'), padding:'10px 14px', whiteSpace:'nowrap' }}>+ 연결</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 지역·제철월 연결 ── */}
+      {regions !== undefined && (
+        <div style={{ marginBottom:14, background:'#eff6ff', borderRadius:10, padding:14, border:'1px solid #bfdbfe' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'#1d4ed8', marginBottom:10 }}>🗺 지역·제철월 연결</div>
+          {/* 등록된 지역 목록 */}
+          {(regions||[]).length > 0 ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:12 }}>
+              {(regions||[]).map(r=>(
+                <div key={r.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                  background:'#fff', borderRadius:8, padding:'8px 12px', fontSize:12, border:'1px solid #bfdbfe' }}>
+                  <span style={{ color:'#1e40af', fontWeight:600 }}>📍 {categoryLabel(r.region)}{r.district ? ` · ${r.district}` : ''}</span>
+                  <span style={{ color:'#2563eb', fontWeight:700 }}>
+                    {(r.months||[]).length > 0 ? `${(r.months||[]).join('·')}월` : '월 미설정'}
+                  </span>
+                  <button type="button" onClick={()=>onDelRegion(r.id)}
+                    style={{ padding:'2px 8px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:12 }}>아직 연결된 지역이 없어요</p>
+          )}
+          {/* 지역 추가 폼 */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, background:'#fff', borderRadius:8, padding:10, border:'1px solid #bfdbfe' }}>
+            <div>
+              <label style={S.label}>시도 *</label>
+              <select value={regionForm.region} onChange={e=>setRegionForm(p=>({...p,region:e.target.value}))} style={S.input}>
+                {DEFAULT_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel(c)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={S.label}>시군구 (선택)</label>
+              <input value={regionForm.district||''} onChange={e=>setRegionForm(p=>({...p,district:e.target.value}))} placeholder="예: 속초시·강릉시" style={S.input} />
+            </div>
+            <div style={{ gridColumn:'1/-1' }}>
+              <label style={S.label}>제철 월 *</label>
+              <MonthPills value={regionForm.months||[]} onChange={v=>setRegionForm(p=>({...p,months:v}))} />
+            </div>
+            <div style={{ gridColumn:'1/-1' }}>
+              <button type="button" onClick={onAddRegion} style={{ ...S.btn('#0ea5e9'), padding:'8px 18px' }}>+ 지역 추가</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 액션 버튼 ── */}
+      <div style={{ display:'flex', gap:8 }}>
+        <button type="button" onClick={onSubmit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>{submitLabel}</button>
+        {onCancel && <button type="button" onClick={onCancel} style={S.btnGhost}>취소</button>}
+      </div>
+    </div>
+  )
+}
+
+function IngredientTab({ adminToken, showToast, confirmDelete }) {
+  const EMPTY_FORM   = { name:'', category:'fish', description:'', coupang_url:'', caution:'' }
+  const EMPTY_REGION = { region:'gangwon', district:'', months:[] }
+
+  const [list, setList]         = useState([])
+  const [healths, setHealths]   = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [searchQ, setSearchQ]   = useState('')
+  const [catTab, setCatTab]     = useState('all')   // 'all' | 카테고리 id
+
+  // 등록 폼
+  const [form, setForm]                       = useState(EMPTY_FORM)
+  const [formRegions, setFormRegions]         = useState([])
+  const [formRegionForm, setFormRegionForm]   = useState(EMPTY_REGION)
+
+  // 수정 모드
+  const [editId, setEditId]                   = useState(null)
+  const [editForm, setEditForm]               = useState({})
+  const [editRegions, setEditRegions]         = useState([])
+  const [editHealths, setEditHealths]         = useState([])
+  const [editRegionForm, setEditRegionForm]   = useState(EMPTY_REGION)
+  const [editLinkHealthId, setEditLinkHealthId] = useState('')
+
+  // 클릭 → 하단 연결 패널
+  const [selIng, setSelIng]           = useState(null)
+  const [panelHealths, setPanelHealths] = useState([])
+  const [panelRegions, setPanelRegions] = useState([])
+  const [panelHealthId, setPanelHealthId] = useState('')
+  const [panelRegionForm, setPanelRegionForm] = useState(EMPTY_REGION)
+  const [panelSection, setPanelSection] = useState('health') // 'health' | 'region'
+
+  // ── 데이터 로드 ──
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
@@ -1264,86 +1404,170 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
     setLoading(false)
   }, [])
 
-  const loadLinks = useCallback(async (id) => {
+  const loadPanelLinks = useCallback(async (id) => {
     try {
       const [ih, ir] = await Promise.all([
         apiFetch(`${api('ingredient_health')}&ingredient_id=${id}`),
         apiFetch(`${api('ingredient_regions')}&ingredient_id=${id}`),
       ])
-      setIngHealths(ih); setIngRegions(ir)
+      setPanelHealths(ih); setPanelRegions(ir)
+    } catch {}
+  }, [])
+
+  const loadEditLinks = useCallback(async (id) => {
+    try {
+      const [ih, ir] = await Promise.all([
+        apiFetch(`${api('ingredient_health')}&ingredient_id=${id}`),
+        apiFetch(`${api('ingredient_regions')}&ingredient_id=${id}`),
+      ])
+      setEditHealths(ih); setEditRegions(ir)
     } catch {}
   }, [])
 
   useEffect(()=>{ loadAll() }, [])
-  useEffect(()=>{ if(selIng) loadLinks(selIng.id) }, [selIng])
+  useEffect(()=>{
+    if (selIng) loadPanelLinks(selIng.id)
+    else { setPanelHealths([]); setPanelRegions([]) }
+  }, [selIng])
 
+  // ── 등록 ──
   const submit = async () => {
     if (!form.name.trim()) { showToast('⚠️ 이름 필수'); return }
     setSaving(true)
     try {
-      await apiFetch(api('ingredients'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      setForm({ name:'', category:'fish', description:'', coupang_url:'', caution:'' })
+      const created = await apiFetch(api('ingredients'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify(form)
+      })
+      for (const r of formRegions) {
+        await apiFetch(api('ingredient_regions'), {
+          method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+          body:JSON.stringify({ ingredient_id: created.id, region:r.region, district:r.district, months:r.months })
+        }).catch(()=>{})
+      }
+      setForm(EMPTY_FORM); setFormRegions([]); setFormRegionForm(EMPTY_REGION)
       showToast('✅ 등록 완료'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
   }
 
+  const formAddRegion = () => {
+    if (!formRegionForm.region || !formRegionForm.months.length) { showToast('⚠️ 지역·제철월 필수'); return }
+    setFormRegions(prev => [...prev, { ...formRegionForm, _key: Date.now() }])
+    setFormRegionForm(EMPTY_REGION)
+  }
+
+  // ── 수정 ──
   const save = async (id) => {
     try {
-      await apiFetch(`${api('ingredients')}&id=${id}`, { method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(editForm) })
+      await apiFetch(`${api('ingredients')}&id=${id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify(editForm)
+      })
       setEditId(null); showToast('✅ 저장됨'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
   }
 
+  const editAddRegion = async () => {
+    if (!editRegionForm.region || !editRegionForm.months.length) { showToast('⚠️ 지역·제철월 필수'); return }
+    try {
+      await apiFetch(api('ingredient_regions'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ ingredient_id: editId, ...editRegionForm })
+      })
+      setEditRegionForm(EMPTY_REGION); showToast('✅ 지역 추가됨'); loadEditLinks(editId)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+  const editDelRegion = async (id) => {
+    try {
+      await apiFetch(`${api('ingredient_regions')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      showToast('🗑 삭제됨'); loadEditLinks(editId)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+  const editLinkHealth = async () => {
+    if (!editId || !editLinkHealthId) { showToast('⚠️ 효능을 선택하세요'); return }
+    try {
+      await apiFetch(api('ingredient_health'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ ingredient_id: editId, health_id: editLinkHealthId })
+      })
+      setEditLinkHealthId(''); showToast('✅ 효능 연결됨'); loadEditLinks(editId)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+  const editUnlinkHealth = async (id) => {
+    try {
+      await apiFetch(`${api('ingredient_health')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      showToast('🗑 해제됨'); loadEditLinks(editId)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  // ── 하단 패널 액션 ──
+  const panelLinkHealth = async () => {
+    if (!selIng || !panelHealthId) { showToast('⚠️ 효능을 선택하세요'); return }
+    try {
+      await apiFetch(api('ingredient_health'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ ingredient_id: selIng.id, health_id: panelHealthId })
+      })
+      setPanelHealthId(''); showToast('✅ 효능 연결됨'); loadPanelLinks(selIng.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+  const panelUnlinkHealth = async (id) => {
+    try {
+      await apiFetch(`${api('ingredient_health')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      showToast('🗑 해제됨'); loadPanelLinks(selIng.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+  const panelAddRegion = async () => {
+    if (!selIng || !panelRegionForm.region || !panelRegionForm.months.length) { showToast('⚠️ 지역·제철월 필수'); return }
+    try {
+      await apiFetch(api('ingredient_regions'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ ingredient_id: selIng.id, ...panelRegionForm })
+      })
+      setPanelRegionForm(EMPTY_REGION); showToast('✅ 지역 추가됨'); loadPanelLinks(selIng.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+  const panelDelRegion = async (id) => {
+    try {
+      await apiFetch(`${api('ingredient_regions')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      showToast('🗑 삭제됨'); loadPanelLinks(selIng.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  // ── 삭제 ──
   const del = (id, name) => {
     confirmDelete(name, async () => {
       try {
         await apiFetch(`${api('ingredients')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        if (editId===id) setEditId(null)
         if (selIng?.id===id) setSelIng(null)
-        setIngredients(prev => prev.filter(i => i.id !== id))
+        setList(prev => prev.filter(i => i.id !== id))
         showToast('🗑 삭제됨')
       } catch(e) { showToast('❌ '+e.message) }
     })
   }
 
-  const linkHealth = async () => {
-    if (!selIng||!linkHealthId) { showToast('⚠️ 식재료와 효능 선택 필수'); return }
-    try {
-      await apiFetch(api('ingredient_health'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body:JSON.stringify({ ingredient_id:selIng.id, health_id:linkHealthId }) })
-      setLinkHealthId(''); showToast('✅ 효능 연결됨'); loadLinks(selIng.id)
-    } catch(e) { showToast('❌ '+e.message) }
-  }
-
-  const unlinkHealth = async (id) => {
-    try {
-      await apiFetch(`${api('ingredient_health')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      showToast('🗑 해제됨'); loadLinks(selIng.id)
-    } catch(e) { showToast('❌ '+e.message) }
-  }
-
-  const addRegion = async () => {
-    if (!selIng||!regionForm.region||!regionForm.months.length) { showToast('⚠️ 지역·제철월 필수'); return }
-    try {
-      await apiFetch(api('ingredient_regions'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body:JSON.stringify({ ingredient_id:selIng.id, ...regionForm }) })
-      setRegionForm({ region:'gangwon', district:'', months:[] })
-      showToast('✅ 지역 연결됨'); loadLinks(selIng.id)
-    } catch(e) { showToast('❌ '+e.message) }
-  }
-
-  const delRegion = async (id) => {
-    try {
-      await apiFetch(`${api('ingredient_regions')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      showToast('🗑 해제됨'); loadLinks(selIng.id)
-    } catch(e) { showToast('❌ '+e.message) }
+  const openEdit = (i) => {
+    setSelIng(null)
+    setEditId(i.id)
+    setEditForm({ name:i.name, category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'' })
+    setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
+    loadEditLinks(i.id)
   }
 
   const cat = (id) => ING_CATEGORIES.find(c=>c.id===id)
-  const filtered = searchQ ? list.filter(i=>i.name.includes(searchQ)) : list
+
+  // 카테고리 탭 필터 → 검색어 필터
+  const byTab  = catTab === 'all' ? list : list.filter(i => i.category === catTab)
+  const filtered = searchQ ? byTab.filter(i => i.name.includes(searchQ)) : byTab
+
+  // 탭별 개수
+  const countOf = (cid) => cid === 'all' ? list.length : list.filter(i=>i.category===cid).length
 
   return (
     <div>
+      {/* ── 등록 폼 ── */}
       <div style={S.card}>
         <div style={S.cardTitle}>🥕 식재료 등록</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
@@ -1356,8 +1580,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
             <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:6 }}>
               {ING_CATEGORIES.map(c=>(
                 <button key={c.id} type="button" onClick={()=>setForm(f=>({...f,category:c.id}))}
-                  style={{ padding:'4px 10px', borderRadius:20, border:`1.5px solid ${form.category===c.id?'#a855f7':'#333'}`,
-                    background:form.category===c.id?'#f5f0ff':'#f5f9f5', color:form.category===c.id?'#a855f7':'#888',
+                  style={{ padding:'4px 10px', borderRadius:20, border:`1.5px solid ${form.category===c.id?'#a855f7':'#d1e8d1'}`,
+                    background:form.category===c.id?'#f5f0ff':'#f5f9f5', color:form.category===c.id?'#a855f7':'#4b6e4b',
                     fontSize:12, fontWeight:form.category===c.id?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
                   {c.emoji} {c.label}
                 </button>
@@ -1365,7 +1589,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
             </div>
           </div>
           <div style={{ gridColumn:'1/-1' }}>
-            <label style={S.label}>설명</label>
+            <label style={S.label}>설명 (건강효능 요약)</label>
             <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="간단 설명" style={S.input} />
           </div>
           <div style={{ gridColumn:'1/-1' }}>
@@ -1374,69 +1598,110 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
           </div>
           <div style={{ gridColumn:'1/-1' }}>
             <label style={S.label}>⚠️ 주의사항 (알레르기·특정질환·섭취제한 등)</label>
-            <input
-              value={form.caution||''}
-              onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
+            <input value={form.caution||''} onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
               placeholder="예: 견과류 알레르기 주의 / 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의"
-              style={S.input}
-              list="caution-presets"
-            />
+              style={S.input} list="caution-presets" />
             <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 입력창 클릭하면 자주 쓰는 주의문구 나와요</p>
           </div>
         </div>
-        <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
+
+        {/* 등록 폼 내 지역·제철월 미리 추가 */}
+        <div style={{ marginBottom:12, background:'#eff6ff', borderRadius:10, padding:12, border:'1px solid #bfdbfe' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'#1d4ed8', marginBottom:8 }}>🗺 지역·제철월 (선택 — 등록과 동시에 저장)</div>
+          {formRegions.length > 0 && (
+            <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:10 }}>
+              {formRegions.map(r=>(
+                <div key={r._key} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                  background:'#fff', borderRadius:7, padding:'6px 10px', fontSize:12, border:'1px solid #bfdbfe' }}>
+                  <span style={{ color:'#1e40af', fontWeight:600 }}>📍 {categoryLabel(r.region)}{r.district?` · ${r.district}`:''}</span>
+                  <span style={{ color:'#2563eb', fontWeight:700 }}>{(r.months||[]).join('·')}월</span>
+                  <button type="button" onClick={()=>setFormRegions(prev=>prev.filter(x=>x._key!==r._key))}
+                    style={{ padding:'1px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            <div>
+              <label style={S.label}>시도</label>
+              <select value={formRegionForm.region} onChange={e=>setFormRegionForm(f=>({...f,region:e.target.value}))} style={S.input}>
+                {DEFAULT_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel(c)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={S.label}>시군구 (선택)</label>
+              <input value={formRegionForm.district||''} onChange={e=>setFormRegionForm(f=>({...f,district:e.target.value}))} placeholder="예: 속초시" style={S.input} />
+            </div>
+            <div style={{ gridColumn:'1/-1' }}>
+              <label style={S.label}>제철 월</label>
+              <MonthPills value={formRegionForm.months||[]} onChange={v=>setFormRegionForm(f=>({...f,months:v}))} />
+            </div>
+          </div>
+          <button type="button" onClick={formAddRegion} style={{ ...S.btn('#0ea5e9'), marginTop:8, padding:'6px 16px' }}>+ 지역 추가</button>
+        </div>
+
+        <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>{saving?'등록 중...':'+ 등록'}</button>
       </div>
 
+      {/* ── 목록 ── */}
       <div style={S.card}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, flexWrap:'wrap', gap:8 }}>
+        {/* 헤더: 타이틀 + 검색 */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, flexWrap:'wrap', gap:8 }}>
           <div style={S.cardTitle}>📋 식재료 목록 ({filtered.length}) — 클릭하면 효능·지역 연결</div>
           <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 검색" style={{ ...S.input, width:160 }} />
         </div>
+
+        {/* 카테고리 탭 */}
+        <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:14, borderBottom:'1px solid #d1e8d1', paddingBottom:10 }}>
+          {[{ id:'all', emoji:'🌿', label:'전체' }, ...ING_CATEGORIES].map(c=>{
+            const on = catTab === c.id
+            return (
+              <button key={c.id} onClick={()=>{ setCatTab(c.id); setSelIng(null) }}
+                style={{ padding:'5px 12px', borderRadius:20, border:`1.5px solid ${on?'#a855f7':'#d1e8d1'}`,
+                  background:on?'#f5f0ff':'#f5f9f5', color:on?'#7c3aed':'#4b6e4b',
+                  fontSize:12, fontWeight:on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif", whiteSpace:'nowrap' }}>
+                {c.emoji} {c.label}
+                <span style={{ marginLeft:4, fontSize:11, opacity:.7 }}>({countOf(c.id)})</span>
+              </button>
+            )
+          })}
+        </div>
+
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:6, marginBottom: selIng?20:0 }}>
             {filtered.map(i => {
-              const ct = cat(i.category)
-              const on = selIng?.id===i.id
+              const ct  = cat(i.category)
+              const on  = selIng?.id === i.id
+
+              // ── 수정 모드 ──
               if (editId === i.id) return (
-                <div key={i.id} style={{ ...S.row, border:'1.5px solid #16a34a', gridColumn:'1/-1' }}>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+                <div key={i.id} style={{ ...S.row, border:'1.5px solid #a855f7', gridColumn:'1/-1' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, paddingBottom:12, borderBottom:'1px solid #e9d5ff' }}>
+                    <div style={{ fontSize:18 }}>✏️</div>
                     <div>
-                      <label style={S.label}>식재료명 *</label>
-                      <input value={editForm.name||''} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={S.input} />
-                    </div>
-                    <div>
-                      <label style={S.label}>카테고리</label>
-                      <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:6 }}>
-                        {ING_CATEGORIES.map(ic=>(
-                          <button key={ic.id} type="button" onClick={()=>setEditForm(f=>({...f,category:ic.id}))}
-                            style={{ padding:'3px 8px', borderRadius:20, border:`1.5px solid ${editForm.category===ic.id?'#a855f7':'#d1e8d1'}`,
-                              background:editForm.category===ic.id?'#f5f0ff':'#f5f9f5', color:editForm.category===ic.id?'#7c3aed':'#4b6e4b',
-                              fontSize:11, fontWeight:editForm.category===ic.id?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
-                            {ic.emoji} {ic.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <label style={S.label}>설명 (건강효능 요약)</label>
-                      <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} style={S.input} />
-                    </div>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <label style={S.label}>🛒 쿠팡 URL</label>
-                      <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="https://coupa.ng/..." style={S.input} />
-                    </div>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <label style={S.label}>⚠️ 주의사항</label>
-                      <input value={editForm.caution||''} onChange={e=>setEditForm(f=>({...f,caution:e.target.value}))}
-                        placeholder="예: 견과류 알레르기 주의" style={S.input} list="caution-presets" />
+                      <div style={{ fontSize:11, color:'#a855f7', fontWeight:700, letterSpacing:1 }}>수정 중</div>
+                      <div style={{ fontSize:15, fontWeight:900, color:'#0f1f0f' }}>{ct?.emoji} {i.name}</div>
                     </div>
                   </div>
-                  <div style={{ display:'flex', gap:6 }}>
-                    <button onClick={()=>save(i.id)} style={S.btn()}>저장</button>
-                    <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
-                  </div>
+                  <IngForm
+                    f={editForm} setF={setEditForm}
+                    healths={{ all: healths, linked: editHealths }}
+                    regions={editRegions}
+                    regionForm={editRegionForm} setRegionForm={setEditRegionForm}
+                    linkHealthId={editLinkHealthId} setLinkHealthId={setEditLinkHealthId}
+                    onAddRegion={editAddRegion}
+                    onDelRegion={editDelRegion}
+                    onLinkHealth={editLinkHealth}
+                    onUnlinkHealth={editUnlinkHealth}
+                    submitLabel="저장"
+                    onSubmit={()=>save(i.id)}
+                    onCancel={()=>setEditId(null)}
+                    saving={false}
+                  />
                 </div>
               )
+
+              // ── 보기 모드 ──
               return (
                 <div key={i.id} onClick={()=>{ if(editId) return; setSelIng(on?null:i) }}
                   style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#a855f7':'#d1e8d1'}`, background:on?'#f5f0ff':'#f5f9f5' }}>
@@ -1444,17 +1709,17 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{ct?.emoji} {i.name}</div>
                       <div style={{ fontSize:11, color:'#4b6e4b' }}>{ct?.label}</div>
-                      {i.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{i.description}</div>}
+                      {i.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{i.description.slice(0,40)}{i.description.length>40?'…':''}</div>}
                       {i.caution && (
-                        <div style={{ fontSize:10, marginTop:3, padding:'3px 7px', background:'#fef2f2', borderRadius:4, border:'1.5px solid #fca5a5', lineHeight:1.3 }}>
-                          <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ 주의 </span>
-                          <span style={{ color:'#dc2626', fontWeight:600 }}>{i.caution}</span>
+                        <div style={{ fontSize:10, marginTop:3, padding:'2px 6px', background:'#fef2f2', borderRadius:4, border:'1px solid #fca5a5', lineHeight:1.4 }}>
+                          <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ </span>
+                          <span style={{ color:'#dc2626' }}>{i.caution.slice(0,40)}{i.caution.length>40?'…':''}</span>
                         </div>
                       )}
-                      {i.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:3 }}>🛒 쿠팡 링크 있음</div>}
+                      {i.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:2 }}>🛒 쿠팡 링크 있음</div>}
                     </div>
-                    <div style={{ display:'flex', gap:4, flexShrink:0 }}>
-                      <button onClick={e=>{ e.stopPropagation(); setEditId(i.id); setEditForm({name:i.name,category:i.category,description:i.description||'',coupang_url:i.coupang_url||'',caution:i.caution||''}); setSelIng(null) }}
+                    <div style={{ display:'flex', flexDirection:'column', gap:3, flexShrink:0, marginLeft:6 }}>
+                      <button onClick={e=>{ e.stopPropagation(); openEdit(i) }}
                         style={{ padding:'2px 8px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
                       <button onClick={e=>{ e.stopPropagation(); del(i.id, i.name) }}
                         style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
@@ -1466,59 +1731,86 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
           </div>
         )}
 
-        {/* 선택된 식재료 연결 관리 */}
+        {/* ── 클릭 → 하단 연결 패널 ── */}
         {selIng && (
-          <div>
-            <SectionCard title={`💊 "${selIng.name}" 건강효능 연결`}>
-              <TagRow
-                items={ingHealths.map(ih=>({ label:ih.health_benefits?.name, id:ih.id }))}
-                onRemove={(i)=>unlinkHealth(ingHealths[i].id)}
-                color="#22c55e"
-              />
-              <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginTop:10, alignItems:'flex-end' }}>
-                <SearchSelect
-                  label="효능 선택/검색 (기존 선택 or 새로 추가)"
-                  items={healths}
-                  value={linkHealthId}
-                  onChange={setLinkHealthId}
-                  placeholder="효능 검색..."
-                />
-                <button onClick={linkHealth} style={{ ...S.btn('#22c55e'), padding:'10px 14px' }}>연결</button>
+          <div style={{ marginTop:20 }}>
+            {/* 패널 헤더 */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:'#0f1f0f' }}>
+                {cat(selIng.category)?.emoji} {selIng.name} 연결 관리
               </div>
-            </SectionCard>
+              <button onClick={()=>setSelIng(null)}
+                style={{ padding:'3px 10px', borderRadius:6, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✕ 닫기</button>
+            </div>
 
-            <SectionCard title={`🗺 "${selIng.name}" 지역·제철 연결`}>
-              {ingRegions.length > 0 && (
-                <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
-                  {ingRegions.map(r=>(
-                    <div key={r.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                      background:'#f5f9f5', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
-                      <span style={{ color:'#0f1f0f' }}>📍 {categoryLabel(r.region)} {r.district && `· ${r.district}`}</span>
-                      <span style={{ color:'#4b6e4b' }}>{(r.months||[]).join('·')}월</span>
-                      <button onClick={()=>delRegion(r.id)}
-                        style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
-                    </div>
-                  ))}
+            {/* 패널 탭 */}
+            <div style={{ display:'flex', borderBottom:'1px solid #d1e8d1', marginBottom:14 }}>
+              {[{ id:'health', label:`💊 건강효능 (${panelHealths.length})` }, { id:'region', label:`🗺 지역·제철월 (${panelRegions.length})` }].map(t=>(
+                <button key={t.id} onClick={()=>setPanelSection(t.id)}
+                  style={{ padding:'10px 16px', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif", fontSize:13, fontWeight:700,
+                    background:'transparent', color: panelSection===t.id?'#a855f7':'#888',
+                    borderBottom: panelSection===t.id?'2.5px solid #a855f7':'2.5px solid transparent' }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 건강효능 탭 */}
+            {panelSection==='health' && (
+              <SectionCard title={`💊 "${selIng.name}" 건강효능 연결`}>
+                <TagRow
+                  items={panelHealths.map(ih=>({ label:ih.health_benefits?.name, id:ih.id }))}
+                  onRemove={(idx)=>panelUnlinkHealth(panelHealths[idx].id)}
+                  color="#22c55e"
+                />
+                <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginTop:10, alignItems:'flex-end' }}>
+                  <SearchSelect
+                    label="효능 선택/검색"
+                    items={healths}
+                    value={panelHealthId}
+                    onChange={setPanelHealthId}
+                    placeholder="효능 검색..."
+                  />
+                  <button onClick={panelLinkHealth} style={{ ...S.btn('#22c55e'), padding:'10px 14px' }}>연결</button>
                 </div>
-              )}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                <div>
-                  <label style={S.label}>시도</label>
-                  <select value={regionForm.region} onChange={e=>setRegionForm(f=>({...f,region:e.target.value}))} style={S.input}>
-                    {DEFAULT_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel(c)}</option>)}
-                  </select>
+              </SectionCard>
+            )}
+
+            {/* 지역·제철월 탭 */}
+            {panelSection==='region' && (
+              <SectionCard title={`🗺 "${selIng.name}" 지역·제철 연결`}>
+                {panelRegions.length > 0 && (
+                  <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
+                    {panelRegions.map(r=>(
+                      <div key={r.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                        background:'#f5f9f5', borderRadius:8, padding:'8px 12px', fontSize:12 }}>
+                        <span style={{ color:'#0f1f0f' }}>📍 {categoryLabel(r.region)}{r.district?` · ${r.district}`:''}</span>
+                        <span style={{ color:'#4b6e4b', fontWeight:700 }}>{(r.months||[]).join('·')}월</span>
+                        <button onClick={()=>panelDelRegion(r.id)}
+                          style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <label style={S.label}>시도</label>
+                    <select value={panelRegionForm.region} onChange={e=>setPanelRegionForm(f=>({...f,region:e.target.value}))} style={S.input}>
+                      {DEFAULT_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel(c)}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={S.label}>시군구 (선택)</label>
+                    <input value={panelRegionForm.district||''} onChange={e=>setPanelRegionForm(f=>({...f,district:e.target.value}))} placeholder="예: 속초시·강릉시" style={S.input} />
+                  </div>
+                  <div style={{ gridColumn:'1/-1' }}>
+                    <label style={S.label}>제철 월</label>
+                    <MonthPills value={panelRegionForm.months||[]} onChange={v=>setPanelRegionForm(f=>({...f,months:v}))} />
+                  </div>
                 </div>
-                <div>
-                  <label style={S.label}>시군구 (선택)</label>
-                  <input value={regionForm.district} onChange={e=>setRegionForm(f=>({...f,district:e.target.value}))} placeholder="예: 속초시·강릉시" style={S.input} />
-                </div>
-                <div style={{ gridColumn:'1/-1' }}>
-                  <label style={S.label}>제철 월</label>
-                  <MonthPills value={regionForm.months} onChange={v=>setRegionForm(f=>({...f,months:v}))} />
-                </div>
-              </div>
-              <button onClick={addRegion} style={{ ...S.btn('#0ea5e9'), marginTop:12 }}>+ 지역 추가</button>
-            </SectionCard>
+                <button onClick={panelAddRegion} style={{ ...S.btn('#0ea5e9'), marginTop:12 }}>+ 지역 추가</button>
+              </SectionCard>
+            )}
           </div>
         )}
       </div>
