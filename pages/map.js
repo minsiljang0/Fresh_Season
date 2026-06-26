@@ -155,15 +155,16 @@ export default function MapPage() {
   const [selHealth, setSelHealth]     = useState('all')
   const [query, setQuery]             = useState('')
   const [view, setView]               = useState('cards')
-  const [dbFoods, setDbFoods]         = useState([])   // DB에서 불러온 추가 식재료
-  const [tvShows, setTvShows]         = useState([])   // DB TV 프로그램 목록
+  const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])  // DB seasonal_foods
+  const [tvShows, setTvShows]                = useState([])   // DB TV 프로그램 목록
   const searchRef = useRef(null)
 
   // DB 데이터 로드
   useEffect(() => {
-    fetch('/api/admin/map-data?type=ingredients')
+    // seasonal_foods 테이블에서 제철 데이터 로드
+    fetch('/api/map/seasonal-foods')
       .then(r => r.ok ? r.json() : [])
-      .then(data => setDbFoods(data || []))
+      .then(data => setDbSeasonalFoods(data || []))
       .catch(() => {})
     fetch('/api/admin/map-data?type=tv_shows')
       .then(r => r.ok ? r.json() : [])
@@ -197,10 +198,16 @@ export default function MapPage() {
     { id:'갱년기', label:'🌸 갱년기', keywords:['갱년기','호르몬','에스트로겐','폐경'] },
   ]
 
-  // 시드 + DB 식재료 합산 (중복 제거)
+  // DB seasonal_foods + 시드 합산
   const allFoods = useMemo(() => {
+    if (dbSeasonalFoods.length > 0) {
+      // DB 데이터가 있으면 DB 우선, 시드는 DB에 없는 것만
+      const dbIngredients = new Set(dbSeasonalFoods.map(f => f.ingredient + '_' + f.region))
+      const seedOnly = SEASONAL_FOODS_SEED.filter(f => !dbIngredients.has(f.ingredient + '_' + f.region))
+      return [...dbSeasonalFoods, ...seedOnly]
+    }
     return SEASONAL_FOODS_SEED
-  }, [])
+  }, [dbSeasonalFoods])
 
   // 필터링
   const filtered = useMemo(() => {
