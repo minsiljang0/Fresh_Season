@@ -68,11 +68,11 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
     const count = regionCounts[regionId] || 0
     const isSelected = selRegion === regionId
     const isHovered = hovered === regionId
-    if (isSelected) return '#22c55e'
-    if (count === 0) return '#1e2a1e'
-    const intensity = 0.18 + (count / maxCount) * 0.52
-    if (isHovered) return `rgba(34,197,94,${Math.min(intensity + 0.18, 0.9)})`
-    return `rgba(34,197,94,${intensity})`
+    if (isSelected) return '#16a34a'
+    if (count === 0) return '#e8f5e8'
+    const intensity = 0.15 + (count / maxCount) * 0.65
+    if (isHovered) return `rgba(22,163,74,${Math.min(intensity + 0.15, 0.95)})`
+    return `rgba(22,163,74,${intensity})`
   }
 
   return (
@@ -108,14 +108,14 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
                 <path
                   d={pathD}
                   fill={getRegionColor(regionId)}
-                  stroke={isSelected ? '#4ade80' : '#2d3a2d'}
-                  strokeWidth={isSelected ? 1.5 : 0.5}
+                  stroke={isSelected ? '#15803d' : '#a7d7a7'}
+                  strokeWidth={isSelected ? 1.5 : 0.6}
                   style={{ transition:'fill 0.15s' }}
                 />
                 <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
                   style={{
                     fontSize: ['sejong','gwangju','daejeon','daegu','ulsan'].includes(regionId) ? 7 : 9,
-                    fill: isSelected ? '#fff' : count > 0 ? '#e2e8f0' : '#4b5563',
+                    fill: isSelected ? '#fff' : count > 0 ? '#0f1f0f' : '#9ca3af',
                     fontWeight: isSelected ? 700 : 600,
                     pointerEvents:'none', userSelect:'none',
                     textShadow: '0 1px 2px rgba(0,0,0,0.8)',
@@ -124,7 +124,7 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
                 </text>
                 {count > 0 && (
                   <text x={lx} y={ly + 11} textAnchor="middle" dominantBaseline="middle"
-                    style={{ fontSize:7, fill: isSelected ? '#bbf7d0' : '#86efac', pointerEvents:'none', userSelect:'none' }}>
+                    style={{ fontSize:7, fill: isSelected ? '#dcfce7' : '#15803d', pointerEvents:'none', userSelect:'none' }}>
                     {count}개
                   </text>
                 )}

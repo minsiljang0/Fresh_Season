@@ -1,18 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&display=swap');
 
 :root {
-  --bg: #0c0c0c;
-  --surface: #161616;
-  --surface2: #1f1f1f;
-  --surface3: #2a2a2a;
-  --accent: #22c55e;
-  --accent2: #4ade80;
-  --text: #f0f0f0;
-  --text2: #999;
-  --text3: #555;
-  --border: #2a2a2a;
+  --bg: #f5f9f5;
+  --surface: #ffffff;
+  --surface2: #eef6ee;
+  --surface3: #dff0df;
+  --accent: #16a34a;
+  --accent2: #22c55e;
+  --text: #0f1f0f;
+  --text2: #4b6e4b;
+  --text3: #8aaa8a;
+  --border: #d1e8d1;
   --radius: 12px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow: 0 4px 24px rgba(22,163,74,0.08);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,7 +33,7 @@ body {
   padding: 16px 0;
   border-bottom: 1px solid var(--border);
   position: sticky; top: 0;
-  background: rgba(12,12,12,0.92);
+  background: rgba(245,249,245,0.92);
   backdrop-filter: blur(12px);
   z-index: 100;
 }
@@ -62,7 +62,7 @@ body {
   transition: all 0.15s;
 }
 .nav-link:hover { color: var(--text); background: var(--surface2); }
-.nav-link.active { color: var(--accent); background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); }
+.nav-link.active { color: var(--accent); background: rgba(22,163,74,0.08); border-color: rgba(22,163,74,0.25); }
 
 /* HERO */
 .hero { padding: 52px 0 36px; text-align: center; }
@@ -82,10 +82,10 @@ body {
 .card {
   background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--radius); padding: 20px;
-  transition: border-color 0.15s; cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s; cursor: pointer;
   text-decoration: none; color: inherit; display: block;
 }
-.card:hover { border-color: var(--accent); }
+.card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
 
 /* BADGE */
 .badge {
