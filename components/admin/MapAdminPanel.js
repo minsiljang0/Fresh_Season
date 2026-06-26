@@ -322,7 +322,8 @@ function HealthTab({ adminToken, showToast, confirmDelete }) {
         try {
           await apiFetch(`${api('health_benefits')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
           if (selHealth?.id===id) setSelHealth(null)
-          showToast('🗑 삭제됨'); load()
+          setList(prev => prev.filter(h => h.id !== id))
+          showToast('🗑 삭제됨')
         } catch(e) { showToast('❌ '+e.message) }
       }
     })
@@ -887,7 +888,7 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
     setSaving(true)
     try {
       await apiFetch(api('tv_shows'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      setForm({ name:'', broadcaster:'', category:'', description:'' })
+      setForm({ name:'', broadcaster:'', category:'', description:'', started_at:'', ended_at:'', air_days:[] })
       showToast('✅ 등록 완료'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
@@ -898,7 +899,8 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
       try {
         await apiFetch(`${api('tv_shows')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
         if (selShow?.id===id) setSelShow(null)
-        showToast('🗑 삭제됨'); loadAll()
+        setShows(prev => prev.filter(s => s.id !== id))
+        showToast('🗑 삭제됨')
       } catch(e) { showToast('❌ '+e.message) }
     })
   }
@@ -1090,13 +1092,15 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
                         📅 {s.started_at ? s.started_at.slice(0,7) : '?'} ~ {s.ended_at ? s.ended_at.slice(0,7) : '현재'}
                       </div>
                     )}
-                    {s.air_days?.length > 0 && (
-                      <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:2 }}>
-                        {s.air_days.map(d => (
-                          <span key={d} style={{ fontSize:10, padding:'1px 6px', borderRadius:6, background:'#fef3c7', border:'1px solid #fde68a', color:'#92400e', fontWeight:600 }}>{d}요일</span>
-                        ))}
-                      </div>
-                    )}
+                    <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:2 }}>
+                      {s.air_days?.length > 0 ? (
+                        s.air_days.map(d => (
+                          <span key={d} style={{ fontSize:10, padding:'1px 6px', borderRadius:6, background:'#fef3c7', border:'1px solid #fde68a', color:'#92400e', fontWeight:600 }}>📡 {d}요일</span>
+                        ))
+                      ) : (
+                        <span style={{ fontSize:10, padding:'1px 6px', borderRadius:6, background:'#f8fafc', border:'1px solid #e2e8f0', color:'#94a3b8' }}>요일 미등록</span>
+                      )}
+                    </div>
                     {s.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.description}</div>}
                   </div>
                   <div style={{ display:'flex', gap:4, flexShrink:0, marginLeft:8 }}>
@@ -1156,7 +1160,8 @@ function ChefTab({ adminToken, showToast, confirmDelete }) {
     confirmDelete(name, async () => {
       try {
         await apiFetch(`${api('chefs')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-        showToast('🗑 삭제됨'); load()
+        setList(prev => prev.filter(c => c.id !== id))
+        showToast('🗑 삭제됨')
       } catch(e) { showToast('❌ '+e.message) }
     })
   }
@@ -1295,7 +1300,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
       try {
         await apiFetch(`${api('ingredients')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
         if (selIng?.id===id) setSelIng(null)
-        showToast('🗑 삭제됨'); loadAll()
+        setIngredients(prev => prev.filter(i => i.id !== id))
+        showToast('🗑 삭제됨')
       } catch(e) { showToast('❌ '+e.message) }
     })
   }
@@ -1589,7 +1595,8 @@ function DishTab({ adminToken, showToast, confirmDelete }) {
       try {
         await apiFetch(`${api('dishes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
         if (selDish?.id===id) setSelDish(null)
-        showToast('🗑 삭제됨'); loadAll()
+        setDishes(prev => prev.filter(d => d.id !== id))
+        showToast('🗑 삭제됨')
       } catch(e) { showToast('❌ '+e.message) }
     })
   }
@@ -1863,7 +1870,8 @@ function RecipeTab({ adminToken, showToast, confirmDelete }) {
       try {
         await apiFetch(`${api('recipes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
         if (selRecipe?.id===id) setSelRecipe(null)
-        showToast('🗑 삭제됨'); loadAll()
+        setRecipes(prev => prev.filter(r => r.id !== id))
+        showToast('🗑 삭제됨')
       } catch(e) { showToast('❌ '+e.message) }
     })
   }
