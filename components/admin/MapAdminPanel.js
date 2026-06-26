@@ -1751,7 +1751,7 @@ function DishTab({ adminToken, showToast, confirmDelete }) {
                             </div>
                             {r.summary && <p style={{ fontSize:11, color:'#4b6e4b', marginTop:4 }}>{r.summary}</p>}
                           </div>
-                          <button onClick={async()=>{ if(!confirm('삭제?'))return; await apiFetch(`${api('recipes')}&id=${r.id}`,{method:'DELETE',headers:{'x-admin-token':adminToken}}); loadDishRecipes(selDish.id); showToast('🗑 삭제됨') }}
+                          <button onClick={()=>confirmDelete(r.title, async()=>{ await apiFetch(`${api('recipes')}&id=${r.id}`,{method:'DELETE',headers:{'x-admin-token':adminToken}}); loadDishRecipes(selDish.id); showToast('🗑 삭제됨') })}
                             style={{ padding:'3px 9px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>삭제</button>
                         </div>
                       </div>
