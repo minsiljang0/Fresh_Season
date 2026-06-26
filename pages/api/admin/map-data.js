@@ -230,7 +230,7 @@ export default async function handler(req, res) {
       }
       if (type === 'ingredient_regions') {
         const { data, error } = await supabase.from('ingredient_regions')
-          .insert([{ id: genId(), ingredient_id: body.ingredient_id, region: body.region, district: body.district || '', months: body.months || [] }])
+          .insert([{ id: genId(), ingredient_id: body.ingredient_id, region: body.region, district: body.district || '', months: body.months || [], label: body.label || '' }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)
