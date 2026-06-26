@@ -181,8 +181,70 @@ function HealthTab({ adminToken, showToast }) {
   const [healthTvs, setHealthTvs] = useState([])
   const [linkIngId, setLinkIngId] = useState('')
   const [linkTvId, setLinkTvId] = useState('')
+  const [showLinkModal, setShowLinkModal] = useState(false)
+  const [justCreated, setJustCreated] = useState(null)
+  const [modalTab, setModalTab] = useState('ingredient')
+  const [modalIngId, setModalIngId] = useState('')
+  const [modalTvId, setModalTvId] = useState('')
+  const [modalIngs, setModalIngs] = useState([])
+  const [modalTvs, setModalTvs] = useState([])
 
   const ING_CAT = { fish:'🐟', veg:'🥬', fruit:'🍎', grain:'🌾', meat:'🥩', mushroom:'🍄' }
+
+  const loadModalLinks = useCallback(async (healthId) => {
+    try {
+      const [ings, tvs] = await Promise.all([
+        apiFetch(`${api('ingredient_health')}&health_id=${healthId}`),
+        apiFetch(`${api('health_tv_shows')}&health_id=${healthId}`),
+      ])
+      setModalIngs(ings); setModalTvs(tvs)
+    } catch {}
+  }, [])
+
+  const modalLinkIng = async () => {
+    if (!justCreated || !modalIngId) { showToast('⚠️ 식재료를 선택하세요'); return }
+    try {
+      await apiFetch(api('ingredient_health'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ ingredient_id: modalIngId, health_id: justCreated.id })
+      })
+      setModalIngId(''); loadModalLinks(justCreated.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const modalUnlinkIng = async (id) => {
+    try {
+      await apiFetch(`${api('ingredient_health')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      loadModalLinks(justCreated.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const modalLinkTv = async () => {
+    if (!justCreated || !modalTvId) { showToast('⚠️ TV방송을 선택하세요'); return }
+    try {
+      await apiFetch(api('health_tv_shows'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ health_id: justCreated.id, show_id: modalTvId })
+      })
+      setModalTvId(''); loadModalLinks(justCreated.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const modalUnlinkTv = async (id) => {
+    try {
+      await apiFetch(`${api('health_tv_shows')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      loadModalLinks(justCreated.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const closeModal = () => {
+    setShowLinkModal(false)
+    setJustCreated(null)
+    setModalIngs([]); setModalTvs([])
+    setModalIngId(''); setModalTvId('')
+    setModalTab('ingredient')
+    showToast('✅ 등록 완료')
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -197,6 +259,13 @@ function HealthTab({ adminToken, showToast }) {
     setLoading(false)
   }, [])
   useEffect(()=>{ load() }, [])
+
+  // 모달 오픈 시 자동 로드
+  useEffect(()=>{
+    if (showLinkModal && justCreated) {
+      loadModalLinks(justCreated.id)
+    }
+  }, [showLinkModal, justCreated])
 
   const loadLinks = useCallback(async (healthId) => {
     try {
@@ -217,13 +286,17 @@ function HealthTab({ adminToken, showToast }) {
     if (!form.name.trim()) { showToast('⚠️ 이름 필수'); return }
     setSaving(true)
     try {
-      await apiFetch(api('health_benefits'), {
+      const created = await apiFetch(api('health_benefits'), {
         method:'POST',
         headers:{'Content-Type':'application/json','x-admin-token':adminToken},
         body:JSON.stringify(form)
       })
       setForm({ name:'', description:'', category:'', coupang_url:'', age_groups:[], caution:'' })
-      showToast('✅ 등록 완료'); load()
+      await load()
+      if (created?.id) {
+        setJustCreated(created)
+        setShowLinkModal(true)
+      }
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
   }
@@ -362,6 +435,114 @@ function HealthTab({ adminToken, showToast }) {
 
   return (
     <div>
+      {/* ── 등록 후 연결 모달 ── */}
+      {showLinkModal && justCreated && (
+        <div style={{ position:'fixed', inset:0, zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.55)', padding:16 }}
+          onClick={e=>{ if(e.target===e.currentTarget) closeModal() }}>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:560, maxHeight:'90vh', overflowY:'auto',
+            boxShadow:'0 20px 60px rgba(0,0,0,0.3)', fontFamily:"'Outfit',sans-serif" }}>
+            {/* 모달 헤더 */}
+            <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid #e8f5e8', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div>
+                <div style={{ fontSize:11, color:'#22c55e', fontWeight:700, letterSpacing:1, marginBottom:4 }}>✅ 등록 완료</div>
+                <div style={{ fontSize:18, fontWeight:900, color:'#0f1f0f' }}>💊 {justCreated.name}</div>
+                <div style={{ fontSize:12, color:'#4b6e4b', marginTop:4 }}>식재료와 TV방송을 지금 바로 연결해보세요</div>
+              </div>
+              <button onClick={closeModal}
+                style={{ width:32, height:32, borderRadius:8, border:'1px solid #d1e8d1', background:'#f5f9f5',
+                  color:'#4b6e4b', fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>×</button>
+            </div>
+
+            {/* 탭 */}
+            <div style={{ display:'flex', borderBottom:'1px solid #e8f5e8' }}>
+              <button onClick={()=>{ setModalTab('ingredient'); loadModalLinks(justCreated.id) }}
+                style={{ flex:1, padding:'12px 0', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                  fontWeight:700, fontSize:13,
+                  background: modalTab==='ingredient' ? '#fff' : '#f9fbf9',
+                  color: modalTab==='ingredient' ? '#a855f7' : '#888',
+                  borderBottom: modalTab==='ingredient' ? '2.5px solid #a855f7' : '2.5px solid transparent' }}>
+                🥕 식재료 연결 ({modalIngs.length})
+              </button>
+              <button onClick={()=>{ setModalTab('tv'); loadModalLinks(justCreated.id) }}
+                style={{ flex:1, padding:'12px 0', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                  fontWeight:700, fontSize:13,
+                  background: modalTab==='tv' ? '#fff' : '#f9fbf9',
+                  color: modalTab==='tv' ? '#f59e0b' : '#888',
+                  borderBottom: modalTab==='tv' ? '2.5px solid #f59e0b' : '2.5px solid transparent' }}>
+                📺 TV방송 연결 ({modalTvs.length})
+              </button>
+            </div>
+
+            {/* 탭 콘텐츠 */}
+            <div style={{ padding:20 }}>
+              {/* 식재료 탭 */}
+              {modalTab==='ingredient' && (
+                <div>
+                  {modalIngs.length > 0 ? (
+                    <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
+                      {modalIngs.map(ih => {
+                        const ing = ingredients.find(i=>i.id===ih.ingredient_id)
+                        return ing ? (
+                          <span key={ih.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                            padding:'4px 12px', borderRadius:20, background:'#a855f718', border:'1px solid #a855f744', color:'#7c3aed' }}>
+                            {ING_CAT[ing.category]||'🥕'} {ing.name}
+                            <button type="button" onClick={()=>modalUnlinkIng(ih.id)}
+                              style={{ background:'none', border:'none', color:'#7c3aed', cursor:'pointer', fontSize:15, lineHeight:1, padding:0 }}>×</button>
+                          </span>
+                        ) : null
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize:13, color:'#8aaa8a', marginBottom:14, textAlign:'center', padding:'12px 0' }}>
+                      아직 연결된 식재료가 없어요
+                    </p>
+                  )}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+                    <SearchSelect items={ingredients} value={modalIngId} onChange={setModalIngId} placeholder="식재료 검색해서 추가..." />
+                    <button type="button" onClick={modalLinkIng}
+                      style={{ ...S.btn('#a855f7'), padding:'10px 16px', whiteSpace:'nowrap' }}>+ 연결</button>
+                  </div>
+                </div>
+              )}
+
+              {/* TV방송 탭 */}
+              {modalTab==='tv' && (
+                <div>
+                  {modalTvs.length > 0 ? (
+                    <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
+                      {modalTvs.map(ht => (
+                        <span key={ht.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                          padding:'4px 12px', borderRadius:20, background:'#f59e0b18', border:'1px solid #f59e0b44', color:'#b45309' }}>
+                          📺 {ht.tv_shows?.name}
+                          <button type="button" onClick={()=>modalUnlinkTv(ht.id)}
+                            style={{ background:'none', border:'none', color:'#b45309', cursor:'pointer', fontSize:15, lineHeight:1, padding:0 }}>×</button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize:13, color:'#8aaa8a', marginBottom:14, textAlign:'center', padding:'12px 0' }}>
+                      아직 연결된 TV방송이 없어요
+                    </p>
+                  )}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+                    <SearchSelect items={tvShows} value={modalTvId} onChange={setModalTvId} placeholder="TV방송 검색해서 추가..." />
+                    <button type="button" onClick={modalLinkTv}
+                      style={{ ...S.btn('#f59e0b'), padding:'10px 16px', whiteSpace:'nowrap' }}>+ 연결</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 모달 푸터 */}
+            <div style={{ padding:'16px 24px', borderTop:'1px solid #e8f5e8', display:'flex', justifyContent:'flex-end' }}>
+              <button onClick={closeModal}
+                style={{ ...S.btn(), padding:'10px 28px' }}>완료</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 등록 폼 ── */}
       <div style={S.card}>
         <div style={S.cardTitle}>💊 건강효능 등록</div>
@@ -414,6 +595,10 @@ function HealthTab({ adminToken, showToast }) {
           </div>
         </div>
         <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
+        <p style={{ fontSize:12, color:'#4b6e4b', marginTop:10, lineHeight:1.6 }}>
+          💡 등록 후 아래 효능 목록에서 해당 카드를 클릭하면<br/>
+          <strong>🥕 식재료</strong>와 <strong>📺 TV방송</strong>을 바로 연결할 수 있어요.
+        </p>
       </div>
 
       {/* ── 효능 목록 ── */}
@@ -531,7 +716,7 @@ function HealthTab({ adminToken, showToast }) {
 
                 {/* 보기 모드 연결 패널 (클릭 시 펼침) */}
                 {selHealth?.id===h.id && editId!==h.id && (
-                  <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid #d1e8d1' }}
+                  <div id="health-link-panel" style={{ marginTop:12, paddingTop:12, borderTop:'1px solid #d1e8d1' }}
                     onClick={e=>e.stopPropagation()}>
                     {/* 탭 */}
                     <div style={{ display:'flex', gap:0, marginBottom:12, borderBottom:'1px solid #d1e8d1' }}>
