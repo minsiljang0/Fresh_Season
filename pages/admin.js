@@ -7,7 +7,7 @@ import ContentLogPanel from '../components/admin/ContentLogPanel'
 import ContentIdeaPanel from '../components/admin/ContentIdeaPanel'
 import KeywordPanel from '../components/admin/KeywordPanel'
 import TvRecipePanel from '../components/admin/TvRecipePanel'
-import SeasonalFoodPanel from '../components/admin/SeasonalFoodPanel'
+import MapAdminPanel from '../components/admin/MapAdminPanel'
 import AdsensePanel from '../components/admin/AdsensePanel'
 import BoardAdminPanel from '../components/admin/BoardAdminPanel'
 import LegalPanel from '../components/admin/LegalPanel'
@@ -232,7 +232,7 @@ export default function Admin() {
             {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
             {activeTab === 'system_prompt' && <SystemPromptPanel adminToken={adminToken} />}
             {activeTab === 'tv_recipes' && <TvRecipePanel adminToken={adminToken} />}
-            {activeTab === 'seasonal' && <SeasonalFoodPanel adminToken={adminToken} />}
+            {activeTab === 'seasonal' && <MapAdminPanel adminToken={adminToken} />}
             {activeTab === 'free_board' && <BoardAdminPanel adminToken={adminToken} postType="free" />}
             {activeTab === 'requests' && <BoardAdminPanel adminToken={adminToken} postType="request" />}
             {activeTab === 'adsense' && (
