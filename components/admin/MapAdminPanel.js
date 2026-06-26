@@ -1250,8 +1250,29 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
       {/* ── 기본 정보 ── */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
         <div>
-          <label style={S.label}>식재료명 *</label>
-          <input value={f.name||''} onChange={e=>setF(p=>({...p,name:e.target.value}))} placeholder="예: 돼지고기, 당근" style={S.input} />
+          <label style={S.label}>식재료명 (기본명)</label>
+          <input value={f.name||''} onChange={e=>setF(p=>({...p,name:e.target.value}))} placeholder="예: 감귤, 사과" style={S.input} />
+        </div>
+        <div>
+          <label style={S.label}>지역</label>
+          <select value={f.region_id||''} onChange={e=>setF(p=>({...p,region_id:e.target.value}))} style={S.input}>
+            <option value="">선택 안 함</option>
+            {DEFAULT_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel(c)}</option>)}
+          </select>
+        </div>
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={S.label}>📌 등록명 (식재료명-지역) *</label>
+          <input
+            value={f.display_name !== undefined
+              ? (f.display_name || (f.name && f.region_id
+                  ? f.name + '-' + categoryLabel(f.region_id).replace(/[🏙🌊🍎🦀🌿🍢🐟🌾🏡🏔🍇🦪🍚🍎🦐🍊]/u,'').replace(/(특별자치도|특별자치시|특별시|광역시|도|시)$/,'').trim()
+                  : f.name || ''))
+              : f.name || ''}
+            onChange={e=>setF(p=>({...p,display_name:e.target.value}))}
+            placeholder="예: 감귤-제주, 사과-경북"
+            style={{ ...S.input, fontWeight:700, color:'#1d4ed8', fontSize:14 }}
+          />
+          <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 식재료명+지역 입력하면 자동완성 — 직접 수정 가능</p>
         </div>
         <div>
           <label style={S.label}>카테고리</label>
@@ -1363,7 +1384,7 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
 }
 
 function IngredientTab({ adminToken, showToast, confirmDelete }) {
-  const EMPTY_FORM   = { name:'', category:'fish', description:'', coupang_url:'', caution:'' }
+  const EMPTY_FORM   = { name:'', display_name:'', region_id:'', category:'fish', description:'', coupang_url:'', caution:'' }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[], label:'' }
 
   const [list, setList]         = useState([])
@@ -1449,9 +1470,13 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
     if (!form.name.trim()) { showToast('⚠️ 이름 필수'); return }
     setSaving(true)
     try {
+      const submitData = {
+        ...form,
+        name: form.display_name?.trim() || form.name.trim(), // 등록명 우선
+      }
       const created = await apiFetch(api('ingredients'), {
         method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body:JSON.stringify(form)
+        body:JSON.stringify(submitData)
       })
       for (const r of formRegions) {
         await apiFetch(api('ingredient_regions'), {
@@ -1485,9 +1510,13 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
   // ── 수정 ──
   const save = async (id) => {
     try {
+      const saveData = {
+        ...editForm,
+        name: editForm.display_name?.trim() || editForm.name?.trim(),
+      }
       await apiFetch(`${api('ingredients')}&id=${id}`, {
         method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body:JSON.stringify(editForm)
+        body:JSON.stringify(saveData)
       })
       setEditId(null); showToast('✅ 저장됨'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
@@ -1588,7 +1617,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
   const openEdit = (i) => {
     setSelIng(null)
     setEditId(i.id)
-    setEditForm({ name:i.name, category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'' })
+    setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'' })
     setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
     loadEditLinks(i.id)
   }
@@ -1610,7 +1639,24 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
           <div>
             <label style={S.label}>식재료명 *</label>
-            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="예: 돼지고기, 당근" style={S.input} />
+            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="예: 감귤, 사과" style={S.input} />
+          </div>
+          <div>
+            <label style={S.label}>지역</label>
+            <select value={form.region_id||''} onChange={e=>setForm(f=>({...f,region_id:e.target.value}))} style={S.input}>
+              <option value="">선택 안 함</option>
+              {DEFAULT_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel(c)}</option>)}
+            </select>
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>📌 등록명 (식재료명-지역) *</label>
+            <input
+              value={form.display_name || (form.name && form.region_id ? `${form.name}-${categoryLabel(form.region_id).replace(/[🏙🌊🍎🦀🌿🍢🐟🌾🏡🏔🍇🦪🍚🍎🦐🍊]/u,'').replace(/(특별자치도|특별자치시|특별시|광역시|도|시)$/,'').trim()}` : form.name)}
+              onChange={e=>setForm(f=>({...f,display_name:e.target.value}))}
+              placeholder="예: 감귤-제주, 사과-경북"
+              style={{ ...S.input, fontWeight:700, color:'#1d4ed8', fontSize:14 }}
+            />
+            <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 식재료명·지역 입력하면 자동완성 — 직접 수정도 가능합니다</p>
           </div>
           <div>
             <label style={S.label}>카테고리</label>
