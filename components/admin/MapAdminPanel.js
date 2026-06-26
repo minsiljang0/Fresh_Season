@@ -720,6 +720,8 @@ function IngredientTab({ adminToken, showToast }) {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name:'', category:'fish', description:'', coupang_url:'', caution:'' })
   const [saving, setSaving] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [editForm, setEditForm] = useState({})
   const [selIng, setSelIng] = useState(null)
   const [ingHealths, setIngHealths] = useState([])
   const [ingRegions, setIngRegions] = useState([])
@@ -758,6 +760,13 @@ function IngredientTab({ adminToken, showToast }) {
       showToast('✅ 등록 완료'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
     setSaving(false)
+  }
+
+  const save = async (id) => {
+    try {
+      await apiFetch(`${api('ingredients')}&id=${id}`, { method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(editForm) })
+      setEditId(null); showToast('✅ 저장됨'); loadAll()
+    } catch(e) { showToast('❌ '+e.message) }
   }
 
   const del = async (id) => {
@@ -858,24 +867,70 @@ function IngredientTab({ adminToken, showToast }) {
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:6, marginBottom: selIng?20:0 }}>
             {filtered.map(i => {
-              const c = cat(i.category)
+              const ct = cat(i.category)
               const on = selIng?.id===i.id
-              return (
-                <div key={i.id} onClick={()=>setSelIng(on?null:i)}
-                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#a855f7':'#d1e8d1'}`, background:on?'#120a1a':'#f5f9f5' }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              if (editId === i.id) return (
+                <div key={i.id} style={{ ...S.row, border:'1.5px solid #16a34a', gridColumn:'1/-1' }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
                     <div>
-                      <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{c?.emoji} {i.name}</div>
-                      <div style={{ fontSize:11, color:'#4b6e4b' }}>{c?.label}</div>
+                      <label style={S.label}>식재료명 *</label>
+                      <input value={editForm.name||''} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={S.input} />
+                    </div>
+                    <div>
+                      <label style={S.label}>카테고리</label>
+                      <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:6 }}>
+                        {ING_CATEGORIES.map(ic=>(
+                          <button key={ic.id} type="button" onClick={()=>setEditForm(f=>({...f,category:ic.id}))}
+                            style={{ padding:'3px 8px', borderRadius:20, border:`1.5px solid ${editForm.category===ic.id?'#a855f7':'#d1e8d1'}`,
+                              background:editForm.category===ic.id?'#f5f0ff':'#f5f9f5', color:editForm.category===ic.id?'#7c3aed':'#4b6e4b',
+                              fontSize:11, fontWeight:editForm.category===ic.id?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                            {ic.emoji} {ic.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={S.label}>설명 (건강효능 요약)</label>
+                      <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} style={S.input} />
+                    </div>
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={S.label}>🛒 쿠팡 URL</label>
+                      <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="https://coupa.ng/..." style={S.input} />
+                    </div>
+                    <div style={{ gridColumn:'1/-1' }}>
+                      <label style={S.label}>⚠️ 주의사항</label>
+                      <input value={editForm.caution||''} onChange={e=>setEditForm(f=>({...f,caution:e.target.value}))}
+                        placeholder="예: 견과류 알레르기 주의" style={S.input} list="caution-presets" />
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={()=>save(i.id)} style={S.btn()}>저장</button>
+                    <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
+                  </div>
+                </div>
+              )
+              return (
+                <div key={i.id} onClick={()=>{ if(editId) return; setSelIng(on?null:i) }}
+                  style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#a855f7':'#d1e8d1'}`, background:on?'#f5f0ff':'#f5f9f5' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{ct?.emoji} {i.name}</div>
+                      <div style={{ fontSize:11, color:'#4b6e4b' }}>{ct?.label}</div>
+                      {i.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{i.description}</div>}
                       {i.caution && (
                         <div style={{ fontSize:10, marginTop:3, padding:'3px 7px', background:'#fef2f2', borderRadius:4, border:'1.5px solid #fca5a5', lineHeight:1.3 }}>
                           <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ 주의 </span>
                           <span style={{ color:'#dc2626', fontWeight:600 }}>{i.caution}</span>
                         </div>
                       )}
+                      {i.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:3 }}>🛒 쿠팡 링크 있음</div>}
                     </div>
-                    <button onClick={e=>{ e.stopPropagation(); del(i.id) }}
-                      style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                    <div style={{ display:'flex', gap:4, flexShrink:0 }}>
+                      <button onClick={e=>{ e.stopPropagation(); setEditId(i.id); setEditForm({name:i.name,category:i.category,description:i.description||'',coupang_url:i.coupang_url||'',caution:i.caution||''}); setSelIng(null) }}
+                        style={{ padding:'2px 8px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
+                      <button onClick={e=>{ e.stopPropagation(); del(i.id) }}
+                        style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                    </div>
                   </div>
                 </div>
               )
