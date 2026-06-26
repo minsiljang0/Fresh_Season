@@ -956,117 +956,20 @@ function TvShowTab({ adminToken, showToast }) {
 
       {/* 방송 목록 */}
       <div style={S.card}>
-        <div style={S.cardTitle}>📋 방송 목록 ({shows.length}) — 클릭하면 셰프·식재료 연결</div>
+        <div style={S.cardTitle}>📋 방송 목록 ({shows.length})</div>
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:8, marginBottom: selShow ? 20 : 0 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:8 }}>
             {shows.map(s => (
-              <div key={s.id} onClick={()=>setSelShow(selShow?.id===s.id ? null : s)}
-                style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${selShow?.id===s.id?'#f59e0b':'#d1e8d1'}`,
-                  background: selShow?.id===s.id?'#1a1500':'#f5f9f5' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-                  <div>
-                    <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:3 }}>📺 {s.name}</div>
-                    <div style={{ fontSize:11, color:'#4b6e4b' }}>{s.broadcaster} {s.category && `· ${s.category}`}</div>
-                  </div>
-                  <button onClick={e=>{ e.stopPropagation(); delShow(s.id) }}
-                    style={{ padding:'3px 8px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+              <div key={s.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div>
+                  <div style={{ fontWeight:700, color:'#0f1f0f', marginBottom:3 }}>📺 {s.name}</div>
+                  <div style={{ fontSize:11, color:'#4b6e4b' }}>{s.broadcaster}{s.category && ` · ${s.category}`}</div>
+                  {s.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{s.description}</div>}
                 </div>
+                <button onClick={e=>{ e.stopPropagation(); delShow(s.id) }}
+                  style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0, marginLeft:8 }}>삭제</button>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* 선택된 방송 연결 관리 */}
-        {selShow && (
-          <div style={{ border:'1.5px solid #f59e0b', borderRadius:14, overflow:'hidden', marginTop:4 }}>
-            {/* 수정 중 헤더 */}
-            <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 16px', background:'#1a1500', borderBottom:'1px solid #f59e0b44' }}>
-              <div style={{ width:34, height:34, borderRadius:9, background:'#f59e0b22', border:'1.5px solid #f59e0b', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>📺</div>
-              <div>
-                <div style={{ fontSize:10, color:'#f59e0b', fontWeight:700, letterSpacing:1, marginBottom:2 }}>선택됨</div>
-                <div style={{ fontSize:15, fontWeight:900, color:'#fef9c3' }}>{selShow.name}</div>
-              </div>
-            </div>
-
-            {/* 탭 헤더 */}
-            <div style={{ display:'flex', borderBottom:'1px solid #f59e0b33', background:'#111' }}>
-              <button onClick={()=>setActiveSection('chef')}
-                style={{ flex:1, padding:'10px 0', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
-                  fontWeight:700, fontSize:13,
-                  background: activeSection==='chef' ? '#1a1500' : 'transparent',
-                  color: activeSection==='chef' ? '#f59e0b' : '#888',
-                  borderBottom: activeSection==='chef' ? '2px solid #f59e0b' : '2px solid transparent' }}>
-                👨‍🍳 출연 셰프 ({showChefs.length})
-              </button>
-              <button onClick={()=>setActiveSection('ingredient')}
-                style={{ flex:1, padding:'10px 0', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
-                  fontWeight:700, fontSize:13,
-                  background: activeSection==='ingredient' ? '#1a1500' : 'transparent',
-                  color: activeSection==='ingredient' ? '#a855f7' : '#888',
-                  borderBottom: activeSection==='ingredient' ? '2px solid #a855f7' : '2px solid transparent' }}>
-                🥕 연결 식재료 ({showIngs.length})
-              </button>
-            </div>
-
-            {/* 셰프 섹션 */}
-            {activeSection === 'chef' && (
-              <div style={{ padding:16 }}>
-                <TagRow
-                  items={showChefs.map(sc=>({ label:`${sc.chefs?.name} (${sc.role||'출연'})`, id:sc.id }))}
-                  onRemove={(i)=>unlinkChef(showChefs[i].id)}
-                  color="#f59e0b"
-                />
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:8, marginTop:12, alignItems:'flex-end' }}>
-                  <SearchSelect
-                    label="셰프 선택/검색"
-                    items={chefs}
-                    value={linkChefId}
-                    onChange={setLinkChefId}
-                    placeholder="셰프 이름 검색"
-                  />
-                  <div>
-                    <label style={S.label}>역할</label>
-                    <select value={linkRole} onChange={e=>setLinkRole(e.target.value)} style={S.input}>
-                      <option value="">선택</option>
-                      {CHEF_ROLES.map(r=><option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </div>
-                  <button onClick={linkChef} style={{ ...S.btn('#f59e0b'), padding:'10px 14px', whiteSpace:'nowrap' }}>연결</button>
-                </div>
-              </div>
-            )}
-
-            {/* 식재료 섹션 */}
-            {activeSection === 'ingredient' && (
-              <div style={{ padding:16 }}>
-                {showIngs.length > 0 ? (
-                  <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:12 }}>
-                    {showIngs.map(si => {
-                      const ing = ingredients.find(i=>i.id===si.ingredient_id)
-                      return ing ? (
-                        <span key={si.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
-                          padding:'3px 10px', borderRadius:20, background:'#a855f718', border:'1px solid #a855f744', color:'#7c3aed' }}>
-                          {ING_CAT[ing.category]||'🥕'} {ing.name}
-                          <button type="button" onClick={()=>unlinkIng(si.id)}
-                            style={{ background:'none', border:'none', color:'#7c3aed', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
-                        </span>
-                      ) : null
-                    })}
-                  </div>
-                ) : (
-                  <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:12 }}>아직 연결된 식재료가 없어요</p>
-                )}
-                <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
-                  <SearchSelect
-                    items={ingredients}
-                    value={linkIngId}
-                    onChange={setLinkIngId}
-                    placeholder="식재료 검색해서 추가..."
-                  />
-                  <button onClick={linkIng} style={{ ...S.btn('#a855f7'), padding:'10px 14px', whiteSpace:'nowrap' }}>+ 연결</button>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
