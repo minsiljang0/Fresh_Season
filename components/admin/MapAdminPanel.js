@@ -339,8 +339,9 @@ function HealthTab({ adminToken, showToast }) {
                     </div>
                   )}
                   {h.caution && (
-                    <div style={{ marginTop:5, padding:'4px 8px', borderRadius:6, background:'#fff7ed', border:'1px solid #fed7aa', fontSize:11, color:'#c2410c', lineHeight:1.4 }}>
-                      {h.caution}
+                    <div style={{ marginTop:5, padding:'4px 8px', borderRadius:6, background:'#fef2f2', border:'1.5px solid #fca5a5', fontSize:11, lineHeight:1.4 }}>
+                      <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ 주의 </span>
+                      <span style={{ color:'#dc2626', fontWeight:600 }}>{h.caution}</span>
                     </div>
                   )}
                   {h.coupang_url && <a href={h.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none', marginTop:3, display:'inline-block' }}>🛒 쿠팡 링크 ↗</a>}
@@ -869,7 +870,12 @@ function IngredientTab({ adminToken, showToast }) {
                     <div>
                       <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{c?.emoji} {i.name}</div>
                       <div style={{ fontSize:11, color:'#4b6e4b' }}>{c?.label}</div>
-                      {i.caution && <div style={{ fontSize:10, color:'#c2410c', marginTop:3, padding:'2px 6px', background:'#fff7ed', borderRadius:4, border:'1px solid #fed7aa', lineHeight:1.3 }}>⚠️ {i.caution}</div>}
+                      {i.caution && (
+                        <div style={{ fontSize:10, marginTop:3, padding:'3px 7px', background:'#fef2f2', borderRadius:4, border:'1.5px solid #fca5a5', lineHeight:1.3 }}>
+                          <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ 주의 </span>
+                          <span style={{ color:'#dc2626', fontWeight:600 }}>{i.caution}</span>
+                        </div>
+                      )}
                     </div>
                     <button onClick={e=>{ e.stopPropagation(); del(i.id) }}
                       style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
