@@ -19,6 +19,9 @@ export default function Header() {
               {r.icon} {r.name}
             </Link>
           ))}
+          <Link href="/map" className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}>
+            🗺 제철지도
+          </Link>
           <Link href="/blog" className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}>
             📝 블로그
           </Link>
