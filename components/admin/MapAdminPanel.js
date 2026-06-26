@@ -165,7 +165,8 @@ function SectionCard({ title, children }) {
 // ══════════════════════════════════════════════════════════
 function HealthTab({ adminToken, showToast }) {
   const [list, setList] = useState([])
-  const [ingredients, setIngredients] = useState([])   // 전체 식재료 목록
+  const [ingredients, setIngredients] = useState([])
+  const [tvShows, setTvShows] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'', age_groups:[], caution:'' })
   const [saving, setSaving] = useState(false)
@@ -173,36 +174,43 @@ function HealthTab({ adminToken, showToast }) {
   const [editForm, setEditForm] = useState({})
   const [filterCat, setFilterCat] = useState('')
 
-  // 식재료 연결 패널용 상태
-  const [selHealth, setSelHealth] = useState(null)   // 선택된 효능
-  const [healthIngs, setHealthIngs] = useState([])   // 연결된 식재료 목록
+  // 연결 패널 상태
+  const [selHealth, setSelHealth] = useState(null)
+  const [activeSection, setActiveSection] = useState('ingredient') // 'ingredient' | 'tv'
+  const [healthIngs, setHealthIngs] = useState([])
+  const [healthTvs, setHealthTvs] = useState([])
   const [linkIngId, setLinkIngId] = useState('')
+  const [linkTvId, setLinkTvId] = useState('')
+
+  const ING_CAT = { fish:'🐟', veg:'🥬', fruit:'🍎', grain:'🌾', meat:'🥩', mushroom:'🍄' }
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [h, i] = await Promise.all([
+      const [h, i, tv] = await Promise.all([
         apiFetch(api('health_benefits')),
         apiFetch(api('ingredients')),
+        apiFetch(api('tv_shows')),
       ])
-      setList(h); setIngredients(i)
+      setList(h); setIngredients(i); setTvShows(tv)
     } catch(e) { showToast('❌ '+e.message) }
     setLoading(false)
   }, [])
   useEffect(()=>{ load() }, [])
 
-  // 선택된 효능의 연결 식재료 불러오기 (ingredient_health 역방향 조회)
-  const loadHealthIngs = useCallback(async (healthId) => {
+  const loadLinks = useCallback(async (healthId) => {
     try {
-      // ingredient_health 테이블에서 health_id로 조회
-      const rows = await apiFetch(`${api('ingredient_health')}&health_id=${healthId}`)
-      setHealthIngs(rows)
-    } catch { setHealthIngs([]) }
+      const [ings, tvs] = await Promise.all([
+        apiFetch(`${api('ingredient_health')}&health_id=${healthId}`),
+        apiFetch(`${api('health_tv_shows')}&health_id=${healthId}`),
+      ])
+      setHealthIngs(ings); setHealthTvs(tvs)
+    } catch { setHealthIngs([]); setHealthTvs([]) }
   }, [])
 
   useEffect(()=>{
-    if (selHealth) loadHealthIngs(selHealth.id)
-    else setHealthIngs([])
+    if (selHealth) loadLinks(selHealth.id)
+    else { setHealthIngs([]); setHealthTvs([]) }
   }, [selHealth])
 
   const submit = async () => {
@@ -240,7 +248,6 @@ function HealthTab({ adminToken, showToast }) {
     } catch(e) { showToast('❌ '+e.message) }
   }
 
-  // 건강효능 → 식재료 연결 (ingredient_health에 ingredient_id + health_id 저장)
   const linkIng = async () => {
     if (!selHealth || !linkIngId) { showToast('⚠️ 식재료를 선택하세요'); return }
     try {
@@ -249,19 +256,109 @@ function HealthTab({ adminToken, showToast }) {
         headers:{'Content-Type':'application/json','x-admin-token':adminToken},
         body:JSON.stringify({ ingredient_id: linkIngId, health_id: selHealth.id })
       })
-      setLinkIngId(''); showToast('✅ 식재료 연결됨'); loadHealthIngs(selHealth.id)
+      setLinkIngId(''); showToast('✅ 식재료 연결됨'); loadLinks(selHealth.id)
     } catch(e) { showToast('❌ '+e.message) }
   }
 
   const unlinkIng = async (id) => {
     try {
       await apiFetch(`${api('ingredient_health')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-      showToast('🗑 해제됨'); loadHealthIngs(selHealth.id)
+      showToast('🗑 해제됨'); loadLinks(selHealth.id)
     } catch(e) { showToast('❌ '+e.message) }
   }
 
-  const ING_CAT = { fish:'🐟', veg:'🥬', fruit:'🍎', grain:'🌾', meat:'🥩', mushroom:'🍄' }
+  const linkTv = async () => {
+    if (!selHealth || !linkTvId) { showToast('⚠️ TV방송을 선택하세요'); return }
+    try {
+      await apiFetch(api('health_tv_shows'), {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ health_id: selHealth.id, show_id: linkTvId })
+      })
+      setLinkTvId(''); showToast('✅ TV방송 연결됨'); loadLinks(selHealth.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const unlinkTv = async (id) => {
+    try {
+      await apiFetch(`${api('health_tv_shows')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+      showToast('🗑 해제됨'); loadLinks(selHealth.id)
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
   const filtered = filterCat ? list.filter(h=>h.category===filterCat) : list
+
+  // 편집 모드 공통 식재료+TV 연결 섹션
+  const renderLinkSection = (hId) => (
+    <div style={{ gridColumn:'1/-1', borderTop:'1px solid #d1e8d1', paddingTop:14, marginTop:4 }}>
+      {/* 탭 */}
+      <div style={{ display:'flex', gap:0, marginBottom:12, borderBottom:'1px solid #d1e8d1' }}>
+        <button type="button" onClick={()=>setActiveSection('ingredient')}
+          style={{ padding:'6px 14px', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+            fontWeight:700, fontSize:12,
+            background: activeSection==='ingredient' ? '#f5f9f5' : 'transparent',
+            color: activeSection==='ingredient' ? '#a855f7' : '#888',
+            borderBottom: activeSection==='ingredient' ? '2px solid #a855f7' : '2px solid transparent' }}>
+          🥕 식재료 ({healthIngs.length})
+        </button>
+        <button type="button" onClick={()=>setActiveSection('tv')}
+          style={{ padding:'6px 14px', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+            fontWeight:700, fontSize:12,
+            background: activeSection==='tv' ? '#f5f9f5' : 'transparent',
+            color: activeSection==='tv' ? '#f59e0b' : '#888',
+            borderBottom: activeSection==='tv' ? '2px solid #f59e0b' : '2px solid transparent' }}>
+          📺 TV방송 ({healthTvs.length})
+        </button>
+      </div>
+
+      {/* 식재료 연결 */}
+      {activeSection==='ingredient' && (
+        <div>
+          {healthIngs.length > 0 ? (
+            <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
+              {healthIngs.map(ih => {
+                const ing = ingredients.find(i=>i.id===ih.ingredient_id)
+                return ing ? (
+                  <span key={ih.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                    padding:'3px 10px', borderRadius:20, background:'#a855f718', border:'1px solid #a855f744', color:'#7c3aed' }}>
+                    {ING_CAT[ing.category]||'🥕'} {ing.name}
+                    <button type="button" onClick={()=>unlinkIng(ih.id)}
+                      style={{ background:'none', border:'none', color:'#7c3aed', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
+                  </span>
+                ) : null
+              })}
+            </div>
+          ) : <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:10 }}>연결된 식재료 없음</p>}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+            <SearchSelect items={ingredients} value={linkIngId} onChange={setLinkIngId} placeholder="식재료 검색해서 추가..." />
+            <button type="button" onClick={linkIng} style={{ ...S.btn('#a855f7'), padding:'10px 14px', whiteSpace:'nowrap' }}>+ 연결</button>
+          </div>
+        </div>
+      )}
+
+      {/* TV방송 연결 */}
+      {activeSection==='tv' && (
+        <div>
+          {healthTvs.length > 0 ? (
+            <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
+              {healthTvs.map(ht => (
+                <span key={ht.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                  padding:'3px 10px', borderRadius:20, background:'#f59e0b18', border:'1px solid #f59e0b44', color:'#b45309' }}>
+                  📺 {ht.tv_shows?.name}
+                  <button type="button" onClick={()=>unlinkTv(ht.id)}
+                    style={{ background:'none', border:'none', color:'#b45309', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
+                </span>
+              ))}
+            </div>
+          ) : <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:10 }}>연결된 TV방송 없음</p>}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+            <SearchSelect items={tvShows} value={linkTvId} onChange={setLinkTvId} placeholder="TV방송 검색해서 추가..." />
+            <button type="button" onClick={linkTv} style={{ ...S.btn('#f59e0b'), padding:'10px 14px', whiteSpace:'nowrap' }}>+ 연결</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <div>
@@ -307,13 +404,9 @@ function HealthTab({ adminToken, showToast }) {
           </div>
           <div style={{ gridColumn:'1/-1' }}>
             <label style={S.label}>⚠️ 주의사항 (알레르기·특정질환 등 — 없으면 비워두세요)</label>
-            <input
-              value={form.caution||''}
-              onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
+            <input value={form.caution||''} onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
               placeholder="예: 견과류 알레르기 주의 / 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의"
-              style={S.input}
-              list="caution-presets"
-            />
+              style={S.input} list="caution-presets" />
             <datalist id="caution-presets">
               {CAUTION_PRESETS.map(p=><option key={p} value={p} />)}
             </datalist>
@@ -385,45 +478,11 @@ function HealthTab({ adminToken, showToast }) {
                   </div>
                   <div style={{ gridColumn:'1/-1' }}>
                     <label style={S.label}>⚠️ 주의사항</label>
-                    <input
-                      value={editForm.caution||''}
-                      onChange={e=>setEditForm(f=>({...f,caution:e.target.value}))}
-                      placeholder="예: 통풍 환자 주의"
-                      style={S.input}
-                      list="caution-presets"
-                    />
+                    <input value={editForm.caution||''} onChange={e=>setEditForm(f=>({...f,caution:e.target.value}))}
+                      placeholder="예: 통풍 환자 주의" style={S.input} list="caution-presets" />
                   </div>
-                  {/* ── 식재료 연결 (편집 모드) ── */}
-                  <div style={{ gridColumn:'1/-1' }}>
-                    <label style={{ ...S.label, marginBottom:6 }}>🥕 연결된 식재료</label>
-                    {healthIngs.filter(ih=>ih.health_id===h.id || selHealth?.id===h.id).length > 0 ? (
-                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:8 }}>
-                        {healthIngs.map(ih => {
-                          const ing = ingredients.find(i=>i.id===ih.ingredient_id)
-                          return ing ? (
-                            <span key={ih.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
-                              padding:'3px 10px', borderRadius:20, background:'#a855f718', border:'1px solid #a855f744', color:'#7c3aed' }}>
-                              {ING_CAT[ing.category]||'🥕'} {ing.name}
-                              <button type="button" onClick={()=>unlinkIng(ih.id)}
-                                style={{ background:'none', border:'none', color:'#7c3aed', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
-                            </span>
-                          ) : null
-                        })}
-                      </div>
-                    ) : (
-                      <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:8 }}>연결된 식재료 없음</p>
-                    )}
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
-                      <SearchSelect
-                        items={ingredients}
-                        value={linkIngId}
-                        onChange={setLinkIngId}
-                        placeholder="식재료 검색해서 추가..."
-                      />
-                      <button type="button" onClick={linkIng}
-                        style={{ ...S.btn('#a855f7'), padding:'10px 14px', whiteSpace:'nowrap' }}>+ 연결</button>
-                    </div>
-                  </div>
+                  {/* 식재료 + TV방송 연결 탭 */}
+                  {renderLinkSection(h.id)}
                 </div>
                 <div style={{ display:'flex', gap:6 }}>
                   <button onClick={()=>save(h.id)} style={S.btn()}>저장</button>
@@ -434,7 +493,6 @@ function HealthTab({ adminToken, showToast }) {
               /* ── 보기 모드 ── */
               <div key={h.id} style={{
                 ...S.row,
-                display:'flex', flexDirection:'column', gap:0,
                 border: selHealth?.id===h.id ? '1.5px solid #a855f7' : S.row.border,
                 cursor:'pointer',
               }}
@@ -464,45 +522,83 @@ function HealthTab({ adminToken, showToast }) {
                     {h.coupang_url && <a href={h.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none', display:'inline-block' }}>🛒 쿠팡 링크 ↗</a>}
                   </div>
                   <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-                    <button onClick={e=>{ e.stopPropagation(); setEditId(h.id); setSelHealth(h); setEditForm({name:h.name,description:h.description||'',category:h.category||'',coupang_url:h.coupang_url||'',age_groups:h.age_groups||[],caution:h.caution||''}); loadHealthIngs(h.id) }}
+                    <button onClick={e=>{ e.stopPropagation(); setEditId(h.id); setSelHealth(h); setEditForm({name:h.name,description:h.description||'',category:h.category||'',coupang_url:h.coupang_url||'',age_groups:h.age_groups||[],caution:h.caution||''}); loadLinks(h.id) }}
                       style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
                     <button onClick={e=>{ e.stopPropagation(); del(h.id) }}
                       style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                   </div>
                 </div>
 
-                {/* ── 식재료 연결 패널 (카드 클릭 시 펼침) ── */}
+                {/* 보기 모드 연결 패널 (클릭 시 펼침) */}
                 {selHealth?.id===h.id && editId!==h.id && (
                   <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid #d1e8d1' }}
                     onClick={e=>e.stopPropagation()}>
-                    <p style={{ fontSize:12, fontWeight:700, color:'#a855f7', marginBottom:8 }}>🥕 연결된 식재료</p>
-                    {healthIngs.length > 0 ? (
-                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
-                        {healthIngs.map(ih => {
-                          const ing = ingredients.find(i=>i.id===ih.ingredient_id)
-                          return ing ? (
-                            <span key={ih.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
-                              padding:'3px 10px', borderRadius:20, background:'#a855f718', border:'1px solid #a855f744', color:'#7c3aed' }}>
-                              {ING_CAT[ing.category]||'🥕'} {ing.name}
-                              <button type="button" onClick={()=>unlinkIng(ih.id)}
-                                style={{ background:'none', border:'none', color:'#7c3aed', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
-                            </span>
-                          ) : null
-                        })}
-                      </div>
-                    ) : (
-                      <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:8 }}>아직 연결된 식재료가 없어요</p>
-                    )}
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
-                      <SearchSelect
-                        items={ingredients}
-                        value={linkIngId}
-                        onChange={setLinkIngId}
-                        placeholder="식재료 검색해서 추가..."
-                      />
-                      <button type="button" onClick={linkIng}
-                        style={{ ...S.btn('#a855f7'), padding:'8px 12px', whiteSpace:'nowrap', fontSize:12 }}>+ 연결</button>
+                    {/* 탭 */}
+                    <div style={{ display:'flex', gap:0, marginBottom:12, borderBottom:'1px solid #d1e8d1' }}>
+                      <button type="button" onClick={()=>setActiveSection('ingredient')}
+                        style={{ padding:'6px 14px', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                          fontWeight:700, fontSize:12,
+                          background: activeSection==='ingredient' ? '#f5f9f5' : 'transparent',
+                          color: activeSection==='ingredient' ? '#a855f7' : '#888',
+                          borderBottom: activeSection==='ingredient' ? '2px solid #a855f7' : '2px solid transparent' }}>
+                        🥕 식재료 ({healthIngs.length})
+                      </button>
+                      <button type="button" onClick={()=>setActiveSection('tv')}
+                        style={{ padding:'6px 14px', border:'none', cursor:'pointer', fontFamily:"'Outfit',sans-serif",
+                          fontWeight:700, fontSize:12,
+                          background: activeSection==='tv' ? '#f5f9f5' : 'transparent',
+                          color: activeSection==='tv' ? '#f59e0b' : '#888',
+                          borderBottom: activeSection==='tv' ? '2px solid #f59e0b' : '2px solid transparent' }}>
+                        📺 TV방송 ({healthTvs.length})
+                      </button>
                     </div>
+
+                    {/* 식재료 */}
+                    {activeSection==='ingredient' && (
+                      <div>
+                        {healthIngs.length > 0 ? (
+                          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
+                            {healthIngs.map(ih => {
+                              const ing = ingredients.find(i=>i.id===ih.ingredient_id)
+                              return ing ? (
+                                <span key={ih.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                                  padding:'3px 10px', borderRadius:20, background:'#a855f718', border:'1px solid #a855f744', color:'#7c3aed' }}>
+                                  {ING_CAT[ing.category]||'🥕'} {ing.name}
+                                  <button type="button" onClick={()=>unlinkIng(ih.id)}
+                                    style={{ background:'none', border:'none', color:'#7c3aed', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
+                                </span>
+                              ) : null
+                            })}
+                          </div>
+                        ) : <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:10 }}>아직 연결된 식재료가 없어요</p>}
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+                          <SearchSelect items={ingredients} value={linkIngId} onChange={setLinkIngId} placeholder="식재료 검색해서 추가..." />
+                          <button type="button" onClick={linkIng} style={{ ...S.btn('#a855f7'), padding:'8px 12px', whiteSpace:'nowrap', fontSize:12 }}>+ 연결</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TV방송 */}
+                    {activeSection==='tv' && (
+                      <div>
+                        {healthTvs.length > 0 ? (
+                          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
+                            {healthTvs.map(ht => (
+                              <span key={ht.id} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12,
+                                padding:'3px 10px', borderRadius:20, background:'#f59e0b18', border:'1px solid #f59e0b44', color:'#b45309' }}>
+                                📺 {ht.tv_shows?.name}
+                                <button type="button" onClick={()=>unlinkTv(ht.id)}
+                                  style={{ background:'none', border:'none', color:'#b45309', cursor:'pointer', fontSize:14, lineHeight:1, padding:0 }}>×</button>
+                              </span>
+                            ))}
+                          </div>
+                        ) : <p style={{ fontSize:12, color:'#8aaa8a', marginBottom:10 }}>아직 연결된 TV방송이 없어요</p>}
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+                          <SearchSelect items={tvShows} value={linkTvId} onChange={setLinkTvId} placeholder="TV방송 검색해서 추가..." />
+                          <button type="button" onClick={linkTv} style={{ ...S.btn('#f59e0b'), padding:'8px 12px', whiteSpace:'nowrap', fontSize:12 }}>+ 연결</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
