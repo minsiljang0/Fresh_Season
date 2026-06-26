@@ -337,7 +337,15 @@ function HealthTab({ adminToken, showToast }) {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:8 }}>
             {filtered.map(h => editId===h.id ? (
               /* ── 편집 모드 ── */
-              <div key={h.id} style={{ ...S.row, border:'1.5px solid #22c55e44', gridColumn: '1/-1' }}>
+              <div key={h.id} style={{ ...S.row, border:'1.5px solid #22c55e', gridColumn: '1/-1' }}>
+                {/* 수정 중 헤더 */}
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16, paddingBottom:12, borderBottom:'1px solid #d1e8d1' }}>
+                  <div style={{ width:36, height:36, borderRadius:10, background:'#dcfce7', border:'1.5px solid #22c55e', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>✏️</div>
+                  <div>
+                    <div style={{ fontSize:11, color:'#22c55e', fontWeight:700, letterSpacing:1, marginBottom:2 }}>수정 중</div>
+                    <div style={{ fontSize:16, fontWeight:900, color:'#0f1f0f' }}>💊 {h.name}</div>
+                  </div>
+                </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
                   <div>
                     <label style={S.label}>효능명 *</label>
