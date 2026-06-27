@@ -347,7 +347,7 @@ export default function MapPage() {
             <span style={{ color:'var(--accent)' }}>제철 식재료 한눈에</span>
           </h1>
           <p style={{ fontSize:14, color:'var(--text2)' }}>
-            {totalCount}개 데이터 · {regionCount}개 지역 · 지역·월·카테고리·TV·효능 통합 검색
+            {totalCount}개 데이터 · {regionCount}개 지역 · 지역·월·카테고리·효능 통합 검색
           </p>
         </section>
 
@@ -361,7 +361,7 @@ export default function MapPage() {
               ref={searchRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="식재료·산지·효능·TV프로그램 검색 (Ctrl+K)"
+              placeholder="식재료·산지·효능 검색 (Ctrl+K)"
               style={{
                 width:'100%', padding:'11px 40px 11px 38px',
                 background:'var(--surface2)', border:'1.5px solid var(--border)',
@@ -402,6 +402,46 @@ export default function MapPage() {
             </div>
           </div>
 
+          {/* 건강 효능 필터 — 드롭다운 (카테고리 위) */}
+          <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
+              💊 건강 효능
+            </p>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <select
+                value={selHealth}
+                onChange={e => setSelHealth(e.target.value)}
+                style={{
+                  padding:'7px 14px', borderRadius:10,
+                  border: selHealth !== 'all' ? '1.5px solid #10b981' : '1.5px solid var(--border)',
+                  background: selHealth !== 'all' ? '#10b98111' : 'var(--surface2)',
+                  color: selHealth !== 'all' ? '#10b981' : 'var(--text)',
+                  fontSize:13, fontFamily:'inherit', cursor:'pointer',
+                  fontWeight: selHealth !== 'all' ? 700 : 400,
+                  minWidth:180,
+                }}
+              >
+                <option value="all">전체 효능</option>
+                {HEALTH_FILTERS.map(hf => (
+                  <option key={hf.id} value={hf.id}>
+                    {hf.label}{healthCounts[hf.id] > 0 ? ` (${healthCounts[hf.id]})` : ''}
+                  </option>
+                ))}
+              </select>
+              {selHealth !== 'all' && (
+                <span style={{ fontSize:12, color:'var(--text3)' }}>
+                  <span style={{ fontWeight:700, color:'#10b981' }}>{healthCounts[selHealth] || 0}개</span> 해당
+                </span>
+              )}
+              {selHealth !== 'all' && (
+                <button onClick={() => setSelHealth('all')}
+                  style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                  ✕ 초기화
+                </button>
+              )}
+            </div>
+          </div>
+
           <div style={{ display:'flex', gap:20, flexWrap:'wrap' }}>
             {/* 카테고리 */}
             <div style={{ flex:1, minWidth:200 }}>
@@ -435,80 +475,6 @@ export default function MapPage() {
                   <option key={r} value={r}>{REGION_SHORT[r]}</option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          {/* TV 프로그램 필터 */}
-          <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              📺 TV 프로그램
-              <span style={{ marginLeft:6, fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:999, padding:'1px 6px' }}>
-                {selTV === 'all' ? filtered.length : (tvCounts[selTV] || 0)}
-              </span>
-            </p>
-            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-              <button onClick={() => setSelTV('all')}
-                style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                  borderColor: selTV==='all' ? '#888' : 'var(--border)',
-                  background: selTV==='all' ? 'var(--surface3)' : 'var(--surface2)',
-                  color: selTV==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selTV==='all'?700:400,
-                }}>전체</button>
-              {TV_PROGRAMS.map(tv => (
-                <button key={tv} onClick={() => setSelTV(selTV===tv ? 'all' : tv)}
-                  style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                    borderColor: selTV===tv ? '#f59e0b' : 'var(--border)',
-                    background: selTV===tv ? '#f59e0b22' : 'var(--surface2)',
-                    color: selTV===tv ? '#f59e0b' : 'var(--text2)',
-                    fontWeight: selTV===tv ? 700 : 400,
-                  }}>
-                  📺 {tv}
-                  {tvCounts[tv] > 0 && (
-                    <span style={{
-                      marginLeft:5, fontSize:10, fontWeight:700,
-                      background: selTV===tv ? '#f59e0b33' : 'rgba(0,0,0,0.08)',
-                      color: selTV===tv ? '#d97706' : 'var(--text3)',
-                      borderRadius:999, padding:'0px 5px',
-                    }}>{tvCounts[tv]}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 건강 효능 필터 */}
-          <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              💊 건강 효능
-              <span style={{ marginLeft:6, fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:999, padding:'1px 6px' }}>
-                {selHealth === 'all' ? filtered.length : (healthCounts[selHealth] || 0)}
-              </span>
-            </p>
-            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-              <button onClick={() => setSelHealth('all')}
-                style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                  borderColor: selHealth==='all' ? '#888' : 'var(--border)',
-                  background: selHealth==='all' ? 'var(--surface3)' : 'var(--surface2)',
-                  color: selHealth==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selHealth==='all'?700:400,
-                }}>전체</button>
-              {HEALTH_FILTERS.map(hf => (
-                <button key={hf.id} onClick={() => setSelHealth(selHealth===hf.id ? 'all' : hf.id)}
-                  style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                    borderColor: selHealth===hf.id ? '#10b981' : 'var(--border)',
-                    background: selHealth===hf.id ? '#10b98122' : 'var(--surface2)',
-                    color: selHealth===hf.id ? '#10b981' : 'var(--text2)',
-                    fontWeight: selHealth===hf.id ? 700 : 400,
-                  }}>
-                  {hf.label}
-                  {healthCounts[hf.id] > 0 && (
-                    <span style={{
-                      marginLeft:5, fontSize:10, fontWeight:700,
-                      background: selHealth===hf.id ? '#10b98133' : 'rgba(0,0,0,0.08)',
-                      color: selHealth===hf.id ? '#059669' : 'var(--text3)',
-                      borderRadius:999, padding:'0px 5px',
-                    }}>{healthCounts[hf.id]}</span>
-                  )}
-                </button>
-              ))}
             </div>
           </div>
 
