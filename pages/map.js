@@ -162,21 +162,22 @@ export default function MapPage() {
 
   // DB 데이터 로드
   useEffect(() => {
-    fetch('/api/map/seasonal-foods')
-      .then(r => r.ok ? r.json() : {})
-      .then(data => {
-        if (Array.isArray(data)) {
-          setDbSeasonalFoods(data)
-        } else {
-          setDbSeasonalFoods(data.foods || [])
-          setDbHealthBenefits(data.healthBenefits || [])
-        }
-      })
-      .catch(() => {})
-    fetch('/api/admin/map-data?type=tv_shows')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setTvShows(data || []))
-      .catch(() => {})
+    // 3개 API 병렬 로드
+    Promise.all([
+      fetch('/api/map/seasonal-foods').then(r => r.ok ? r.json() : {}),
+      fetch('/api/admin/map-data?type=tv_shows').then(r => r.ok ? r.json() : []),
+      fetch('/api/admin/map-data?type=health_benefits').then(r => r.ok ? r.json() : []),
+    ]).then(([sfData, tvData, hbData]) => {
+      // seasonal-foods: 새 포맷 { foods, healthBenefits } 또는 구 포맷 배열
+      if (Array.isArray(sfData)) {
+        setDbSeasonalFoods(sfData)
+      } else {
+        setDbSeasonalFoods(sfData.foods || [])
+      }
+      setTvShows(tvData || [])
+      // health_benefits는 map-data API에서 직접 — 관리자와 항상 동일한 소스
+      setDbHealthBenefits(Array.isArray(hbData) ? hbData : [])
+    }).catch(() => {})
   }, [])
 
   // TV 프로그램 목록 (시드 + DB 합산)
