@@ -428,14 +428,15 @@ export default function MapPage() {
             </div>
           </div>
 
-          {/* 건강 효능 + 연령 + 성별 — 드롭다운 행 */}
+          {/* 건강 효능 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
             <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              💊 건강 효능 · 연령 · 성별
+              💊 건강 효능
+              <span style={{ marginLeft:6, fontSize:10, fontWeight:700, color:'var(--text3)', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:999, padding:'1px 7px' }}>
+                {HEALTH_FILTERS.length}
+              </span>
             </p>
             <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-
-              {/* 건강효능 */}
               <select
                 value={selHealth}
                 onChange={e => setSelHealth(e.target.value)}
@@ -449,7 +450,7 @@ export default function MapPage() {
                   minWidth:180,
                 }}
               >
-                <option value="all">💊 전체 효능</option>
+                <option value="all">전체 효능</option>
                 {HEALTH_FILTERS.map(hf => {
                   const cnt = healthCounts[hf.id] ?? 0
                   return (
@@ -459,8 +460,21 @@ export default function MapPage() {
                   )
                 })}
               </select>
+              {selHealth !== 'all' && (
+                <button onClick={() => setSelHealth('all')}
+                  style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
 
-              {/* 연령 */}
+          {/* 연령 */}
+          <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
+              👥 연령
+            </p>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <select
                 value={selAge}
                 onChange={e => setSelAge(e.target.value)}
@@ -474,7 +488,7 @@ export default function MapPage() {
                   minWidth:160,
                 }}
               >
-                <option value="all">👥 전체 연령</option>
+                <option value="all">전체 연령</option>
                 <option value="infant">👶 유아 (0-6세)</option>
                 <option value="child">🧒 어린이 (7-12세)</option>
                 <option value="teen">🧑 청소년 (13-18세)</option>
@@ -482,8 +496,21 @@ export default function MapPage() {
                 <option value="middle">🧑‍🦳 중장년 (40-64세)</option>
                 <option value="senior">👴 노년 (65세+)</option>
               </select>
+              {selAge !== 'all' && (
+                <button onClick={() => setSelAge('all')}
+                  style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
 
-              {/* 성별 */}
+          {/* 성별 */}
+          <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
+              ⚥ 성별
+            </p>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <select
                 value={selGender}
                 onChange={e => setSelGender(e.target.value)}
@@ -497,59 +524,66 @@ export default function MapPage() {
                   minWidth:130,
                 }}
               >
-                <option value="all">⚥ 전체</option>
+                <option value="all">전체</option>
                 <option value="male">♂ 남성</option>
                 <option value="female">♀ 여성</option>
               </select>
-
-              {/* 선택된 필터 뱃지 + 초기화 */}
-              {(selHealth !== 'all' || selAge !== 'all' || selGender !== 'all') && (
-                <>
-                  <span style={{ fontSize:12, color:'var(--text3)' }}>
-                    <span style={{ fontWeight:700, color:'#10b981' }}>{filtered.length}개</span> 해당
-                  </span>
-                  <button onClick={() => { setSelHealth('all'); setSelAge('all'); setSelGender('all') }}
-                    style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
-                    ✕ 초기화
-                  </button>
-                </>
+              {selGender !== 'all' && (
+                <button onClick={() => setSelGender('all')}
+                  style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                  ✕
+                </button>
               )}
             </div>
           </div>
 
-          <div style={{ display:'flex', gap:20, flexWrap:'wrap' }}>
-            {/* 카테고리 */}
-            <div style={{ flex:1, minWidth:200 }}>
-              <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🏷 카테고리</p>
-              <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-                <button onClick={() => setSelCategory('all')}
+          {/* 카테고리 */}
+          <div style={{ marginBottom:14 }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🏷 카테고리</p>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+              <button onClick={() => setSelCategory('all')}
+                style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                  borderColor: selCategory==='all' ? '#888' : 'var(--border)',
+                  background: selCategory==='all' ? 'var(--surface3)' : 'var(--surface2)',
+                  color: selCategory==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selCategory==='all'?700:400,
+                }}>전체</button>
+              {CATEGORIES.map(c => (
+                <button key={c.id} onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
                   style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                    borderColor: selCategory==='all' ? '#888' : 'var(--border)',
-                    background: selCategory==='all' ? 'var(--surface3)' : 'var(--surface2)',
-                    color: selCategory==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selCategory==='all'?700:400,
-                  }}>전체</button>
-                {CATEGORIES.map(c => (
-                  <button key={c.id} onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
-                    style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                      borderColor: selCategory===c.id ? c.color : 'var(--border)',
-                      background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
-                      color: selCategory===c.id ? c.color : 'var(--text2)',
-                      fontWeight: selCategory===c.id ? 700 : 400,
-                    }}>{c.emoji} {c.label}</button>
-                ))}
-              </div>
+                    borderColor: selCategory===c.id ? c.color : 'var(--border)',
+                    background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
+                    color: selCategory===c.id ? c.color : 'var(--text2)',
+                    fontWeight: selCategory===c.id ? 700 : 400,
+                  }}>{c.emoji} {c.label}</button>
+              ))}
             </div>
+          </div>
 
-            {/* 지역 드롭다운 */}
-            <div style={{ flex:'0 0 auto' }}>
-              <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>📍 지역</p>
+          {/* 지역 */}
+          <div style={{ marginBottom:14 }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>📍 지역</p>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <select value={selRegion} onChange={e => setSelRegion(e.target.value)}
-                style={{ padding:'6px 12px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface2)', color:'var(--text)', fontSize:13, fontFamily:'inherit', cursor:'pointer' }}>
+                style={{
+                  padding:'7px 14px', borderRadius:10,
+                  border: selRegion !== 'all' ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                  background: selRegion !== 'all' ? 'rgba(34,197,94,0.08)' : 'var(--surface2)',
+                  color: selRegion !== 'all' ? 'var(--accent)' : 'var(--text)',
+                  fontSize:13, fontFamily:'inherit', cursor:'pointer',
+                  fontWeight: selRegion !== 'all' ? 700 : 400,
+                  minWidth:160,
+                }}>
                 <option value="all">전체 지역</option>
                 {REGION_ORDER.map(r => (
                   <option key={r} value={r}>{REGION_SHORT[r]}</option>
                 ))}
               </select>
+              {selRegion !== 'all' && (
+                <button onClick={() => setSelRegion('all')}
+                  style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                  ✕
+                </button>
+              )}
             </div>
           </div>
 
