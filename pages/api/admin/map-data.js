@@ -80,6 +80,11 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data || [])
       }
+      if (type === 'utensils') {
+        const { data, error } = await supabase.from('utensils').select('*').order('name')
+        if (error) throw error
+        return res.status(200).json(data || [])
+      }
       if (type === 'dishes') {
         const { data, error } = await supabase.from('dishes').select('*').order('name')
         if (error) throw error
@@ -251,6 +256,13 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data)
       }
+      if (type === 'utensils') {
+        const { data, error } = await supabase.from('utensils')
+          .insert([{ id: genId(), name: body.name, category: body.category || '', description: body.description || '', coupang_url: body.coupang_url || '' }])
+          .select().single()
+        if (error) throw error
+        return res.status(200).json(data)
+      }
       if (type === 'dishes') {
         const { data, error } = await supabase.from('dishes')
           .insert([{ id: genId(), name: body.name, category: body.category || '', description: body.description || '' }])
@@ -319,6 +331,7 @@ export default async function handler(req, res) {
         chefs: 'chefs',
         ingredients: 'ingredients',
         dishes: 'dishes',
+        utensils: 'utensils',
         recipes: 'recipes',
       }
       const table = TABLE_MAP[type]
@@ -349,6 +362,7 @@ export default async function handler(req, res) {
         recipe_tools: 'recipe_tools',
         recipe_steps: 'recipe_steps',
         dishes: 'dishes',
+        utensils: 'utensils',
         dish_ingredients: 'dish_ingredients',
         recipes: 'recipes',
         recipe_ingredients: 'recipe_ingredients',

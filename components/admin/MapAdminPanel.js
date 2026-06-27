@@ -2336,6 +2336,146 @@ function DishTab({ adminToken, showToast, confirmDelete }) {
 
 // 서브탭 5 : 레시피 관리 (개편)
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// 서브탭 : 조리기구 관리
+// ══════════════════════════════════════════════════════════
+function UtensilTab({ adminToken, showToast, confirmDelete }) {
+  const [list, setList]       = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving]   = useState(false)
+  const [form, setForm]       = useState({ name:'', category:'', description:'', coupang_url:'' })
+  const [editId, setEditId]   = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [searchQ, setSearchQ] = useState('')
+
+  const UTENSIL_CATS = ['냄비·팬','칼·도마','계량·혼합','찜·구이','보관','기타']
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await apiFetch(api('utensils'))
+      setList(data || [])
+    } catch(e) { showToast('❌ '+e.message) }
+    setLoading(false)
+  }, [])
+  useEffect(()=>{ load() }, [])
+
+  const submit = async () => {
+    if (!form.name.trim()) { showToast('⚠️ 이름 필수'); return }
+    setSaving(true)
+    try {
+      await apiFetch(api('utensils'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify(form)
+      })
+      setForm({ name:'', category:'', description:'', coupang_url:'' })
+      showToast('✅ 등록 완료'); load()
+    } catch(e) { showToast('❌ '+e.message) }
+    setSaving(false)
+  }
+
+  const save = async (id) => {
+    try {
+      await apiFetch(`${api('utensils')}&id=${id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify(editForm)
+      })
+      setEditId(null); showToast('✅ 저장됨'); load()
+    } catch(e) { showToast('❌ '+e.message) }
+  }
+
+  const del = (id, name) => {
+    confirmDelete(name, async () => {
+      try {
+        await apiFetch(`${api('utensils')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        setList(prev => prev.filter(u => u.id !== id))
+        showToast('🗑 삭제됨')
+      } catch(e) { showToast('❌ '+e.message) }
+    })
+  }
+
+  const filtered = searchQ ? list.filter(u => u.name.includes(searchQ) || (u.category||'').includes(searchQ)) : list
+
+  return (
+    <div>
+      {/* 등록 폼 */}
+      <div style={S.card}>
+        <div style={S.cardTitle}>🔧 조리기구 등록</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
+          <div>
+            <label style={S.label}>기구명 *</label>
+            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
+              placeholder="예: 프라이팬, 믹싱볼, 계량컵" style={S.input}
+              onKeyDown={e=>{ if(e.key==='Enter') submit() }} />
+          </div>
+          <div>
+            <label style={S.label}>카테고리</label>
+            <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} style={S.input}>
+              <option value="">선택</option>
+              {UTENSIL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>설명</label>
+            <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}
+              placeholder="간단 설명" style={S.input} />
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
+            <label style={S.label}>🛒 쿠팡 파트너스 URL</label>
+            <input value={form.coupang_url||''} onChange={e=>setForm(f=>({...f,coupang_url:e.target.value}))}
+              placeholder="예: https://coupa.ng/xxxxx" style={S.input} />
+          </div>
+        </div>
+        <button onClick={submit} disabled={saving} style={{ ...S.btn(), opacity:saving?.6:1 }}>+ 등록</button>
+      </div>
+
+      {/* 목록 */}
+      <div style={S.card}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8 }}>
+          <div style={S.cardTitle}>📋 조리기구 목록 ({filtered.length})</div>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 검색" style={{ ...S.input, width:160 }} />
+        </div>
+        {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:8 }}>
+            {filtered.map(u => editId===u.id ? (
+              <div key={u.id} style={{ ...S.row, border:'1.5px solid #22c55e' }}>
+                <input value={editForm.name||''} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} placeholder="기구명" style={{ ...S.input, marginBottom:6 }} />
+                <select value={editForm.category||''} onChange={e=>setEditForm(f=>({...f,category:e.target.value}))} style={{ ...S.input, marginBottom:6 }}>
+                  <option value="">카테고리</option>
+                  {UTENSIL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+                <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} placeholder="설명" style={{ ...S.input, marginBottom:6 }} />
+                <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="쿠팡 URL" style={{ ...S.input, marginBottom:8 }} />
+                <div style={{ display:'flex', gap:6 }}>
+                  <button onClick={()=>save(u.id)} style={S.btn()}>저장</button>
+                  <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
+                </div>
+              </div>
+            ) : (
+              <div key={u.id} style={{ ...S.row, background:'#f5f9f5', border:'1px solid #d1e8d1' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13, marginBottom:4 }}>🔧 {u.name}</div>
+                    {u.category && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:10, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#1d4ed8', fontWeight:600, display:'inline-block', marginBottom:4 }}>{u.category}</span>}
+                    {u.description && <div style={{ fontSize:11, color:'#8aaa8a', marginBottom:4 }}>{u.description}</div>}
+                    {u.coupang_url && <a href={u.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none' }}>🛒 쿠팡 링크 ↗</a>}
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:4, flexShrink:0, marginLeft:8 }}>
+                    <button onClick={()=>{ setEditId(u.id); setEditForm({name:u.name,category:u.category||'',description:u.description||'',coupang_url:u.coupang_url||''}) }}
+                      style={{ padding:'3px 8px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
+                    <button onClick={()=>del(u.id, u.name)}
+                      style={{ padding:'3px 8px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function RecipeTab({ adminToken, showToast, confirmDelete }) {
   const EMPTY_FORM = { title:'', dish_id:'', show_id:'', chef_id:'', episode:'', aired_at:'', summary:'', source_url:'' }
 
@@ -2512,9 +2652,10 @@ function RecipeTab({ adminToken, showToast, confirmDelete }) {
             <input type="date" value={form.aired_at} onChange={e=>setForm(f=>({...f,aired_at:e.target.value}))} style={S.input} />
           </div>
           <div style={{ gridColumn:'1/-1' }}>
-            <label style={S.label}>요약</label>
-            <textarea value={form.summary} onChange={e=>setForm(f=>({...f,summary:e.target.value}))} rows={2}
-              style={{ ...S.textarea, fontFamily:"'Outfit',sans-serif" }} placeholder="레시피 간단 설명" />
+            <label style={S.label}>📝 레시피 설명 (순서대로 작성)</label>
+            <textarea value={form.summary} onChange={e=>setForm(f=>({...f,summary:e.target.value}))} rows={6}
+              style={{ ...S.textarea, fontFamily:"'Outfit',sans-serif" }}
+              placeholder={"1. 재료를 손질합니다.\n2. 팬을 달구고 기름을 두릅니다.\n3. 재료를 넣고 볶습니다."} />
           </div>
           <div style={{ gridColumn:'1/-1' }}>
             <label style={S.label}>출처 URL</label>
@@ -2822,6 +2963,7 @@ export default function MapAdminPanel({ adminToken }) {
       {subTab === 'chef'      && <ChefTab       adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
       {subTab === 'ingredient' && <IngredientTab adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
       {subTab === 'dish'      && <DishTab       adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
+      {subTab === 'utensil'   && <UtensilTab    adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
       {subTab === 'recipe'    && <RecipeTab     adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />}
     </div>
   )
