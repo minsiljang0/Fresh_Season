@@ -188,7 +188,6 @@ export default function RegionPage({ regionId }) {
                       ))}
                     </div>
                   </div>
-                  </div>
                   <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>💚 {food.health}</p>
                   <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
                     {(food.tvPrograms||[]).map(tv => <span key={tv} className="tag">📺 {tv}</span>)}
