@@ -323,6 +323,7 @@ function HealthTab({ adminToken, showToast, confirmDelete, allIngredients, allTv
   const [editForm, setEditForm] = useState({})
   const [filterCat, setFilterCat] = useState('')
   const [searchQ, setSearchQ] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
 
   // 선택된 건강효능의 연결 데이터
   const [selId, setSelId] = useState(null)
@@ -472,11 +473,19 @@ function HealthTab({ adminToken, showToast, confirmDelete, allIngredients, allTv
 
   return (
     <div>
-      {/* ── 등록 폼 ── */}
+      {/* ── 등록 폼 (접기/펼치기) ── */}
       <div style={S.card}>
-        <div style={S.cardTitle}>💊 건강효능 등록</div>
-        <HealthFormFields f={form} setF={setForm} />
-        <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
+          onClick={() => setFormOpen(p => !p)}>
+          <div style={S.cardTitle}>💊 건강효능 등록</div>
+          <span style={{ fontSize:16, color:'#22c55e', lineHeight:1 }}>{formOpen ? '▲' : '▼'}</span>
+        </div>
+        {formOpen && (
+          <>
+            <HealthFormFields f={form} setF={setForm} />
+            <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+          </>
+        )}
       </div>
 
       {/* ── 필터 ── */}
@@ -557,6 +566,13 @@ function HealthTab({ adminToken, showToast, confirmDelete, allIngredients, allTv
                       )}
                     </div>
                     {h.description && <p style={{ fontSize:12, color:'#555', margin:'0 0 5px' }}>{h.description}</p>}
+                    {/* 연결 개수 뱃지 */}
+                    <div style={{ display:'flex', gap:4, marginBottom:4 }}>
+                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:20,
+                        background:'#f0fdf4', border:'1px solid #86efac', color:'#16a34a', fontWeight:700 }}>
+                        🥕 식재료 {(h.ingredients||[]).length}개
+                      </span>
+                    </div>
                     {/* 연령대 뱃지 */}
                     {(h.age_groups||[]).length > 0 && (
                       <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:4 }}>
@@ -667,6 +683,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
     age_groups:[], gender:'all', months:[]
   }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[] }
+  const [formOpen, setFormOpen] = useState(false)
 
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1009,39 +1026,46 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
 
   return (
     <div>
-      {/* ── 등록 폼 ── */}
+      {/* ── 등록 폼 (접기/펼치기) ── */}
       <div style={S.card}>
-        <div style={S.cardTitle}>🥕 식재료 등록</div>
-        <IngFormFields f={form} setF={setForm} />
-
-        {/* 지역·제철 미리 추가 */}
-        <div style={{ marginTop:14 }}>
-          {formRegions.length > 0 && (
-            <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:8 }}>
-              {formRegions.map(r => (
-                <div key={r._key} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                  background:'#eff6ff', borderRadius:7, padding:'7px 12px', fontSize:12, border:'1px solid #bfdbfe' }}>
-                  <span style={{ color:'#1e40af', fontWeight:700 }}>{r.label || `${categoryLabel(r.region)} ${r.months.join('·')}월`}</span>
-                  <button type="button" onClick={()=>setFormRegions(p=>p.filter(x=>x._key!==r._key))}
-                    style={{ padding:'1px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
-          <RegionAddBox
-            regionForm={formRegionForm} setRegionForm={setFormRegionForm}
-            ingName={form.display_name || form.name}
-            onAdd={() => {
-              if (!formRegionForm.region || !formRegionForm.months.length) { showToast('⚠️ 지역·월 필수'); return }
-              const label = formRegionForm.label || autoLabel(form.display_name||form.name, formRegionForm.region, formRegionForm.district)
-              setFormRegions(p => [...p, { ...formRegionForm, label, _key:Date.now() }])
-              setFormRegionForm(EMPTY_REGION)
-            }}
-          />
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
+          onClick={() => setFormOpen(p => !p)}>
+          <div style={S.cardTitle}>🥕 식재료 등록</div>
+          <span style={{ fontSize:16, color:'#a855f7', lineHeight:1 }}>{formOpen ? '▲' : '▼'}</span>
         </div>
-        <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>
-          {saving?'등록 중...':'+ 등록'}
-        </button>
+        {formOpen && (
+          <>
+            <IngFormFields f={form} setF={setForm} />
+            {/* 지역·제철 미리 추가 */}
+            <div style={{ marginTop:14 }}>
+              {formRegions.length > 0 && (
+                <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:8 }}>
+                  {formRegions.map(r => (
+                    <div key={r._key} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                      background:'#eff6ff', borderRadius:7, padding:'7px 12px', fontSize:12, border:'1px solid #bfdbfe' }}>
+                      <span style={{ color:'#1e40af', fontWeight:700 }}>{r.label || `${categoryLabel(r.region)} ${r.months.join('·')}월`}</span>
+                      <button type="button" onClick={()=>setFormRegions(p=>p.filter(x=>x._key!==r._key))}
+                        style={{ padding:'1px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <RegionAddBox
+                regionForm={formRegionForm} setRegionForm={setFormRegionForm}
+                ingName={form.display_name || form.name}
+                onAdd={() => {
+                  if (!formRegionForm.region || !formRegionForm.months.length) { showToast('⚠️ 지역·월 필수'); return }
+                  const label = formRegionForm.label || autoLabel(form.display_name||form.name, formRegionForm.region, formRegionForm.district)
+                  setFormRegions(p => [...p, { ...formRegionForm, label, _key:Date.now() }])
+                  setFormRegionForm(EMPTY_REGION)
+                }}
+              />
+            </div>
+            <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>
+              {saving?'등록 중...':'+ 등록'}
+            </button>
+          </>
+        )}
       </div>
 
       {/* ── 카테고리 탭 + 검색 ── */}
@@ -1174,6 +1198,13 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                       </div>
                     )}
                     {i.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:2 }}>🛒 쿠팡</div>}
+                    {/* 건강효능 연결 개수 뱃지 */}
+                    <div style={{ display:'flex', gap:4, marginTop:4 }}>
+                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:20,
+                        background:'#f0fdf4', border:'1px solid #86efac', color:'#16a34a', fontWeight:700 }}>
+                        💊 건강효능 {(i.health_benefits||[]).length}개
+                      </span>
+                    </div>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:3, flexShrink:0, marginLeft:6 }}>
                     <button onClick={e => {
@@ -1258,6 +1289,7 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [dayFilter, setDayFilter] = useState('전체')
+  const [formOpen, setFormOpen] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -1361,9 +1393,17 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
   return (
     <div>
       <div style={S.card}>
-        <div style={S.cardTitle}>📺 TV 프로그램 등록</div>
-        <ShowFields f={form} setF={setForm} />
-        <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
+          onClick={() => setFormOpen(p => !p)}>
+          <div style={S.cardTitle}>📺 TV 프로그램 등록</div>
+          <span style={{ fontSize:16, color:'#f59e0b', lineHeight:1 }}>{formOpen ? '▲' : '▼'}</span>
+        </div>
+        {formOpen && (
+          <>
+            <ShowFields f={form} setF={setForm} />
+            <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+          </>
+        )}
       </div>
 
       <div style={S.card}>
@@ -1437,6 +1477,7 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
 // ChefTab (간소화)
 // ══════════════════════════════════════════════════════════
 function ChefTab({ adminToken, showToast, confirmDelete }) {
+  const [formOpen, setFormOpen] = useState(false)
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name:'', role:'', specialty:'', description:'' })
@@ -1504,9 +1545,17 @@ function ChefTab({ adminToken, showToast, confirmDelete }) {
   return (
     <div>
       <div style={S.card}>
-        <div style={S.cardTitle}>👨‍🍳 셰프/출연자 등록</div>
-        <ChefFields f={form} setF={setForm} />
-        <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
+          onClick={() => setFormOpen(p => !p)}>
+          <div style={S.cardTitle}>👨‍🍳 셰프/출연자 등록</div>
+          <span style={{ fontSize:16, color:'#8b5cf6', lineHeight:1 }}>{formOpen ? '▲' : '▼'}</span>
+        </div>
+        {formOpen && (
+          <>
+            <ChefFields f={form} setF={setForm} />
+            <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+          </>
+        )}
       </div>
       <div style={S.card}>
         <div style={S.cardTitle}>📋 셰프 목록 ({list.length})</div>
@@ -1553,6 +1602,7 @@ const UTENSIL_USAGES     = ['가정용','영업용','공통']
 const UTENSIL_CUISINES   = ['한식','양식','중식','일식','공통']
 
 function UtensilTab({ adminToken, showToast, confirmDelete }) {
+  const [formOpen, setFormOpen] = useState(false)
   const EMPTY = { name:'', category:'', cuisine:'', usage:'', description:'', coupang_url:'' }
   const [list, setList]     = useState([])
   const [loading, setLoading] = useState(true)
@@ -1638,9 +1688,17 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
   return (
     <div>
       <div style={S.card}>
-        <div style={S.cardTitle}>🍳 조리기구 등록</div>
-        <UtensilFields f={form} setF={setForm} />
-        <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
+          onClick={() => setFormOpen(p => !p)}>
+          <div style={S.cardTitle}>🍳 조리기구 등록</div>
+          <span style={{ fontSize:16, color:'#0ea5e9', lineHeight:1 }}>{formOpen ? '▲' : '▼'}</span>
+        </div>
+        {formOpen && (
+          <>
+            <UtensilFields f={form} setF={setForm} />
+            <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+          </>
+        )}
       </div>
       <div style={S.card}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
@@ -1688,6 +1746,7 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
 // ══════════════════════════════════════════════════════════
 function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
   const EMPTY = { title:'', dish_id:'', show_id:'', chef_id:'', episode:'', aired_at:'', summary:'', source_url:'' }
+  const [formOpen, setFormOpen] = useState(false)
   const [list, setList]       = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm]       = useState(EMPTY)
@@ -1789,9 +1848,17 @@ function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
   return (
     <div>
       <div style={S.card}>
-        <div style={S.cardTitle}>📖 레시피 등록</div>
-        <RecipeFields f={form} setF={setForm} />
-        <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
+          onClick={() => setFormOpen(p => !p)}>
+          <div style={S.cardTitle}>📖 레시피 등록</div>
+          <span style={{ fontSize:16, color:'#f97316', lineHeight:1 }}>{formOpen ? '▲' : '▼'}</span>
+        </div>
+        {formOpen && (
+          <>
+            <RecipeFields f={form} setF={setForm} />
+            <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
+          </>
+        )}
       </div>
       <div style={S.card}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
