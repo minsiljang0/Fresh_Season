@@ -927,11 +927,182 @@ const baseHandler = createMcpHandler(
     //  맵 관리 데이터 조회/추가 툴 (건강효능·TV방송·셰프·식재료·요리·조리도구·레시피)
     // ══════════════════════════════════════════════════════════════
 
+    // ── 식재료 ↔ 건강효능 크로스 연결 툴 ─────────────────────────────────
+
+    server.registerTool(
+      'link_ingredient_benefit',
+      {
+        title: '식재료 ↔ 건강효능 연결',
+        description:
+          '식재료(ingredient_id)와 건강효능(benefit_id)을 중간 테이블(ingredient_health_benefits)에 연결한다. ' +
+          '이미 연결된 경우 중복 없이 무시(upsert). ' +
+          'list_ingredients / list_health_benefits 조회 시 서로의 데이터가 함께 반환된다.',
+        inputSchema: {
+          ingredient_id: z.string().describe('식재료 ID (list_ingredients로 조회 후 사용)'),
+          benefit_id:    z.string().describe('건강효능 ID (list_health_benefits로 조회 후 사용)'),
+        },
+        annotations: { destructiveHint: false, idempotentHint: true },
+      },
+      async ({ ingredient_id, benefit_id }) => {
+        const { error } = await supabase
+          .from('ingredient_health_benefits')
+          .upsert({ ingredient_id, benefit_id }, { onConflict: 'ingredient_id,benefit_id' })
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 연결 완료: 식재료(${ingredient_id}) ↔ 건강효능(${benefit_id})` }] }
+      }
+    )
+
+    server.registerTool(
+      'unlink_ingredient_benefit',
+      {
+        title: '식재료 ↔ 건강효능 연결 해제',
+        description: '식재료와 건강효능의 연결을 해제한다.',
+        inputSchema: {
+          ingredient_id: z.string().describe('식재료 ID'),
+          benefit_id:    z.string().describe('건강효능 ID'),
+        },
+        annotations: { destructiveHint: true },
+      },
+      async ({ ingredient_id, benefit_id }) => {
+        const { error } = await supabase
+          .from('ingredient_health_benefits')
+          .delete()
+          .eq('ingredient_id', ingredient_id)
+          .eq('benefit_id', benefit_id)
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 연결 해제: 식재료(${ingredient_id}) ↔ 건강효능(${benefit_id})` }] }
+      }
+    )
+
+    server.registerTool(
+      'get_ingredient_benefits',
+      {
+        title: '식재료의 건강효능 조회',
+        description: '특정 식재료에 연결된 건강효능 목록을 가져온다. 식재료 이름으로 검색 가능.',
+        inputSchema: {
+          ingredient_id:   z.string().optional().describe('식재료 ID'),
+          ingredient_name: z.string().optional().describe('식재료 이름 (부분 일치)'),
+        },
+      },
+      async ({ ingredient_id, ingredient_name }) => {
+        // 이름으로 ID 찾기
+        let ingId = ingredient_id
+        if (!ingId && ingredient_name) {
+          const { data: found } = await supabase
+            .from('ingredients').select('id,name').ilike('name', `%${ingredient_name}%`).limit(1).single()
+          if (!found) return { content: [{ type: 'text', text: `❌ 식재료를 찾을 수 없습니다: ${ingredient_name}` }], isError: true }
+          ingId = found.id
+        }
+        if (!ingId) return { content: [{ type: 'text', text: '❌ ingredient_id 또는 ingredient_name을 입력해주세요.' }], isError: true }
+
+        const { data: ing } = await supabase.from('ingredients').select('id,name').eq('id', ingId).single()
+        const { data, error } = await supabase
+          .from('ingredient_health_benefits')
+          .select('health_benefits(id,name,category,description)')
+          .eq('ingredient_id', ingId)
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        const benefits = (data || []).map(r => r.health_benefits).filter(Boolean)
+        return { content: [{ type: 'text', text: JSON.stringify({ ingredient: ing, health_benefits: benefits, count: benefits.length }, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'get_benefit_ingredients',
+      {
+        title: '건강효능의 식재료 조회',
+        description: '특정 건강효능에 연결된 식재료 목록을 가져온다. 건강효능 이름으로 검색 가능.',
+        inputSchema: {
+          benefit_id:   z.string().optional().describe('건강효능 ID'),
+          benefit_name: z.string().optional().describe('건강효능 이름 (부분 일치)'),
+        },
+      },
+      async ({ benefit_id, benefit_name }) => {
+        let hbId = benefit_id
+        if (!hbId && benefit_name) {
+          const { data: found } = await supabase
+            .from('health_benefits').select('id,name').ilike('name', `%${benefit_name}%`).limit(1).single()
+          if (!found) return { content: [{ type: 'text', text: `❌ 건강효능을 찾을 수 없습니다: ${benefit_name}` }], isError: true }
+          hbId = found.id
+        }
+        if (!hbId) return { content: [{ type: 'text', text: '❌ benefit_id 또는 benefit_name을 입력해주세요.' }], isError: true }
+
+        const { data: hb } = await supabase.from('health_benefits').select('id,name,category').eq('id', hbId).single()
+        const { data, error } = await supabase
+          .from('ingredient_health_benefits')
+          .select('ingredients(id,name,category,season_start,season_end)')
+          .eq('benefit_id', hbId)
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        const ingredients = (data || []).map(r => r.ingredients).filter(Boolean)
+        return { content: [{ type: 'text', text: JSON.stringify({ health_benefit: hb, ingredients, count: ingredients.length }, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'link_ingredients_bulk',
+      {
+        title: '식재료 ↔ 건강효능 일괄 연결',
+        description:
+          '식재료 1개에 건강효능 여러 개를 한 번에 연결하거나, 건강효능 1개에 식재료 여러 개를 한 번에 연결한다. ' +
+          '이미 연결된 항목은 중복 없이 무시(upsert).',
+        inputSchema: {
+          ingredient_id:  z.string().optional().describe('식재료 ID 1개 (이 경우 benefit_ids 필수)'),
+          benefit_ids:    z.array(z.string()).optional().describe('연결할 건강효능 ID 배열'),
+          benefit_id:     z.string().optional().describe('건강효능 ID 1개 (이 경우 ingredient_ids 필수)'),
+          ingredient_ids: z.array(z.string()).optional().describe('연결할 식재료 ID 배열'),
+        },
+        annotations: { destructiveHint: false, idempotentHint: true },
+      },
+      async ({ ingredient_id, benefit_ids, benefit_id, ingredient_ids }) => {
+        const rows = []
+        if (ingredient_id && benefit_ids?.length) {
+          benefit_ids.forEach(bid => rows.push({ ingredient_id, benefit_id: bid }))
+        } else if (benefit_id && ingredient_ids?.length) {
+          ingredient_ids.forEach(iid => rows.push({ ingredient_id: iid, benefit_id }))
+        } else {
+          return { content: [{ type: 'text', text: '❌ (ingredient_id + benefit_ids) 또는 (benefit_id + ingredient_ids) 조합으로 입력해주세요.' }], isError: true }
+        }
+        const { error } = await supabase
+          .from('ingredient_health_benefits')
+          .upsert(rows, { onConflict: 'ingredient_id,benefit_id' })
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 일괄 연결 완료: ${rows.length}건` }] }
+      }
+    )
+
+    server.registerTool(
+      'update_ingredient',
+      {
+        title: '식재료 정보 수정',
+        description: '등록된 식재료의 정보(이름·카테고리·설명·제철 시작·종료월)를 수정한다. slug로 대상 식재료를 찾고, 전달된 필드만 업데이트한다.',
+        inputSchema: {
+          id:           z.string().describe('식재료 ID (필수)'),
+          name:         z.string().optional().describe('식재료명'),
+          category:     z.string().optional().describe('카테고리 id (예: fish)'),
+          description:  z.string().optional().describe('설명'),
+          season_start: z.number().optional().describe('제철 시작 월 (1~12)'),
+          season_end:   z.number().optional().describe('제철 종료 월 (1~12)'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ id, name, category, description, season_start, season_end }) => {
+        const updates = {}
+        if (name         !== undefined) updates.name = name
+        if (category     !== undefined) updates.category = category
+        if (description  !== undefined) updates.description = description
+        if (season_start !== undefined) updates.season_start = season_start
+        if (season_end   !== undefined) updates.season_end = season_end
+        if (!Object.keys(updates).length) return { content: [{ type: 'text', text: '❌ 수정할 필드를 하나 이상 입력해주세요.' }], isError: true }
+        const { data, error } = await supabase.from('ingredients').update(updates).eq('id', id).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 식재료 수정 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
     server.registerTool(
       'list_health_benefits',
       {
         title: '건강효능 목록 조회',
-        description: 'DB에 등록된 건강효능(health_benefits) 목록을 가져온다. 카테고리·이름으로 필터 가능.',
+        description: 'DB에 등록된 건강효능(health_benefits) 목록을 가져온다. 카테고리·이름으로 필터 가능. 연결된 식재료 목록도 함께 반환.',
         inputSchema: {
           category: z.string().optional().describe('카테고리 필터 (예: 면역·항산화)'),
           q:        z.string().optional().describe('이름 검색어'),
@@ -939,12 +1110,29 @@ const baseHandler = createMcpHandler(
         },
       },
       async ({ category, q, limit = 50 }) => {
-        let query = supabase.from('health_benefits').select('id,name,category,description').order('name').limit(limit)
+        let query = supabase
+          .from('health_benefits')
+          .select(`
+            id, name, category, description,
+            ingredient_health_benefits (
+              ingredient_id,
+              ingredients ( id, name, category )
+            )
+          `)
+          .order('name')
+          .limit(limit)
         if (category) query = query.eq('category', category)
         if (q)        query = query.ilike('name', `%${q}%`)
         const { data, error } = await query
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
-        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+        const result = (data || []).map(hb => ({
+          id: hb.id,
+          name: hb.name,
+          category: hb.category,
+          description: hb.description,
+          ingredients: (hb.ingredient_health_benefits || []).map(r => r.ingredients).filter(Boolean),
+        }))
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
       }
     )
 
@@ -1053,7 +1241,7 @@ const baseHandler = createMcpHandler(
       'list_ingredients',
       {
         title: '식재료 목록 조회',
-        description: 'DB에 등록된 식재료 목록을 가져온다. 카테고리·이름으로 필터 가능.',
+        description: 'DB에 등록된 식재료 목록을 가져온다. 카테고리·이름으로 필터 가능. 연결된 건강효능 목록도 함께 반환.',
         inputSchema: {
           category: z.string().optional().describe('카테고리 id (예: fish, leaf_veg)'),
           q:        z.string().optional().describe('이름 검색어'),
@@ -1061,12 +1249,32 @@ const baseHandler = createMcpHandler(
         },
       },
       async ({ category, q, limit = 50 }) => {
-        let query = supabase.from('ingredients').select('id,name,category,description,season_start,season_end').order('name').limit(limit)
+        let query = supabase
+          .from('ingredients')
+          .select(`
+            id, name, category, description, season_start, season_end,
+            ingredient_health_benefits (
+              benefit_id,
+              health_benefits ( id, name, category )
+            )
+          `)
+          .order('name')
+          .limit(limit)
         if (category) query = query.eq('category', category)
         if (q)        query = query.ilike('name', `%${q}%`)
         const { data, error } = await query
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
-        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+        // 응답을 보기 좋게 정리
+        const result = (data || []).map(ing => ({
+          id: ing.id,
+          name: ing.name,
+          category: ing.category,
+          description: ing.description,
+          season_start: ing.season_start,
+          season_end: ing.season_end,
+          health_benefits: (ing.ingredient_health_benefits || []).map(r => r.health_benefits).filter(Boolean),
+        }))
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
       }
     )
 
