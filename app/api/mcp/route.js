@@ -1697,6 +1697,141 @@ const baseHandler = createMcpHandler(
       }
     )
 
+    // ── Supabase 직접 조회·수정 툴 ──────────────────────────────────────
+
+    server.registerTool(
+      'list_tables',
+      {
+        title: 'DB 테이블 목록 조회',
+        description: 'Supabase DB에 있는 테이블 목록과 각 테이블의 컬럼 정보를 조회한다. 어떤 테이블이 있는지 모를 때 가장 먼저 호출한다.',
+        inputSchema: {
+          schema: z.string().optional().describe('스키마 이름. 기본값: public'),
+        },
+      },
+      async ({ schema = 'public' }) => {
+        const { data, error } = await supabase
+          .rpc('get_tables_info', { schema_name: schema })
+          .select()
+        if (error) {
+          // rpc 없으면 information_schema로 fallback
+          const { data: d2, error: e2 } = await supabase
+            .from('information_schema.tables')
+            .select('table_name')
+            .eq('table_schema', schema)
+            .eq('table_type', 'BASE TABLE')
+            .order('table_name')
+          if (e2) {
+            // 최후 수단: SQL로 직접
+            const { data: d3, error: e3 } = await supabase.rpc('run_sql_query', {
+              sql: `SELECT table_name FROM information_schema.tables WHERE table_schema = '${schema}' AND table_type = 'BASE TABLE' ORDER BY table_name`
+            })
+            if (e3) return { content: [{ type: 'text', text: `❌ ${e3.message}` }], isError: true }
+            return { content: [{ type: 'text', text: JSON.stringify(d3, null, 2) }] }
+          }
+          const names = (d2 || []).map(r => r.table_name).join('\n')
+          return { content: [{ type: 'text', text: `테이블 목록 (${schema} 스키마):\n${names}` }] }
+        }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'get_rows',
+      {
+        title: 'DB 테이블 데이터 조회',
+        description: '특정 테이블의 행을 조회한다. 필터·정렬·페이징 지원. 데이터 확인이나 수정 전 ID 조회에 사용.',
+        inputSchema: {
+          table:   z.string().describe('테이블 이름. 예: ingredients, blog_posts, keyword_stats'),
+          select:  z.string().optional().describe('가져올 컬럼 (쉼표 구분). 비우면 전체(*). 예: id,name,created_at'),
+          filter:  z.record(z.string()).optional().describe('eq 필터. 예: {"status":"published","category":"gangwon"}'),
+          search_column: z.string().optional().describe('텍스트 검색할 컬럼. search_value와 함께 사용'),
+          search_value:  z.string().optional().describe('텍스트 검색어 (ilike, 부분일치)'),
+          order_by: z.string().optional().describe('정렬 기준 컬럼. 기본: created_at'),
+          ascending: z.boolean().optional().describe('오름차순 여부. 기본: false (최신순)'),
+          limit:   z.number().int().min(1).max(500).optional().describe('가져올 행 수. 기본: 50, 최대: 500'),
+          offset:  z.number().int().min(0).optional().describe('건너뛸 행 수 (페이징). 기본: 0'),
+        },
+      },
+      async ({ table, select = '*', filter, search_column, search_value, order_by = 'created_at', ascending = false, limit = 50, offset = 0 }) => {
+        let q = supabase.from(table).select(select)
+        if (filter) {
+          for (const [col, val] of Object.entries(filter)) q = q.eq(col, val)
+        }
+        if (search_column && search_value) q = q.ilike(search_column, `%${search_value}%`)
+        q = q.order(order_by, { ascending }).range(offset, offset + limit - 1)
+        const { data, error, count } = await q
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        if (!data?.length) return { content: [{ type: 'text', text: `(결과 없음) 테이블: ${table}` }] }
+        return { content: [{ type: 'text', text: `[${table}] ${data.length}행 반환 (offset:${offset})\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'upsert_row',
+      {
+        title: 'DB 행 추가·수정',
+        description: '테이블에 행을 추가하거나 수정한다. id를 포함하면 수정(upsert), 없으면 새 행 추가. 수정 전 get_rows로 기존 데이터를 먼저 확인할 것.',
+        inputSchema: {
+          table: z.string().describe('테이블 이름. 예: ingredients, blog_posts'),
+          row:   z.record(z.any()).describe('추가·수정할 데이터 객체. 예: {"id":"abc","name":"고사리","status":"active"}'),
+        },
+        annotations: { destructiveHint: true },
+      },
+      async ({ table, row }) => {
+        const { data, error } = await supabase
+          .from(table)
+          .upsert([row], { onConflict: 'id' })
+          .select()
+          .single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ [${table}] upsert 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'delete_row',
+      {
+        title: 'DB 행 삭제',
+        description: '테이블에서 특정 id의 행을 삭제한다. 삭제 전 반드시 get_rows로 대상을 먼저 확인할 것. 되돌릴 수 없음.',
+        inputSchema: {
+          table: z.string().describe('테이블 이름'),
+          id:    z.string().describe('삭제할 행의 id'),
+        },
+        annotations: { destructiveHint: true },
+      },
+      async ({ table, id }) => {
+        // 삭제 전 존재 확인
+        const { data: existing } = await supabase.from(table).select('id').eq('id', id).maybeSingle()
+        if (!existing) return { content: [{ type: 'text', text: `❌ [${table}] id="${id}" 행을 찾을 수 없음` }], isError: true }
+        const { error } = await supabase.from(table).delete().eq('id', id)
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ [${table}] id="${id}" 삭제 완료` }] }
+      }
+    )
+
+    server.registerTool(
+      'run_sql',
+      {
+        title: 'SQL 직접 실행',
+        description: '복잡한 조회나 수정이 필요할 때 SQL을 직접 실행한다. SELECT/UPDATE/DELETE 모두 가능. 위험한 쿼리(DROP, TRUNCATE 등)는 실행 전 사용자에게 반드시 확인.',
+        inputSchema: {
+          sql: z.string().describe('실행할 SQL 쿼리. 예: SELECT id, name FROM ingredients WHERE season_start <= 7 ORDER BY name LIMIT 20'),
+        },
+        annotations: { destructiveHint: true },
+      },
+      async ({ sql }) => {
+        const upper = sql.trim().toUpperCase()
+        const dangerous = ['DROP ', 'TRUNCATE ', 'ALTER TABLE', 'CREATE TABLE', 'GRANT ', 'REVOKE ']
+        if (dangerous.some(kw => upper.startsWith(kw) || upper.includes('\n' + kw))) {
+          return { content: [{ type: 'text', text: `⛔ 위험한 DDL/권한 쿼리는 차단됩니다: ${sql.slice(0, 80)}` }], isError: true }
+        }
+        const { data, error } = await supabase.rpc('run_sql_query', { sql })
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}\n\nSQL: ${sql}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ SQL 실행 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+
   },
   {},
   { basePath: '/api', maxDuration: 30, verboseLogs: true }
