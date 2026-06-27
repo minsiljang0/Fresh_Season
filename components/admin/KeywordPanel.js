@@ -42,7 +42,7 @@ function FeatureIdeasTab({ token, showToast }) {
   const STATUS_LABELS = {
     proposed: { label: '검토 중', color: '#facc15', bg: '#1c1c00' },
     building:  { label: '개발 중', color: '#60a5fa', bg: '#0f1f3d' },
-    done:      { label: '완료',   color: '#4ade80', bg: '#052e16' },
+    done:      { label: '완료',   color: '#16a34a', bg: '#f0fdf4' },
     rejected:  { label: '보류',   color: '#71717a', bg: '#f5f9f5' },
   }
 
@@ -903,7 +903,7 @@ export default function KeywordPanel({ token }) {
                     <span style={{ fontSize: 15, fontWeight: 700, color: '#0f1f0f', minWidth: 120 }}>{row.label}</span>
                     <div>
                       <div style={{ fontSize: 13, color: kwNeedsUpdate ? '#dc2626' : '#4b6e4b' }}>
-                        네이버 검색일: <b style={{ color: kwNeedsUpdate ? '#fca5a5' : '#d4d4d8' }}>{formatDate(row.collected_at)}</b>
+                        네이버 검색일: <b style={{ color: kwNeedsUpdate ? '#dc2626' : '#0f1f0f' }}>{formatDate(row.collected_at)}</b>
                         {row.collected_at && !kwNeedsUpdate && (() => {
                           const nextDate = new Date(new Date(row.collected_at).getTime() + 30 * 86400000)
                           const daysLeft = Math.ceil((nextDate.getTime() - Date.now()) / 86400000)
@@ -920,7 +920,7 @@ export default function KeywordPanel({ token }) {
                           키워드 <b style={{ color: '#16a34a', fontSize: 13 }}>{fmt(row.count)}개</b>
                           {row.null_doc_count > 0
                             ? <span style={{ color: '#f87171', marginLeft: 6 }}>· 문서수 미수집 <b>{fmt(row.null_doc_count)}개</b> 남음</span>
-                            : <span style={{ color: '#4ade80', marginLeft: 6 }}>· 문서수 완료 ✓</span>
+                            : <span style={{ color: '#16a34a', marginLeft: 6 }}>· 문서수 완료 ✓</span>
                           }
                           {' · 클릭해서 TOP 50 보기'}
                         </div>
@@ -939,9 +939,9 @@ export default function KeywordPanel({ token }) {
                       disabled={isLoadingKw || !kwNeedsUpdate}
                       title={kwNeedsUpdate ? '검색량 갱신' : `수집 완료 (30일마다 갱신)`}
                       style={{
-                        background: isLoadingKw ? '#1d4ed8' : kwNeedsUpdate ? '#2563eb' : '#1e293b',
-                        color: kwNeedsUpdate ? '#fff' : '#475569',
-                        border: `1px solid ${kwNeedsUpdate ? '#3b82f6' : '#334155'}`,
+                        background: isLoadingKw ? '#1d4ed8' : kwNeedsUpdate ? '#2563eb' : '#f5f9f5',
+                        color: kwNeedsUpdate ? '#fff' : '#4b6e4b',
+                        border: `1px solid ${kwNeedsUpdate ? '#3b82f6' : '#d1e8d1'}`,
                         borderRadius: 8, padding: '7px 13px',
                         fontSize: 12, fontWeight: 700,
                         cursor: isLoadingKw ? 'wait' : kwNeedsUpdate ? 'pointer' : 'default',
@@ -959,7 +959,7 @@ export default function KeywordPanel({ token }) {
                         disabled={isLoadingDoc || !docNeedsUpdate}
                         title={docNeedsUpdate ? `미수집 ${row.null_doc_count}개 문서수 수집` : '문서수 수집 완료'}
                         style={{
-                          background: isLoadingDoc ? '#15803d' : docNeedsUpdate ? '#16a34a' : '#0f2318',
+                          background: isLoadingDoc ? '#15803d' : docNeedsUpdate ? '#16a34a' : '#f5f9f5',
                           color: docNeedsUpdate ? '#fff' : '#4b6e4b',
                           border: `1px solid ${docNeedsUpdate ? '#16a34a' : '#d1e8d1'}`,
                           borderRadius: 8, padding: '7px 13px',
@@ -1071,7 +1071,7 @@ export default function KeywordPanel({ token }) {
           {allKwLoading ? (
             <div style={{ color: '#71717a', fontSize: 13, padding: 20, textAlign: 'center' }}>로딩 중...</div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#f5f9f5', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #d1e8d1' }}>
               <thead>
                 <tr>
                   <th style={S.th}>순위</th>
@@ -1140,7 +1140,7 @@ export default function KeywordPanel({ token }) {
               이 경쟁도에 해당하는 키워드가 없어요.
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#f5f9f5', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #d1e8d1' }}>
               <thead>
                 <tr>
                   <th style={S.th}>순위</th>
@@ -1193,7 +1193,7 @@ export default function KeywordPanel({ token }) {
               <span style={{ fontSize: 12, marginTop: 6, display: 'block' }}>수집 현황 / 전체 순위 / 황금키워드 탭에서 ☆ 버튼으로 찜해두세요!</span>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#f5f9f5', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #d1e8d1' }}>
               <thead>
                 <tr>
                   <th style={S.th}>그룹</th>
@@ -1219,7 +1219,7 @@ export default function KeywordPanel({ token }) {
                     <td style={{ ...S.td, fontSize: 12, color: '#374151', maxWidth: 200 }}>{item.memo || '-'}</td>
                     <td style={{ ...S.td, textAlign: 'center' }}>
                       <button onClick={() => handleMarkUsed(item)} style={{
-                        background: '#16a34a22', border: '1px solid #16a34a55', color: '#4ade80',
+                        background: '#f0fdf4', border: '1px solid #86efac', color: '#16a34a',
                         borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                         fontFamily: "'Outfit', sans-serif",
                       }}>✅ 사용함</button>
@@ -1324,7 +1324,7 @@ export default function KeywordPanel({ token }) {
               <span style={{ fontSize: 12, marginTop: 6, display: 'block' }}>찜한 키워드 탭의 "✅ 사용함" 버튼으로 기록해두세요!</span>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#f5f9f5', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #d1e8d1' }}>
               <thead>
                 <tr>
                   <th style={S.th}>사용일</th>
@@ -1342,7 +1342,7 @@ export default function KeywordPanel({ token }) {
                     <td style={{ ...S.td, fontSize: 12, color: '#71717a' }}>{item.tool_id}</td>
                     <td style={{ ...S.td, fontWeight: 700, color: '#0f1f0f' }}>{item.keyword}</td>
                     <td style={{ ...S.tdNum, color: '#16a34a' }}>{fmt(item.total)}</td>
-                    <td style={{ ...S.td, fontSize: 13, color: '#d4d4d8' }}>
+                    <td style={{ ...S.td, fontSize: 13, color: '#374151' }}>
                       {item.used_in_title || '-'}
                       {item.used_in_slug && (
                         <div style={{ fontSize: 11, color: '#4b6e4b' }}>/blog/{item.used_in_slug}</div>

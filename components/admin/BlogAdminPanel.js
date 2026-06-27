@@ -24,7 +24,7 @@ function slugify(text) {
 // ── SEO 체크리스트 데이터 (BlogAdmin TOOL_PANELS 그대로)
 const TOOL_PANELS = {
   adsense: {
-    label:'💰 애드센스', color:'#d97706', border:'#fbbf24', bg:'#1a1400', activeBg:'#2a1e00',
+    label:'💰 애드센스', color:'#d97706', border:'#fbbf24', bg:'#fffbeb', activeBg:'#fef9c3',
     link:'https://www.google.com/adsense', linkLabel:'애드센스 대시보드 →',
     sections:[
       { title:'🚀 최초 셋팅 (한 번만)', color:'#fbbf24', bg:'#2a1e00', border:'#78500a',
@@ -34,7 +34,7 @@ const TOOL_PANELS = {
           { done:false, text:'자동 광고 ON 또는 광고 단위 수동 생성', desc:'자동 광고는 구글이 최적 위치 자동 배치' },
           { done:false, text:'광고 코드를 <head> 또는 본문에 삽입', desc:'_app.js의 <Head>에 Script 컴포넌트로 로드' },
         ]},
-      { title:'📋 주기적으로 확인', color:'#f59e0b', bg:'#1a1200', border:'#5a3a00',
+      { title:'📋 주기적으로 확인', color:'#f59e0b', bg:'#fffbeb', border:'#fde68a',
         items:[
           { done: false, text: '[주간] 수익 및 RPM(페이지 1000회당 수익) 확인', desc: '대시보드 → 보고서에서 날짜별 수익 추이 체크' },
           { done:false, text:'[수시] 정책 위반 경고 확인', desc:'알림 탭에 빨간 경고 뜨면 즉시 조치' },
@@ -44,17 +44,17 @@ const TOOL_PANELS = {
     ]
   },
   searchconsole: {
-    label:'🔍 서치콘솔', color:'#16a34a', border:'#86efac', bg:'#0a1a0a', activeBg:'#0f2a0f',
+    label:'🔍 서치콘솔', color:'#16a34a', border:'#86efac', bg:'#f0fdf4', activeBg:'#dcfce7',
     link:'https://search.google.com/search-console', linkLabel:'Search Console →',
     sections:[
-      { title:'🚀 최초 셋팅', color:'#4ade80', bg:'#0f2a0f', border:'#166534',
+      { title:'🚀 최초 셋팅', color:'#4ade80', bg:'#f0fdf4', border:'#86efac',
         items:[
           { done:false, text:'속성 추가 및 소유권 인증', desc:'URL 접두사 방식 권장' },
           { done:false, text:'sitemap.xml 제출', desc:'설정 → Sitemaps → sitemap.xml 제출' },
           { done:false, text:'robots.txt 확인', desc:'크롤링 차단 규칙 없는지 확인' },
           { done:false, text:'Google Analytics 연결', desc:'설정 → 연결 → Analytics 연동' },
         ]},
-      { title:'📋 주기적으로 확인', color:'#22c55e', bg:'#0a1a0a', border:'#14532d',
+      { title:'📋 주기적으로 확인', color:'#22c55e', bg:'#f0fdf4', border:'#86efac',
         items:[
           { done: false, text: '[월간] 검색 성과 (클릭수·노출수·CTR) 확인', desc: '어떤 키워드로 유입되는지 확인 — CTR 낮은 글은 제목/메타설명 수정 검토' },
           { done:false, text:'[월간] 색인 생성 현황 확인', desc:'색인이 생성되지 않은 페이지 원인 파악' },
@@ -66,10 +66,10 @@ const TOOL_PANELS = {
     ]
   },
   analytics: {
-    label:'📊 애널리틱스', color:'#2563eb', border:'#93c5fd', bg:'#0a0f1a', activeBg:'#0d1525',
+    label:'📊 애널리틱스', color:'#2563eb', border:'#93c5fd', bg:'#eff6ff', activeBg:'#dbeafe',
     link:'https://analytics.google.com', linkLabel:'Google Analytics →',
     sections:[
-      { title:'🚀 최초 셋팅', color:'#60a5fa', bg:'#0d1525', border:'#1e3a8a',
+      { title:'🚀 최초 셋팅', color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe',
         items:[
           { done:false, text:'GA4 속성 생성 및 데이터 스트림 추가', desc:'관리 → 속성 만들기 → 웹 스트림 추가 → 측정 ID(G-XXXXXXXX) 발급' },
           { done:false, text:'측정 ID를 사이트 <head>에 삽입', desc:'_app.js에 Script 컴포넌트로 gtag.js 로드' },
@@ -78,7 +78,7 @@ const TOOL_PANELS = {
           { done:false, text:'목표/전환 이벤트 설정', desc:'뉴스레터 구독, 문의하기 클릭 등 중요 액션을 전환으로 표시' },
           { done:false, text:'주간/월간 리포트 이메일 자동 발송 설정', desc:'GA4 → 리포트 → 공유 → 이메일 예약 전송 설정' },
         ]},
-      { title:'📋 주기적으로 확인', color:'#3b82f6', bg:'#0a0f1a', border:'#1e3a8a',
+      { title:'📋 주기적으로 확인', color:'#3b82f6', bg:'#eff6ff', border:'#bfdbfe',
         items:[
           { done:false, text:'[수시] 실시간 사용자 수 확인', desc:'새 글 발행 직후 트래픽 반응 체크' },
           { done:false, text:'[주간] 유입 채널별 트래픽 분석', desc:'획득 → 트래픽 획득' },
@@ -90,10 +90,10 @@ const TOOL_PANELS = {
     ]
   },
   ogtag: {
-    label:'🔗 OG태그', color:'#7c3aed', border:'#ddd6fe', bg:'#0f0a1a', activeBg:'#150f25',
+    label:'🔗 OG태그', color:'#7c3aed', border:'#ddd6fe', bg:'#faf5ff', activeBg:'#ede9fe',
     link:'https://developers.facebook.com/tools/debug/', linkLabel:'OG 태그 검사기 →',
     sections:[
-      { title:'🚀 최초 셋팅', color:'#a78bfa', bg:'#150f25', border:'#4c1d95',
+      { title:'🚀 최초 셋팅', color:'#a78bfa', bg:'#faf5ff', border:'#ddd6fe',
         items:[
           { done:false, text:'og:title 추가', desc:'<meta property="og:title" content="사이트 제목" />' },
           { done:false, text:'og:description 추가 (80~160자)', desc:'<meta property="og:description" content="사이트 설명..." />' },
@@ -102,7 +102,7 @@ const TOOL_PANELS = {
           { done:false, text:'Twitter Card 태그 추가', desc:'<meta name="twitter:card" content="summary_large_image" />' },
           { done:false, text:'블로그 글 페이지에도 동적 OG 태그 적용', desc:'각 글의 제목/요약/커버이미지가 OG로 출력되는지 확인' },
         ]},
-      { title:'📋 주기적으로 확인', color:'#8b5cf6', bg:'#0f0a1a', border:'#3b1d8a',
+      { title:'📋 주기적으로 확인', color:'#8b5cf6', bg:'#faf5ff', border:'#ddd6fe',
         items:[
           { done:false, text:'Facebook 공유 디버거로 OG 태그 확인', desc:'캐시 새로고침도 여기서 가능' },
           { done:false, text:'카카오톡 공유 미리보기 확인', desc:'카카오톡에서 링크 공유 시 썸네일·제목 테스트' },
@@ -111,10 +111,10 @@ const TOOL_PANELS = {
     ]
   },
   seo: {
-    label:'🚀 SEO', color:'#0891b2', border:'#a5f3fc', bg:'#001a1f', activeBg:'#002530',
+    label:'🚀 SEO', color:'#0891b2', border:'#a5f3fc', bg:'#f0f9ff', activeBg:'#e0f2fe',
     link:'https://search.google.com/search-console', linkLabel:'서치콘솔 →',
     sections:[
-      { title:'🏗️ 기술적 SEO', color:'#22d3ee', bg:'#002530', border:'#0e7490',
+      { title:'🏗️ 기술적 SEO', color:'#22d3ee', bg:'#f0f9ff', border:'#bae6fd',
         items:[
           { done:false, text:'sitemap.xml 자동 생성 및 제출', desc:'새 글 발행 시 sitemap 자동 갱신 확인' },
           { done:false, text:'robots.txt 정상 설정 확인', desc:'/admin은 Disallow, /blog는 Allow' },
@@ -123,7 +123,7 @@ const TOOL_PANELS = {
           { done:false, text:'모바일 반응형 확인', desc:'구글은 모바일 우선 색인' },
           { done: false, text: 'Core Web Vitals 점수 확인', desc: '서치콘솔 → 경험 → Core Web Vitals — LCP·INP·CLS 점수 확인 및 개선' },
         ]},
-      { title:'✍️ 글 작성 시 매번 체크', color:'#06b6d4', bg:'#001a1f', border:'#155e75',
+      { title:'✍️ 글 작성 시 매번 체크', color:'#06b6d4', bg:'#f0f9ff', border:'#bae6fd',
         items:[
           { done:false, text:'핵심 키워드를 제목(H1)에 포함', desc:'검색자가 실제로 치는 단어를 제목 앞쪽에 배치' },
           { done:false, text:'메타 description 작성 (80~160자)', desc:'키워드 포함 + 클릭 유도 문구' },
@@ -136,22 +136,22 @@ const TOOL_PANELS = {
     ]
   },
   searchreg: {
-    label:'🌐 검색엔진 등록', color:'#059669', border:'#6ee7b7', bg:'#001a0a', activeBg:'#002510',
+    label:'🌐 검색엔진 등록', color:'#059669', border:'#6ee7b7', bg:'#f0fdf4', activeBg:'#dcfce7',
     link:'https://searchadvisor.naver.com', linkLabel:'네이버 서치어드바이저 →',
     sections:[
-      { title:'필수 등록', color:'#34d399', bg:'#002510', border:'#065f46',
+      { title:'필수 등록', color:'#34d399', bg:'#f0fdf4', border:'#6ee7b7',
         items:[
           { done:false, text:'구글 서치콘솔 등록', desc:'소유권 인증 · sitemap 제출 · GA4 연결' },
           { done:false, text:'네이버 서치어드바이저 등록', desc:'소유권 인증 · sitemap 제출' },
           { done:false, text:'빙 웹마스터 도구 등록', desc:'구글 서치콘솔에서 가져오기 가능' },
         ]},
-      { title:'선택 등록', color:'#10b981', bg:'#001a0a', border:'#064e3b',
+      { title:'선택 등록', color:'#10b981', bg:'#f0fdf4', border:'#6ee7b7',
         items:[
           { done:false, text:'다음(카카오) 검색 등록', desc:'사이트 등록 신청' },
           { done:false, text:'줌(ZUM) 등록', desc:'구글·다음 등록 시 자동 수집' },
           { done:false, text:'얀덱스 웹마스터 등록', desc:'소유권 인증 · sitemap 제출' },
         ]},
-      { title:'🔧 등록 후 해야 할 것', color:'#10b981', bg:'#001a0a', border:'#064e3b',
+      { title:'🔧 등록 후 해야 할 것', color:'#10b981', bg:'#f0fdf4', border:'#6ee7b7',
         items:[
           { done:false, text:'각 검색엔진에 sitemap.xml 제출', desc:'구글·네이버·빙·얀덱스 모두 제출' },
           { done:false, text:'소유권 인증 메타태그 삽입', desc:'구글·네이버 인증 메타태그 <head>에 추가' },
@@ -164,7 +164,7 @@ const TOOL_PANELS = {
 // ── 루틴 체크리스트 데이터
 const ROUTINES = {
   publish: {
-    label:'📝 글 발행할 때마다', color:'#7c3aed', bg:'#0f0a1a', border:'#4c1d95',
+    label:'📝 글 발행할 때마다', color:'#7c3aed', bg:'#faf5ff', border:'#ddd6fe',
     items:[
       { text:'서치콘솔 URL 색인 요청', link:'https://search.google.com/search-console', desc:'URL 검사 → 색인 생성 요청' },
       { text: '실시간 트래픽 확인', link: 'https://analytics.google.com', desc: '발행 후 GA4 실시간 탭 확인' },
@@ -172,7 +172,7 @@ const ROUTINES = {
     ]
   },
   weekly: {
-    label:'📅 매주 토요일 확인', color:'#0891b2', bg:'#001a1f', border:'#0e7490',
+    label:'📅 매주 토요일 확인', color:'#0891b2', bg:'#f0f9ff', border:'#bae6fd',
     items:[
       { text:'애드센스 수익/RPM 확인', link:'https://www.google.com/adsense', desc:'보고서 → 날짜별 수익 추이' },
       { text:'애드센스 정책 위반 경고 확인', link:'https://www.google.com/adsense', desc:'알림 탭 빨간 경고 확인' },
@@ -182,7 +182,7 @@ const ROUTINES = {
     ]
   },
   monthly: {
-    label:'🗓️ 매월 마지막 토요일', color:'#d97706', bg:'#1a1200', border:'#78500a',
+    label:'🗓️ 매월 마지막 토요일', color:'#d97706', bg:'#fffbeb', border:'#fde68a',
     items:[
       { text:'애드센스 광고 위치 CTR 분석', link:'https://www.google.com/adsense', desc:'어떤 위치 광고가 잘 클릭되는지 파악' },
       { text: '애드센스 모바일 광고 노출 확인', link: 'https://www.google.com/adsense', desc: '반응형 광고 단위 정상 작동 여부' },
@@ -200,13 +200,13 @@ const ROUTINES = {
 const DEFAULT_CATS = DEFAULT_CATEGORIES
 
 const S = {
-  page: { minHeight:'100vh', background:'#0c0c0c', fontFamily:"'Outfit', sans-serif", color:'#f0f0f0', paddingBottom:60 },
+  page: { minHeight:'100vh', background:'#f5f9f5', fontFamily:"'Outfit', sans-serif", color:'#0f1f0f', paddingBottom:60 },
   wrap: { maxWidth:1100, margin:'0 auto', padding:'0 20px' },
-  card: { background:'#161616', border:'1px solid #2a2a2a', borderRadius:14, padding:24, marginBottom:20 },
-  input: { background:'#1f1f1f', border:'1px solid #333', borderRadius:8, padding:'10px 14px', color:'#f0f0f0', fontFamily:"'Outfit', sans-serif", fontSize:14, outline:'none', width:'100%', boxSizing:'border-box' },
-  textarea: { background:'#1f1f1f', border:'1px solid #333', borderRadius:8, padding:'10px 14px', color:'#ccc', fontFamily:'monospace', fontSize:13, outline:'none', width:'100%', boxSizing:'border-box', resize:'vertical', lineHeight:1.7 },
-  btn: (color='#22c55e') => ({ background:color, color:'#fff', border:'none', borderRadius:9, padding:'10px 20px', fontFamily:"'Outfit', sans-serif", fontSize:14, fontWeight:700, cursor:'pointer' }),
-  label: { color:'#888', fontSize:12, marginBottom:5, display:'block', fontWeight:600 },
+  card: { background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:24, marginBottom:20 },
+  input: { background:'#f5f9f5', border:'1px solid #d1e8d1', borderRadius:8, padding:'10px 14px', color:'#0f1f0f', fontFamily:"'Outfit', sans-serif", fontSize:14, outline:'none', width:'100%', boxSizing:'border-box' },
+  textarea: { background:'#f5f9f5', border:'1px solid #d1e8d1', borderRadius:8, padding:'10px 14px', color:'#0f1f0f', fontFamily:'monospace', fontSize:13, outline:'none', width:'100%', boxSizing:'border-box', resize:'vertical', lineHeight:1.7 },
+  btn: (color='#16a34a') => ({ background:color, color:'#fff', border:'none', borderRadius:9, padding:'10px 20px', fontFamily:"'Outfit', sans-serif", fontSize:14, fontWeight:700, cursor:'pointer' }),
+  label: { color:'#4b6e4b', fontSize:12, marginBottom:5, display:'block', fontWeight:600 },
 }
 
 function Toggle({ value, onChange }) {
@@ -406,12 +406,12 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
       `}</style>
 
       {/* 헤더 */}
-      <div style={{ background:'#161616', borderBottom:'1px solid #2a2a2a', padding:'16px 0', marginBottom: 0 }}>
+      <div style={{ background:'#fff', borderBottom:'1px solid #d1e8d1', padding:'16px 0', marginBottom: 0 }}>
         <div style={{ ...S.wrap, maxWidth: 'none', padding: '0 28px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             {view==='write' && (
               <>
-                <button onClick={()=>{setView('list');setEditId(null);setForm(emptyForm)}} style={{ background:'none', border:'none', cursor:'pointer', color:'#888', fontSize:14, fontFamily:"'Outfit', sans-serif" }}>← 목록</button>
+                <button onClick={()=>{setView('list');setEditId(null);setForm(emptyForm)}} style={{ background:'none', border:'none', cursor:'pointer', color:'#4b6e4b', fontSize:14, fontFamily:"'Outfit', sans-serif" }}>← 목록</button>
                 <span style={{ color:'#333' }}>|</span>
               </>
             )}
@@ -427,11 +427,11 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                   {preview ? '✏️ 편집' : '👁 미리보기'}
                 </button>
                 <button onClick={()=>handleSave('draft')} disabled={loading} style={{ ...S.btn('#555'), padding:'8px 14px', fontSize:13 }}>💾 임시저장</button>
-                <div style={{ display:'flex', alignItems:'center', gap:6, background:'#0d1b2a', border:'1.5px solid #1e3a5f', borderRadius:8, padding:'4px 10px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, background:'#eff6ff', border:'1.5px solid #93c5fd', borderRadius:8, padding:'4px 10px' }}>
                   <input type="datetime-local" value={form.scheduledAt} onChange={e=>setForm(v=>({...v,scheduledAt:e.target.value}))}
                     min={new Date(Date.now()+60000).toISOString().slice(0,16)}
-                    style={{ border:'none', background:'transparent', fontSize:12, color:'#60a5fa', fontFamily:"'Outfit', sans-serif", outline:'none', cursor:'pointer' }} />
-                  <button onClick={()=>handleSave('scheduled')} disabled={loading} style={{ ...S.btn('#3b82f6'), padding:'5px 10px', fontSize:12, whiteSpace:'nowrap' }}>⏰ 예약</button>
+                    style={{ border:'none', background:'transparent', fontSize:12, color:'#1d4ed8', fontFamily:"'Outfit', sans-serif", outline:'none', cursor:'pointer' }} />
+                  <button onClick={()=>handleSave('scheduled')} disabled={loading} style={{ ...S.btn('#2563eb'), padding:'5px 10px', fontSize:12, whiteSpace:'nowrap' }}>⏰ 예약</button>
                 </div>
                 <button onClick={()=>handleSave('published')} disabled={loading} style={{ ...S.btn(), padding:'8px 20px', fontSize:14 }}>
                   {loading ? '저장 중...' : '🚀 발행'}
@@ -443,7 +443,7 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
       </div>
 
       <div style={{ ...S.wrap, maxWidth: 'none', padding: '28px 0 0' }}>
-        {msg && <div style={{ padding:'12px 16px', borderRadius:10, marginBottom:16, fontSize:14, background:msg.startsWith('🚀')||msg.startsWith('💾')||msg.startsWith('⏰')?'#0a2a0a':'#0a2a0a', color:msg.startsWith('🚀')||msg.startsWith('💾')||msg.startsWith('⏰')?'#4ade80':'#f87171' }}>{msg}</div>}
+        {msg && <div style={{ padding:'12px 16px', borderRadius:10, marginBottom:16, fontSize:14, background:msg.startsWith('🚀')||msg.startsWith('💾')||msg.startsWith('⏰')?'#f0fdf4':'#fef2f2', color:msg.startsWith('🚀')||msg.startsWith('💾')||msg.startsWith('⏰')?'#16a34a':'#dc2626' }}>{msg}</div>}
 
         {/* ── 글쓰기 뷰 */}
         {view === 'write' && (
@@ -461,7 +461,7 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                 </div>
                 <div>
                   <label style={S.label}>카테고리</label>
-                  <select value={form.category} onChange={e=>setForm(v=>({...v,category:e.target.value}))} style={{ ...S.input, background:'#1f1f1f' }}>
+                  <select value={form.category} onChange={e=>setForm(v=>({...v,category:e.target.value}))} style={{ ...S.input, background:'#f5f9f5' }}>
                     {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
@@ -515,8 +515,8 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
           <>
             {/* SEO 체크리스트 패널 */}
             <div style={{ marginBottom:16 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', padding:'10px 14px', background:'#161616', borderRadius:activeToolPanel?'10px 10px 0 0':'10px', border:'1px solid #2a2a2a', borderBottom:activeToolPanel?'none':'1px solid #2a2a2a' }}>
-                <span style={{ fontSize:12, fontWeight:700, color:'#555', marginRight:4, whiteSpace:'nowrap' }}>🔧 관리 도구</span>
+              <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', padding:'10px 14px', background:'#f5f9f5', borderRadius:activeToolPanel?'10px 10px 0 0':'10px', border:'1px solid #d1e8d1', borderBottom:activeToolPanel?'none':'1px solid #d1e8d1' }}>
+                <span style={{ fontSize:12, fontWeight:700, color:'#4b6e4b', marginRight:4, whiteSpace:'nowrap' }}>🔧 관리 도구</span>
                 {Object.entries(TOOL_PANELS).map(([key, t]) => {
                   const isActive = activeToolPanel === key
                   return (
@@ -531,11 +531,11 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
               {activeToolPanel && (() => {
                 const panel = TOOL_PANELS[activeToolPanel]
                 return (
-                  <div style={{ background:'#161616', border:'1px solid #2a2a2a', borderTop:`3px solid ${panel.border}`, borderRadius:'0 0 12px 12px', padding:'20px 22px' }}>
+                  <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderTop:`3px solid ${panel.border}`, borderRadius:'0 0 12px 12px', padding:'20px 22px' }}>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:10 }}>
                       <div>
                         <span style={{ fontSize:16, fontWeight:800, color:panel.color }}>{panel.label} 필수 체크리스트</span>
-                        <p style={{ fontSize:12, color:'#555', marginTop:3 }}>아래 항목을 하나씩 확인하고 셋팅하세요.</p>
+                        <p style={{ fontSize:12, color:'#4b6e4b', marginTop:3 }}>아래 항목을 하나씩 확인하고 셋팅하세요.</p>
                       </div>
                       <a href={panel.link} target="_blank" rel="noopener noreferrer"
                         style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:8, background:panel.color, color:'#fff', fontSize:12, fontWeight:700, textDecoration:'none' }}>
@@ -553,11 +553,11 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                               const checked = isAuto || (ck in checklistChecks ? checklistChecks[ck] : (item.done||false))
                               return (
                                 <div key={ii} onClick={()=>!isAuto&&toggleCheck(ck)}
-                                  style={{ display:'flex', gap:10, alignItems:'flex-start', background:'rgba(255,255,255,0.05)', borderRadius:8, padding:'10px 12px', cursor:isAuto?'default':'pointer', opacity:checked?0.65:1, transition:'all .15s' }}>
-                                  <span style={{ fontSize:18, flexShrink:0, color:checked?'#16a34a':'#555' }}>{checked?'☑':'☐'}</span>
+                                  style={{ display:'flex', gap:10, alignItems:'flex-start', background:'#f5f9f5', borderRadius:8, padding:'10px 12px', cursor:isAuto?'default':'pointer', opacity:checked?0.65:1, transition:'all .15s' }}>
+                                  <span style={{ fontSize:18, flexShrink:0, color:checked?'#16a34a':'#9ca3af' }}>{checked?'☑':'☐'}</span>
                                   <div style={{ flex:1 }}>
-                                    <div style={{ fontSize:13, fontWeight:700, color:checked?'#666':'#f0f0f0', textDecoration:checked&&!isAuto?'line-through':'none' }}>{item.text}</div>
-                                    <div style={{ fontSize:12, color:'#666', lineHeight:1.6 }}>{item.desc}</div>
+                                    <div style={{ fontSize:13, fontWeight:700, color:checked?'#6b7280':'#0f1f0f', textDecoration:checked&&!isAuto?'line-through':'none' }}>{item.text}</div>
+                                    <div style={{ fontSize:12, color:'#4b6e4b', lineHeight:1.6 }}>{item.desc}</div>
                                   </div>
                                   {isAuto && <span style={{ fontSize:11, color:'#16a34a', fontWeight:700, flexShrink:0 }}>자동완료</span>}
                                 </div>
@@ -575,23 +575,23 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
             {/* 루틴 달력 */}
             <div style={{ marginBottom:16 }}>
               <button onClick={()=>setShowRoutine(v=>!v)}
-                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#161616', borderRadius:showRoutine?'10px 10px 0 0':'10px', border:'1px solid #2a2a2a', cursor:'pointer', fontFamily:"'Outfit', sans-serif", color:'#f0f0f0' }}>
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#f5f9f5', borderRadius:showRoutine?'10px 10px 0 0':'10px', border:'1px solid #d1e8d1', cursor:'pointer', fontFamily:"'Outfit', sans-serif", color:'#0f1f0f' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-                  <span style={{ fontSize:13, fontWeight:700 }}>📆 루틴 체크리스트 — {year}년 {month+1}월</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📆 루틴 체크리스트 — {year}년 {month+1}월</span>
                   <span style={{ fontSize:12, fontWeight:700, color:'#16a34a', background:'#0a2a0a', border:'1px solid #166534', borderRadius:6, padding:'2px 8px' }}>
                     이번 달 {Object.values(dailyCount).reduce((a,b)=>a+b,0)}편
                   </span>
                 </div>
-                <span style={{ fontSize:12, color:'#555' }}>{showRoutine?'▲ 접기':'▼ 펼치기'}</span>
+                <span style={{ fontSize:12, color:'#4b6e4b' }}>{showRoutine?'▲ 접기':'▼ 펼치기'}</span>
               </button>
 
               {showRoutine && (
-                <div style={{ background:'#161616', border:'1px solid #2a2a2a', borderTop:'none', borderRadius:'0 0 12px 12px', padding:20 }}>
+                <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderTop:'none', borderRadius:'0 0 12px 12px', padding:20 }}>
                   {/* 달력 */}
                   <div style={{ marginBottom:20 }}>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:4, textAlign:'center', marginBottom:4 }}>
                       {['일','월','화','수','목','금','토'].map(d=>(
-                        <div key={d} style={{ fontSize:11, fontWeight:700, color:'#555', padding:'4px 0' }}>{d}</div>
+                        <div key={d} style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', padding:'4px 0' }}>{d}</div>
                       ))}
                       {Array.from({length:firstDay}).map((_,i)=><div key={`e${i}`}/>)}
                       {Array.from({length:daysInMonth}).map((_,i)=>{
@@ -601,7 +601,7 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                         const cnt=dailyCount[d]||0
                         return (
                           <div key={d} style={{ padding:'4px 2px', borderRadius:6, background:isToday?'#22c55e':isMonthly?'#1a1200':isWeekly?'#001a1f':'transparent', border:(isWeekly||isMonthly)&&!isToday?`1px solid ${isMonthly?'#78500a':'#0e7490'}`:'none', minHeight:40, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
-                            <div style={{ fontSize:12, fontWeight:isToday?700:400, color:isToday?'#fff':'#aaa' }}>{d}</div>
+                            <div style={{ fontSize:12, fontWeight:isToday?700:400, color:isToday?'#fff':'#374151' }}>{d}</div>
                             {isMonthly&&!isToday&&<div style={{ fontSize:8, color:'#d97706', lineHeight:1 }}>월간</div>}
                             {isWeekly&&!isToday&&<div style={{ fontSize:8, color:'#0891b2', lineHeight:1 }}>주간</div>}
                             {cnt>0&&<div style={{ fontSize:9, fontWeight:700, color:isToday?'#fff':'#22c55e', background:isToday?'rgba(255,255,255,0.2)':'#0a2a0a', borderRadius:3, padding:'0 3px', lineHeight:'14px' }}>{cnt}</div>}
@@ -610,7 +610,7 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                       })}
                     </div>
                     <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-                      <span style={{ fontSize:11, color:'#0891b2' }}>🔵 주간 (매주 토요일)</span>
+                      <span style={{ fontSize:11, color:'#0284c7' }}>🔵 주간 (매주 토요일)</span>
                       <span style={{ fontSize:11, color:'#d97706' }}>🟡 월간 (마지막 토요일)</span>
                       <span style={{ fontSize:11, color:'#22c55e' }}>🔴 오늘</span>
                     </div>
@@ -625,7 +625,7 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                       return (
                         <div key={key} style={{ border:`1.5px solid ${r.border}33`, borderRadius:10, overflow:'hidden' }}>
                           <button onClick={()=>setCollapsedRoutines(v=>({...v,[key]:!v[key]}))}
-                            style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:r.bg, border:'none', cursor:'pointer', fontFamily:"'Outfit', sans-serif", color:'#f0f0f0' }}>
+                            style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:r.bg, border:'none', cursor:'pointer', fontFamily:"'Outfit', sans-serif", color:'#0f1f0f' }}>
                             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                               <span style={{ fontSize:13, fontWeight:800, color:r.color }}>{r.label}</span>
                               <span style={{ fontSize:11, fontWeight:600, color:checkedCnt===r.items.length?'#16a34a':r.color, background:'rgba(255,255,255,0.1)', borderRadius:10, padding:'1px 8px' }}>
@@ -640,11 +640,11 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                                 const mk = `${periodKey}__${ii}`, checked = !!routineChecks[mk]
                                 return (
                                   <div key={ii} onClick={()=>toggleRoutine(periodKey, ii)}
-                                    style={{ display:'flex', gap:10, alignItems:'flex-start', background:checked?'rgba(16,185,129,0.08)':'rgba(255,255,255,0.05)', borderRadius:8, padding:'10px 12px', cursor:'pointer', opacity:checked?0.7:1, transition:'all .15s' }}>
+                                    style={{ display:'flex', gap:10, alignItems:'flex-start', background:checked?'#f0fdf4':'#f5f9f5', borderRadius:8, padding:'10px 12px', cursor:'pointer', opacity:checked?0.7:1, transition:'all .15s' }}>
                                     <span style={{ fontSize:16, flexShrink:0 }}>{checked?'☑':'☐'}</span>
                                     <div style={{ flex:1 }}>
-                                      <div style={{ fontSize:13, fontWeight:700, color:'#f0f0f0', textDecoration:checked?'line-through':'none' }}>{item.text}</div>
-                                      <div style={{ fontSize:12, color:'#666', lineHeight:1.6 }}>{item.desc}</div>
+                                      <div style={{ fontSize:13, fontWeight:700, color:'#0f1f0f', textDecoration:checked?'line-through':'none' }}>{item.text}</div>
+                                      <div style={{ fontSize:12, color:'#4b6e4b', lineHeight:1.6 }}>{item.desc}</div>
                                     </div>
                                     {item.link && (
                                       <a href={item.link} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
@@ -669,7 +669,7 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
             <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:16 }}>
               {[['all','전체'], ...allCategories.map(c=>[c,c])].map(([key,label]) => (
                 <button key={key} onClick={()=>setFilterType(key)}
-                  style={{ padding:'6px 14px', borderRadius:8, border:`1.5px solid ${filterType===key?'#22c55e':'#2a2a2a'}`, background:filterType===key?'#0a2a0a':'#161616', color:filterType===key?'#22c55e':'#888', fontSize:13, fontWeight:filterType===key?700:500, cursor:'pointer', fontFamily:"'Outfit', sans-serif" }}>
+                  style={{ padding:'6px 14px', borderRadius:8, border:`1.5px solid ${filterType===key?'#16a34a':'#d1e8d1'}`, background:filterType===key?'#f0fdf4':'#fff', color:filterType===key?'#15803d':'#4b6e4b', fontSize:13, fontWeight:filterType===key?700:500, cursor:'pointer', fontFamily:"'Outfit', sans-serif" }}>
                   {label} {key==='all'?posts.length:posts.filter(p=>(p.category||'thumb-down')===key).length}
                 </button>
               ))}
@@ -677,44 +677,44 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
 
             {/* 글 목록 */}
             {loading ? (
-              <div style={{ textAlign:'center', padding:48, color:'#555' }}>불러오는 중...</div>
+              <div style={{ textAlign:'center', padding:48, color:'#4b6e4b' }}>불러오는 중...</div>
             ) : filteredPosts.length === 0 ? (
-              <div style={{ textAlign:'center', padding:'60px 20px', background:'#161616', borderRadius:14, border:'1px solid #2a2a2a', color:'#555' }}>
+              <div style={{ textAlign:'center', padding:'60px 20px', background:'#f5f9f5', borderRadius:14, border:'1px solid #d1e8d1', color:'#4b6e4b' }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>📝</div>
                 <div style={{ fontSize:15, fontWeight:600 }}>아직 작성된 글이 없습니다</div>
               </div>
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {filteredPosts.map(post => (
-                  <div key={post.id} style={{ background:'#161616', borderRadius:12, border:'1.5px solid #2a2a2a', padding:'14px 18px', display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
+                  <div key={post.id} style={{ background:'#fff', borderRadius:12, border:'1.5px solid #d1e8d1', padding:'14px 18px', display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
                         <span style={{ fontSize:11, fontWeight:700, borderRadius:999, padding:'2px 10px',
-                          background: post.status==='published'?'#0a2a0a':post.status==='scheduled'?'#0d1b2a':'#1a1a1a',
-                          color: post.status==='published'?'#4ade80':post.status==='scheduled'?'#60a5fa':'#888',
-                          border:`1px solid ${post.status==='published'?'#166534':post.status==='scheduled'?'#1e3a5f':'#2a2a2a'}` }}>
+                          background: post.status==='published'?'#f0fdf4':post.status==='scheduled'?'#eff6ff':'#f5f5f5',
+                          color: post.status==='published'?'#16a34a':post.status==='scheduled'?'#2563eb':'#6b7280',
+                          border:`1px solid ${post.status==='published'?'#86efac':post.status==='scheduled'?'#93c5fd':'#e5e7eb'}` }}>
                           {post.status==='published'?'✅ 발행':post.status==='scheduled'?'⏰ 예약':'📝 임시'}
                         </span>
                         {post.status==='scheduled' && post.scheduled_at && (
-                          <span style={{ fontSize:11, color:'#60a5fa' }}>{new Date(new Date(post.scheduled_at).getTime() + 9*60*60*1000).toISOString().slice(0,16).replace('T',' ')}</span>
+                          <span style={{ fontSize:11, color:'#1d4ed8' }}>{new Date(new Date(post.scheduled_at).getTime() + 9*60*60*1000).toISOString().slice(0,16).replace('T',' ')}</span>
                         )}
-                        {post.category && <span style={{ fontSize:11, color:'#888', background:'#1f1f1f', borderRadius:4, padding:'2px 8px', border:'1px solid #2a2a2a' }}>{post.category}</span>}
+                        {post.category && <span style={{ fontSize:11, color:'#4b6e4b', background:'#f5f9f5', borderRadius:4, padding:'2px 8px', border:'1px solid #d1e8d1' }}>{post.category}</span>}
                       </div>
-                      <div style={{ fontSize:15, fontWeight:700, color:'#f0f0f0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:3 }}>{post.title}</div>
-                      <div style={{ fontSize:12, color:'#555' }}>
+                      <div style={{ fontSize:15, fontWeight:700, color:'#0f1f0f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:3 }}>{post.title}</div>
+                      <div style={{ fontSize:12, color:'#4b6e4b' }}>
                         {(post.published_at || post.created_at) ? new Date(new Date(post.published_at || post.created_at).getTime() + 9*60*60*1000).toISOString().slice(0,10).replace(/-/g,'. ') + '.' : ''}
-                        {post.slug && <span style={{ marginLeft:8, opacity:0.5 }}>/blog/{post.slug}</span>}
+                        {post.slug && <span style={{ marginLeft:8, color:'#9ca3af' }}>/blog/{post.slug}</span>}
                       </div>
                     </div>
                     <div style={{ display:'flex', gap:6, flexShrink:0 }}>
                       {post.status==='published' && post.slug && (
                         <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer"
-                          style={{ padding:'6px 12px', borderRadius:7, border:'1px solid #2a2a2a', background:'#1f1f1f', color:'#888', fontSize:12, fontWeight:600, textDecoration:'none' }}>보기</a>
+                          style={{ padding:'6px 12px', borderRadius:7, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:12, fontWeight:600, textDecoration:'none' }}>보기</a>
                       )}
                       <button onClick={()=>handleEdit(post)}
-                        style={{ ...S.btn('#1a3a6a'), padding:'6px 14px', fontSize:12 }}>수정</button>
+                        style={{ ...S.btn('#2563eb'), padding:'6px 14px', fontSize:12 }}>수정</button>
                       <button onClick={()=>handleDelete(post)}
-                        style={{ ...S.btn('#0a2a0a'), padding:'6px 12px', fontSize:12, border:'1px solid #7f1d1d', color:'#4ade80' }}>삭제</button>
+                        style={{ ...S.btn('#fef2f2'), padding:'6px 12px', fontSize:12, border:'1px solid #fca5a5', color:'#dc2626' }}>삭제</button>
                     </div>
                   </div>
                 ))}
