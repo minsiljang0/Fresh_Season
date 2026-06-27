@@ -2506,17 +2506,17 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
             </select>
           </div>
           <div>
-            <label style={S.label}>요리 종류</label>
-            <select value={form.cuisine} onChange={e=>setForm(f=>({...f,cuisine:e.target.value}))} style={S.input}>
-              <option value="">선택</option>
-              {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
             <label style={S.label}>용도</label>
             <select value={form.usage} onChange={e=>setForm(f=>({...f,usage:e.target.value}))} style={S.input}>
               <option value="">선택</option>
               {UTENSIL_USAGES.map(u=><option key={u} value={u}>{u}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={S.label}>요리 종류</label>
+            <select value={form.cuisine} onChange={e=>setForm(f=>({...f,cuisine:e.target.value}))} style={S.input}>
+              <option value="">선택</option>
+              {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div style={{ gridColumn:'1/-1' }}>
@@ -2542,13 +2542,13 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
               <option value="">전체 카테고리</option>
               {UTENSIL_CATS.flat().map(c=><option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={filterCuisine} onChange={e=>setFilterCuisine(e.target.value)} style={{ ...S.input, width:110 }}>
-              <option value="">전체 요리종류</option>
-              {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
             <select value={filterUsage} onChange={e=>setFilterUsage(e.target.value)} style={{ ...S.input, width:100 }}>
               <option value="">전체 용도</option>
               {UTENSIL_USAGES.map(u=><option key={u} value={u}>{u}</option>)}
+            </select>
+            <select value={filterCuisine} onChange={e=>setFilterCuisine(e.target.value)} style={{ ...S.input, width:110 }}>
+              <option value="">전체 요리종류</option>
+              {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
             <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 이름 검색" style={{ ...S.input, width:120 }} />
           </div>
@@ -2562,13 +2562,13 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
                   <option value="">카테고리</option>
                   {UTENSIL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
-                <select value={editForm.cuisine||''} onChange={e=>setEditForm(f=>({...f,cuisine:e.target.value}))} style={{ ...S.input, marginBottom:6 }}>
-                  <option value="">요리종류</option>
-                  {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
-                </select>
                 <select value={editForm.usage||''} onChange={e=>setEditForm(f=>({...f,usage:e.target.value}))} style={{ ...S.input, marginBottom:6 }}>
                   <option value="">용도</option>
                   {UTENSIL_USAGES.map(u=><option key={u} value={u}>{u}</option>)}
+                </select>
+                <select value={editForm.cuisine||''} onChange={e=>setEditForm(f=>({...f,cuisine:e.target.value}))} style={{ ...S.input, marginBottom:6 }}>
+                  <option value="">요리종류</option>
+                  {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
                 <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} placeholder="설명" style={{ ...S.input, marginBottom:6 }} />
                 <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="쿠팡 URL" style={{ ...S.input, marginBottom:8 }} />
