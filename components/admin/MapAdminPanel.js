@@ -1452,6 +1452,19 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
               </div>
             )}
           </div>
+
+          {/* 해외 식재료 */}
+          <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none' }}>
+            <div onClick={() => setF(p => ({ ...p, is_global: !p.is_global }))}
+              style={{ width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
+                background: f.is_global ? '#3b82f6' : '#d1e8d1', position:'relative', flexShrink:0 }}>
+              <div style={{ position:'absolute', top:3, left: f.is_global ? 20 : 3,
+                width:16, height:16, borderRadius:8, background:'#fff', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }} />
+            </div>
+            <span style={{ fontSize:13, fontWeight:700, color: f.is_global ? '#3b82f6' : '#4b6e4b' }}>🌍 해외 식재료</span>
+            <span style={{ fontSize:11, color:'#8aaa8a' }}>국내 미생산 글로벌 슈퍼푸드 등</span>
+          </label>
+
         </div>
         <div style={{ display:'none' }}>
           <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 입력창 클릭하면 자주 쓰는 주의문구 나와요</p>
@@ -1538,7 +1551,7 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
 }
 
 function IngredientTab({ adminToken, showToast, confirmDelete }) {
-  const EMPTY_FORM   = { name:'', display_name:'', region_id:'', category:'fish', description:'', coupang_url:'', caution:'', is_special:false, is_limited:false, limited_days:'' }
+  const EMPTY_FORM   = { name:'', display_name:'', region_id:'', category:'fish', description:'', coupang_url:'', caution:'', is_special:false, is_limited:false, limited_days:'', is_global:false }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[], label:'' }
 
   const [list, setList]         = useState([])
@@ -1771,7 +1784,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
   const openEdit = (i) => {
     setSelIng(null)
     setEditId(i.id)
-    setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'', is_special:i.is_special||false, is_limited:i.is_limited||false, limited_days:i.limited_days||'' })
+    setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'', is_special:i.is_special||false, is_limited:i.is_limited||false, limited_days:i.limited_days||'', is_global:i.is_global||false })
     setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
     loadEditLinks(i.id)
   }
@@ -1903,6 +1916,28 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                 </div>
               )}
             </div>
+
+            {/* 해외 식재료 */}
+            <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none' }}>
+              <div
+                onClick={() => setForm(f => ({ ...f, is_global: !f.is_global }))}
+                style={{
+                  width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
+                  background: form.is_global ? '#3b82f6' : '#d1e8d1',
+                  position:'relative', flexShrink:0,
+                }}>
+                <div style={{
+                  position:'absolute', top:3, left: form.is_global ? 20 : 3,
+                  width:16, height:16, borderRadius:8, background:'#fff', transition:'left 0.2s',
+                  boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
+                }} />
+              </div>
+              <span style={{ fontSize:13, fontWeight:700, color: form.is_global ? '#3b82f6' : '#4b6e4b' }}>
+                🌍 해외 식재료
+              </span>
+              <span style={{ fontSize:11, color:'#8aaa8a' }}>국내 미생산 글로벌 슈퍼푸드 등</span>
+            </label>
+
           </div>
         </div>
 
@@ -2046,6 +2081,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                         <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{ct?.emoji} {i.name}</div>
                         {i.is_special && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700 }}>🏆 특산품</span>}
                         {i.is_limited && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700 }}>⏰ {i.limited_days || '기간한정'}</span>}
+                        {i.is_global && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#dbeafe', border:'1px solid #3b82f6', color:'#1d4ed8', fontWeight:700 }}>🌍 해외</span>}
                       </div>
                       {i.regions_preview && (
                         <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginTop:2 }}>

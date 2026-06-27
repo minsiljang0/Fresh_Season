@@ -22,6 +22,9 @@ export default function Header() {
           <Link href="/map" className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}>
             🗺 제철지도
           </Link>
+          <Link href="/global" className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}>
+            🌍 글로벌 푸드
+          </Link>
           <Link href="/blog" className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}>
             📝 블로그
           </Link>
