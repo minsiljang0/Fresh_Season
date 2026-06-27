@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       if (type === 'health_benefits') {
-        const { data, error } = await supabase.from('health_benefits').select('*').order('category').order('name')
+        const { data, error } = await supabase.from('health_benefits').select('*, ingredients:ingredient_health(id)').order('category').order('name')
         if (error) throw error
         return res.status(200).json(data || [])
       }
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         return res.status(200).json(data || [])
       }
       if (type === 'ingredients') {
-        const { data, error } = await supabase.from('ingredients').select('*').order('name')
+        const { data, error } = await supabase.from('ingredients').select('*, health_benefits:ingredient_health(id)').order('name')
         if (error) throw error
         return res.status(200).json(data || [])
       }
