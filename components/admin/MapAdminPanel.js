@@ -2388,12 +2388,52 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
   const [list, setList]       = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
-  const [form, setForm]       = useState({ name:'', category:'', description:'', coupang_url:'' })
+  const [form, setForm]       = useState({ name:'', category:'', description:'', coupang_url:'', cuisine:'', usage:'' })
   const [editId, setEditId]   = useState(null)
   const [editForm, setEditForm] = useState({})
   const [searchQ, setSearchQ] = useState('')
+  const [filterCat, setFilterCat] = useState('')
+  const [filterCuisine, setFilterCuisine] = useState('')
+  const [filterUsage, setFilterUsage] = useState('')
 
-  const UTENSIL_CATS = ['냄비·팬','칼·도마','계량·혼합','찜·구이','보관','기타']
+  const UTENSIL_CUISINES = ['한식','양식','중식','일식','분식·간식','베이킹','공통']
+  const UTENSIL_USAGES   = ['가정용','영업용','캠핑·아웃도어','공통']
+
+  const CUISINE_COLORS = {
+    '한식':      { bg:'#fff1f2', border:'#fda4af', color:'#be123c' },
+    '양식':      { bg:'#eff6ff', border:'#93c5fd', color:'#1d4ed8' },
+    '중식':      { bg:'#fff7ed', border:'#fdba74', color:'#c2410c' },
+    '일식':      { bg:'#fdf4ff', border:'#d8b4fe', color:'#7e22ce' },
+    '분식·간식': { bg:'#fefce8', border:'#fde047', color:'#854d0e' },
+    '베이킹':    { bg:'#fdf2f8', border:'#f0abfc', color:'#86198f' },
+    '공통':      { bg:'#f9fafb', border:'#d1d5db', color:'#374151' },
+  }
+  const USAGE_COLORS = {
+    '가정용':        { bg:'#f0fdf4', border:'#86efac', color:'#166534' },
+    '영업용':        { bg:'#eff6ff', border:'#93c5fd', color:'#1e40af' },
+    '캠핑·아웃도어': { bg:'#fefce8', border:'#fcd34d', color:'#92400e' },
+    '공통':          { bg:'#f9fafb', border:'#d1d5db', color:'#374151' },
+  }
+
+  const UTENSIL_CAT_COLORS = {
+    '냄비·팬':        { bg:'#fff7ed', border:'#fdba74', color:'#c2410c' },
+    '프라이팬·웍':    { bg:'#fef3c7', border:'#fcd34d', color:'#92400e' },
+    '칼·도마':        { bg:'#ecfdf5', border:'#6ee7b7', color:'#065f46' },
+    '계량·혼합':      { bg:'#eff6ff', border:'#93c5fd', color:'#1d4ed8' },
+    '찜·구이·오븐':   { bg:'#fdf4ff', border:'#d8b4fe', color:'#7e22ce' },
+    '에어프라이어':   { bg:'#fff1f2', border:'#fda4af', color:'#be123c' },
+    '전기가전':       { bg:'#f0f9ff', border:'#7dd3fc', color:'#0369a1' },
+    '그릇·플레이팅':  { bg:'#f5f3ff', border:'#c4b5fd', color:'#5b21b6' },
+    '보관·밀폐':      { bg:'#f0fdf4', border:'#86efac', color:'#166534' },
+    '청소·관리':      { bg:'#fafafa', border:'#e5e7eb', color:'#374151' },
+    '기타':           { bg:'#f9fafb', border:'#d1d5db', color:'#6b7280' },
+  }
+
+  const UTENSIL_CATS = [
+    '냄비·팬','프라이팬·웍','칼·도마','계량·혼합',
+    '찜·구이·오븐','에어프라이어','전기가전',
+    '그릇·플레이팅','보관·밀폐','청소·관리','기타'
+  ]
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -2439,7 +2479,12 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
     })
   }
 
-  const filtered = searchQ ? list.filter(u => u.name.includes(searchQ) || (u.category||'').includes(searchQ)) : list
+  const filtered = list.filter(u =>
+    (!searchQ || u.name.includes(searchQ) || (u.category||'').includes(searchQ)) &&
+    (!filterCat     || u.category === filterCat) &&
+    (!filterCuisine || u.cuisine  === filterCuisine) &&
+    (!filterUsage   || u.usage    === filterUsage)
+  )
 
   return (
     <div>
@@ -2460,6 +2505,20 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
               {UTENSIL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          <div>
+            <label style={S.label}>요리 종류</label>
+            <select value={form.cuisine} onChange={e=>setForm(f=>({...f,cuisine:e.target.value}))} style={S.input}>
+              <option value="">선택</option>
+              {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={S.label}>용도</label>
+            <select value={form.usage} onChange={e=>setForm(f=>({...f,usage:e.target.value}))} style={S.input}>
+              <option value="">선택</option>
+              {UTENSIL_USAGES.map(u=><option key={u} value={u}>{u}</option>)}
+            </select>
+          </div>
           <div style={{ gridColumn:'1/-1' }}>
             <label style={S.label}>설명</label>
             <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}
@@ -2476,9 +2535,23 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
 
       {/* 목록 */}
       <div style={S.card}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, flexWrap:'wrap', gap:8 }}>
           <div style={S.cardTitle}>📋 조리기구 목록 ({filtered.length})</div>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 검색" style={{ ...S.input, width:160 }} />
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
+            <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ ...S.input, width:120 }}>
+              <option value="">전체 카테고리</option>
+              {UTENSIL_CATS.flat().map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={filterCuisine} onChange={e=>setFilterCuisine(e.target.value)} style={{ ...S.input, width:110 }}>
+              <option value="">전체 요리종류</option>
+              {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={filterUsage} onChange={e=>setFilterUsage(e.target.value)} style={{ ...S.input, width:100 }}>
+              <option value="">전체 용도</option>
+              {UTENSIL_USAGES.map(u=><option key={u} value={u}>{u}</option>)}
+            </select>
+            <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 이름 검색" style={{ ...S.input, width:120 }} />
+          </div>
         </div>
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:8 }}>
@@ -2488,6 +2561,14 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
                 <select value={editForm.category||''} onChange={e=>setEditForm(f=>({...f,category:e.target.value}))} style={{ ...S.input, marginBottom:6 }}>
                   <option value="">카테고리</option>
                   {UTENSIL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={editForm.cuisine||''} onChange={e=>setEditForm(f=>({...f,cuisine:e.target.value}))} style={{ ...S.input, marginBottom:6 }}>
+                  <option value="">요리종류</option>
+                  {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={editForm.usage||''} onChange={e=>setEditForm(f=>({...f,usage:e.target.value}))} style={{ ...S.input, marginBottom:6 }}>
+                  <option value="">용도</option>
+                  {UTENSIL_USAGES.map(u=><option key={u} value={u}>{u}</option>)}
                 </select>
                 <input value={editForm.description||''} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} placeholder="설명" style={{ ...S.input, marginBottom:6 }} />
                 <input value={editForm.coupang_url||''} onChange={e=>setEditForm(f=>({...f,coupang_url:e.target.value}))} placeholder="쿠팡 URL" style={{ ...S.input, marginBottom:8 }} />
@@ -2501,12 +2582,32 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13, marginBottom:4 }}>🔧 {u.name}</div>
-                    {u.category && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:10, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#1d4ed8', fontWeight:600, display:'inline-block', marginBottom:4 }}>{u.category}</span>}
-                    {u.description && <div style={{ fontSize:11, color:'#8aaa8a', marginBottom:4 }}>{u.description}</div>}
-                    {u.coupang_url && <a href={u.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none' }}>🛒 쿠팡 링크 ↗</a>}
+                    <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:5 }}>
+                      {u.category && (() => {
+                        const cc = UTENSIL_CAT_COLORS[u.category] || UTENSIL_CAT_COLORS['기타']
+                        return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:cc.bg, border:`1px solid ${cc.border}`, color:cc.color, fontWeight:700 }}>{u.category}</span>
+                      })()}
+                      {u.cuisine && (() => {
+                        const cc = CUISINE_COLORS[u.cuisine] || CUISINE_COLORS['공통']
+                        return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:cc.bg, border:`1px solid ${cc.border}`, color:cc.color, fontWeight:700 }}>{u.cuisine}</span>
+                      })()}
+                      {u.usage && (() => {
+                        const cc = USAGE_COLORS[u.usage] || USAGE_COLORS['공통']
+                        return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:cc.bg, border:`1px solid ${cc.border}`, color:cc.color, fontWeight:700 }}>{u.usage}</span>
+                      })()}
+                    </div>
+                    {u.description && <div style={{ fontSize:11, color:'#6b7280', marginBottom:5, lineHeight:1.4 }}>{u.description}</div>}
+                    {u.coupang_url && (
+                      <a href={u.coupang_url} target="_blank" rel="noopener noreferrer"
+                        style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:700,
+                          color:'#fff', background:'linear-gradient(135deg,#ea580c,#f97316)',
+                          padding:'4px 10px', borderRadius:6, textDecoration:'none', marginTop:2 }}>
+                        🛒 쿠팡에서 구매
+                      </a>
+                    )}
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:4, flexShrink:0, marginLeft:8 }}>
-                    <button onClick={()=>{ setEditId(u.id); setEditForm({name:u.name,category:u.category||'',description:u.description||'',coupang_url:u.coupang_url||''}) }}
+                    <button onClick={()=>{ setEditId(u.id); setEditForm({name:u.name,category:u.category||'',cuisine:u.cuisine||'',usage:u.usage||'',description:u.description||'',coupang_url:u.coupang_url||''}) }}
                       style={{ padding:'3px 8px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
                     <button onClick={()=>del(u.id, u.name)}
                       style={{ padding:'3px 8px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
@@ -2992,6 +3093,7 @@ const SUBTABS = [
   { id:'chef',      label:'👨\u200d🍳 셰프' },
   { id:'ingredient', label:'🥕 식재료' },
   { id:'dish',      label:'🍽 요리' },
+  { id:'utensil',   label:'🔧 조리도구' },
   { id:'recipe',    label:'📋 레시피' },
 ]
 
