@@ -1,19 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { REGIONS } from '../lib/regions'
 import { SEASONS, getCurrentSeason, getSeasonByMonth } from '../lib/seasons'
-import { getFoodsByMonth } from '../lib/seasonalFoods'
 
 export default function Home() {
   const [activeMonth, setActiveMonth] = useState(new Date().getMonth() + 1)
   const [activeRegion, setActiveRegion] = useState(null)
+  const [allFoods, setAllFoods] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const currentSeason = getCurrentSeason()
-  const monthFoods = getFoodsByMonth(activeMonth)
-  const filteredFoods = activeRegion ? monthFoods.filter(f => f.region === activeRegion) : monthFoods
+
+  // DB 데이터만 로드
+  useEffect(() => {
+    fetch('/api/map/seasonal-foods')
+      .then(r => r.ok ? r.json() : {})
+      .then(data => {
+        const foods = Array.isArray(data) ? data : (data.foods || [])
+        setAllFoods(foods)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const monthFoods = useMemo(() =>
+    allFoods.filter(f => f.months && f.months.includes(activeMonth)),
+    [allFoods, activeMonth]
+  )
+
+  const filteredFoods = useMemo(() =>
+    activeRegion ? monthFoods.filter(f => f.region === activeRegion) : monthFoods,
+    [monthFoods, activeRegion]
+  )
 
   return (
     <>
@@ -94,39 +115,42 @@ export default function Home() {
         <section style={{ marginBottom: 52 }}>
           <h2 className="section-title">
             {activeMonth}월 제철 재료
-            <span>{filteredFoods.length}가지</span>
+            <span>{loading ? '...' : `${filteredFoods.length}가지`}</span>
           </h2>
-          {filteredFoods.length === 0
-            ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>해당 조건의 제철 재료가 없어요.</p>
-            : (
-              <div className="grid-auto">
-                {filteredFoods.map((food, i) => {
-                  const region = REGIONS.find(r => r.id === food.region)
-                  return (
-                    <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
-                      onMouseEnter={e => e.currentTarget.style.borderColor = region?.color}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                        <span style={{ fontSize: 20, fontWeight: 900 }}>{food.ingredient}</span>
-                        {region && (
-                          <span className="badge" style={{ background: `${region.color}22`, color: region.color, border: `1px solid ${region.color}44` }}>
-                            {region.icon} {region.name}
-                          </span>
-                        )}
-                      </div>
-                      <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 10 }}>
-                        💚 {food.health}
-                      </p>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {food.tvPrograms.map(tv => (
-                          <span key={tv} className="tag">📺 {tv}</span>
-                        ))}
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            )}
+          {loading
+            ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>불러오는 중...</p>
+            : filteredFoods.length === 0
+              ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>해당 조건의 제철 재료가 없어요.</p>
+              : (
+                <div className="grid-auto">
+                  {filteredFoods.map((food, i) => {
+                    const region = REGIONS.find(r => r.id === food.region)
+                    return (
+                      <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
+                        onMouseEnter={e => e.currentTarget.style.borderColor = region?.color}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                          <span style={{ fontSize: 20, fontWeight: 900 }}>{food.ingredient}</span>
+                          {region && (
+                            <span className="badge" style={{ background: `${region.color}22`, color: region.color, border: `1px solid ${region.color}44` }}>
+                              {region.icon} {region.name}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 10 }}>
+                          💚 {food.health}
+                        </p>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {(food.tvPrograms || []).map(tv => (
+                            <span key={tv} className="tag">📺 {tv}</span>
+                          ))}
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )
+          }
         </section>
 
         {/* 지역 카드 */}

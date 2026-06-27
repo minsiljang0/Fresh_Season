@@ -6,22 +6,44 @@ import Footer from '../../components/Footer'
 import { REGIONS } from '../../lib/regions'
 import { SEASONAL_FOODS_SEED } from '../../lib/seasonalFoods'
 
+// getStaticPaths는 SEED 기반으로 기본 경로 생성
+// fallback: 'blocking' → DB 신규 식재료도 즉시 처리
 export async function getStaticPaths() {
   const names = [...new Set(SEASONAL_FOODS_SEED.map(f => f.ingredient))]
-  return { paths: names.map(n => ({ params: { name: encodeURIComponent(n) } })), fallback: false }
+  return {
+    paths: names.map(n => ({ params: { name: encodeURIComponent(n) } })),
+    fallback: 'blocking',
+  }
 }
+
 export async function getStaticProps({ params }) {
-  return { props: { ingredientName: decodeURIComponent(params.name) } }
+  return {
+    props: { ingredientName: decodeURIComponent(params.name) },
+    revalidate: 60,
+  }
 }
 
 export default function IngredientPage({ ingredientName }) {
-  const food = SEASONAL_FOODS_SEED.find(f => f.ingredient === ingredientName)
-  const region = food ? REGIONS.find(r => r.id === food.region) : null
-  const [posts, setPosts] = useState([])
+  const [food, setFood] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState([])
 
+  // DB에서만 데이터 로드 — SEED 폴백 없음
   useEffect(() => {
-    if (!food) { setLoading(false); return }
+    fetch('/api/map/seasonal-foods')
+      .then(r => r.ok ? r.json() : {})
+      .then(data => {
+        const foods = Array.isArray(data) ? data : (data.foods || [])
+        const found = foods.find(f => f.ingredient === ingredientName)
+        setFood(found || null)
+      })
+      .catch(() => setFood(null))
+      .finally(() => setLoading(false))
+  }, [ingredientName])
+
+  // 블로그 글 로드
+  useEffect(() => {
+    if (!food) return
     fetch(`/api/blog/posts?category=${food.region}&limit=6`)
       .then(r => r.json())
       .then(data => {
@@ -29,12 +51,31 @@ export default function IngredientPage({ ingredientName }) {
         setPosts(arr.filter(p => p.title?.includes(ingredientName) || p.content?.includes(ingredientName)))
       })
       .catch(() => setPosts([]))
-      .finally(() => setLoading(false))
-  }, [ingredientName])
+  }, [food, ingredientName])
 
-  if (!food) return <p style={{ padding: 40 }}>재료를 찾을 수 없어요.</p>
-
+  const region = food ? REGIONS.find(r => r.id === food.region) : null
   const MONTHS = ['','1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
+
+  if (loading) return (
+    <>
+      <Header />
+      <main className="wrap" style={{ maxWidth: 860 }}>
+        <p style={{ padding: 40, color: 'var(--text2)' }}>불러오는 중...</p>
+      </main>
+      <Footer />
+    </>
+  )
+
+  if (!food) return (
+    <>
+      <Header />
+      <main className="wrap" style={{ maxWidth: 860 }}>
+        <p style={{ padding: 40 }}>재료를 찾을 수 없어요.</p>
+        <Link href="/" className="back-link">← 홈으로</Link>
+      </main>
+      <Footer />
+    </>
+  )
 
   return (
     <>
@@ -63,6 +104,16 @@ export default function IngredientPage({ ingredientName }) {
                 {region.icon} {region.name} 대표 식재료
               </span>
             )}
+            {food.is_special && (
+              <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: '#fef3c7', border: '1px solid #f59e0b', color: '#b45309', fontWeight: 700 }}>
+                🏆 특산품
+              </span>
+            )}
+            {food.is_limited && food.limited_days && (
+              <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: '#d1fae5', border: '1px solid #10b981', color: '#059669', fontWeight: 700 }}>
+                ⏰ {food.limited_days}간 한정
+              </span>
+            )}
           </div>
 
           {/* 제철 시기 */}
@@ -70,7 +121,7 @@ export default function IngredientPage({ ingredientName }) {
             <p className="detail-label">📅 제철 시기</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
-                const on = food.months.includes(m)
+                const on = (food.months || []).includes(m)
                 return (
                   <span key={m} style={{
                     padding: '5px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600,
@@ -89,33 +140,42 @@ export default function IngredientPage({ ingredientName }) {
             <p style={{ fontSize: 14, lineHeight: 1.7 }}>{food.health}</p>
           </div>
 
-          {/* TV 프로그램 */}
-          <div className="detail-box">
-            <p className="detail-label">📺 방영 TV 프로그램</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {food.tvPrograms.map(tv => (
-                <Link key={tv} href={`/blog?q=${encodeURIComponent(tv)}`}
-                  style={{
-                    padding: '8px 16px', borderRadius: 10,
-                    background: 'var(--surface2)', color: 'var(--text2)',
-                    border: '1.5px solid var(--border)',
-                    fontSize: 13, fontWeight: 600, textDecoration: 'none',
-                    transition: 'border-color 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = region?.color || '#888'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
-                  {tv} 레시피 →
-                </Link>
-              ))}
+          {/* 주의사항 */}
+          {food.caution && (
+            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: 20, marginBottom: 14 }}>
+              <p className="detail-label" style={{ color: '#c2410c' }}>⚠️ 주의사항</p>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: '#9a3412' }}>{food.caution}</p>
             </div>
-          </div>
+          )}
+
+          {/* TV 프로그램 */}
+          {(food.tvPrograms || []).length > 0 && (
+            <div className="detail-box">
+              <p className="detail-label">📺 방영 TV 프로그램</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {food.tvPrograms.map(tv => (
+                  <Link key={tv} href={`/blog?q=${encodeURIComponent(tv)}`}
+                    style={{
+                      padding: '8px 16px', borderRadius: 10,
+                      background: 'var(--surface2)', color: 'var(--text2)',
+                      border: '1.5px solid var(--border)',
+                      fontSize: 13, fontWeight: 600, textDecoration: 'none',
+                      transition: 'border-color 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = region?.color || '#888'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                    {tv} 레시피 →
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* 관련 블로그 글 */}
         <section style={{ marginBottom: 52 }}>
           <h2 className="section-title">관련 레시피 글</h2>
-          {loading && <p style={{ color: 'var(--text2)', fontSize: 14 }}>불러오는 중...</p>}
-          {!loading && posts.length === 0 && (
+          {posts.length === 0 && (
             <div className="empty-state">
               <p>아직 관련 레시피 글이 없어요.</p>
               <small>Claude MCP 자동화로 곧 발행될 예정이에요 🤖</small>

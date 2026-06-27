@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { REGIONS } from '../lib/regions'
-import { SEASONAL_FOODS_SEED, CATEGORIES, CATEGORY_GROUPS, getAllIngredients } from '../lib/seasonalFoods'
+import { CATEGORIES, CATEGORY_GROUPS } from '../lib/seasonalFoods'
 import { KOREA_PATHS } from '../lib/koreaPaths'
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
@@ -199,15 +199,9 @@ export default function MapPage() {
     }))
   }, [dbHealthBenefits])
 
-  // DB seasonal_foods + 시드 합산
+  // DB 데이터만 사용 — SEED 혼용 없음
   const allFoods = useMemo(() => {
-    if (dbSeasonalFoods.length > 0) {
-      // DB 데이터가 있으면 DB 우선, 시드는 DB에 없는 것만
-      const dbIngredients = new Set(dbSeasonalFoods.map(f => f.ingredient + '_' + f.region))
-      const seedOnly = SEASONAL_FOODS_SEED.filter(f => !dbIngredients.has(f.ingredient + '_' + f.region))
-      return [...dbSeasonalFoods, ...seedOnly]
-    }
-    return SEASONAL_FOODS_SEED
+    return dbSeasonalFoods
   }, [dbSeasonalFoods])
 
   // 필터링
@@ -875,7 +869,7 @@ export default function MapPage() {
                             {selMonth === 0
                               ? MONTHS.map((_, mi) => {
                                   const mon = mi+1
-                                  const foods = SEASONAL_FOODS_SEED.filter(f =>
+                                  const foods = allFoods.filter(f =>
                                     f.region === r && f.months.includes(mon) &&
                                     (selCategory === 'all' || f.category === selCategory) &&
                                     (!query.trim() || f.ingredient.includes(query) || f.district.includes(query))
