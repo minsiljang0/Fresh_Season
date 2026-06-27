@@ -60,6 +60,12 @@ const AGE_GROUPS = [
   { id:'all',      label:'✅ 전 연령',            color:'#16a34a' },
 ]
 
+const GENDER_OPTIONS = [
+  { id:'all',    label:'⚥ 상관없음 (전체)', color:'#6b7280' },
+  { id:'male',   label:'♂ 남성',            color:'#3b82f6' },
+  { id:'female', label:'♀ 여성',            color:'#ec4899' },
+]
+
 // ── 공통 유틸 ─────────────────────────────────────────────
 const api = (type) => `/api/admin/map-data?type=${type}`
 
@@ -171,7 +177,7 @@ function HealthTab({ adminToken, showToast, confirmDelete }) {
   const [ingredients, setIngredients] = useState([])
   const [tvShows, setTvShows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'', age_groups:[], caution:'' })
+  const [form, setForm] = useState({ name:'', description:'', category:'', coupang_url:'', age_groups:[], gender:'all', caution:'' })
   const [saving, setSaving] = useState(false)
   const [editId, setEditId] = useState(null)
   const [editForm, setEditForm] = useState({})
@@ -295,7 +301,7 @@ function HealthTab({ adminToken, showToast, confirmDelete }) {
         headers:{'Content-Type':'application/json','x-admin-token':adminToken},
         body:JSON.stringify(form)
       })
-      setForm({ name:'', description:'', category:'', coupang_url:'', age_groups:[], caution:'' })
+      setForm({ name:'', description:'', category:'', coupang_url:'', age_groups:[], gender:'all', caution:'' })
       await load()
       if (created?.id) {
         setJustCreated(created)
@@ -620,6 +626,23 @@ function HealthTab({ adminToken, showToast, confirmDelete }) {
             </div>
           </div>
           <div style={{ gridColumn:'1/-1' }}>
+            <label style={{ ...S.label, marginBottom:4 }}>👤 성별</label>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+              {GENDER_OPTIONS.map(g => {
+                const on = (form.gender||'all') === g.id
+                return (
+                  <button key={g.id} type="button"
+                    onClick={() => setForm(f => ({ ...f, gender: g.id }))}
+                    style={{ padding:'5px 14px', borderRadius:20, border:`1.5px solid ${on ? g.color : '#d1e8d1'}`,
+                      background: on ? g.color+'22' : '#f5f9f5', color: on ? g.color : '#4b6e4b',
+                      fontSize:12, fontWeight: on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                    {g.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ gridColumn:'1/-1' }}>
             <label style={S.label}>⚠️ 주의사항 (알레르기·특정질환 등 — 없으면 비워두세요)</label>
             <input value={form.caution||''} onChange={e=>setForm(f=>({...f,caution:e.target.value}))}
               placeholder="예: 견과류 알레르기 주의 / 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의"
@@ -698,6 +721,23 @@ function HealthTab({ adminToken, showToast, confirmDelete }) {
                     </div>
                   </div>
                   <div style={{ gridColumn:'1/-1' }}>
+                    <label style={{ ...S.label, marginBottom:4 }}>👤 성별</label>
+                    <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                      {GENDER_OPTIONS.map(g => {
+                        const on = (editForm.gender||'all') === g.id
+                        return (
+                          <button key={g.id} type="button"
+                            onClick={() => setEditForm(f => ({ ...f, gender: g.id }))}
+                            style={{ padding:'4px 12px', borderRadius:20, border:`1.5px solid ${on ? g.color : '#d1e8d1'}`,
+                              background: on ? g.color+'22' : '#f5f9f5', color: on ? g.color : '#4b6e4b',
+                              fontSize:11, fontWeight: on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                            {g.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ gridColumn:'1/-1' }}>
                     <label style={S.label}>⚠️ 주의사항</label>
                     <input value={editForm.caution||''} onChange={e=>setEditForm(f=>({...f,caution:e.target.value}))}
                       placeholder="예: 통풍 환자 주의" style={S.input} list="caution-presets" />
@@ -734,6 +774,10 @@ function HealthTab({ adminToken, showToast, confirmDelete }) {
                         })}
                       </div>
                     )}
+                    {h.gender && h.gender !== 'all' && (() => {
+                      const g = GENDER_OPTIONS.find(x => x.id === h.gender)
+                      return g ? <span style={{ fontSize:10, padding:'1px 8px', borderRadius:20, background:g.color+'22', color:g.color, border:`1px solid ${g.color}44`, display:'inline-block', marginBottom:4 }}>{g.label}</span> : null
+                    })()}
                     {h.caution && (
                       <div style={{ padding:'4px 8px', borderRadius:6, background:'#fef2f2', border:'1.5px solid #fca5a5', fontSize:11, lineHeight:1.4, marginBottom:4 }}>
                         <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ 주의 </span>
@@ -743,7 +787,7 @@ function HealthTab({ adminToken, showToast, confirmDelete }) {
                     {h.coupang_url && <a href={h.coupang_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#ea580c', textDecoration:'none', display:'inline-block' }}>🛒 쿠팡 링크 ↗</a>}
                   </div>
                   <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-                    <button onClick={e=>{ e.stopPropagation(); setEditId(h.id); setSelHealth(h); setEditForm({name:h.name,description:h.description||'',category:h.category||'',coupang_url:h.coupang_url||'',age_groups:h.age_groups||[],caution:h.caution||''}); loadLinks(h.id) }}
+                    <button onClick={e=>{ e.stopPropagation(); setEditId(h.id); setSelHealth(h); setEditForm({name:h.name,description:h.description||'',category:h.category||'',coupang_url:h.coupang_url||'',age_groups:h.age_groups||[],gender:h.gender||'all',caution:h.caution||''}); loadLinks(h.id) }}
                       style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
                     <button onClick={e=>{ e.stopPropagation(); del(h.id, h.name) }}
                       style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
