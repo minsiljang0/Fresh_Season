@@ -138,41 +138,41 @@ export default function RegionPage({ regionId }) {
         {/* 식재료 카드 */}
         <section style={{ marginBottom:52 }}>
 
-          {/* 특산품 · 기간한정 전용 섹션 */}
-          {(allFoods.some(f => f.is_special) || allFoods.some(f => f.is_limited && f.limited_days)) && (
-            <div style={{ marginBottom:24 }}>
-              {allFoods.some(f => f.is_special) && (
-                <div style={{ marginBottom:14 }}>
-                  <h3 style={{ fontSize:14, fontWeight:800, marginBottom:8, color:'#b45309' }}>🏆 특산품</h3>
-                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                    {allFoods.filter(f => f.is_special).map((food, i) => (
+          {/* 특산품 · 기간한정 전용 섹션 — 항상 표시 */}
+          <div style={{ marginBottom:24 }}>
+            <div style={{ marginBottom:14 }}>
+              <h3 style={{ fontSize:14, fontWeight:800, marginBottom:8, color:'#b45309' }}>🏆 특산품</h3>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                {allFoods.filter(f => f.is_special).length > 0
+                  ? allFoods.filter(f => f.is_special).map((food, i) => (
                       <a key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
                         style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px',
                           borderRadius:20, background:'#fef3c7', border:'1.5px solid #f59e0b',
                           color:'#b45309', fontWeight:700, fontSize:13, textDecoration:'none' }}>
                         🏆 {food.ingredient}
                       </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {allFoods.some(f => f.is_limited && f.limited_days) && (
-                <div>
-                  <h3 style={{ fontSize:14, fontWeight:800, marginBottom:8, color:'#059669' }}>⏰ 기간한정</h3>
-                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                    {allFoods.filter(f => f.is_limited && f.limited_days).map((food, i) => (
+                    ))
+                  : <span style={{ fontSize:13, color:'var(--text3)' }}>등록된 특산품이 없습니다</span>
+                }
+              </div>
+            </div>
+            <div>
+              <h3 style={{ fontSize:14, fontWeight:800, marginBottom:8, color:'#059669' }}>⏰ 기간한정</h3>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                {allFoods.filter(f => f.is_limited && f.limited_days).length > 0
+                  ? allFoods.filter(f => f.is_limited && f.limited_days).map((food, i) => (
                       <a key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
                         style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px',
                           borderRadius:20, background:'#d1fae5', border:'1.5px solid #10b981',
                           color:'#059669', fontWeight:700, fontSize:13, textDecoration:'none' }}>
                         ⏰ {food.ingredient} · {food.limited_days}간 한정
                       </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    ))
+                  : <span style={{ fontSize:13, color:'var(--text3)' }}>등록된 기간한정 상품이 없습니다</span>
+                }
+              </div>
             </div>
-          )}
+          </div>
 
           <h2 className="section-title">
             제철 식재료 <span>{loading ? '...' : `${filtered.length}가지`}</span>
