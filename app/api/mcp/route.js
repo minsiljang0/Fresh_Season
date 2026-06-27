@@ -1703,7 +1703,7 @@ const baseHandler = createMcpHandler(
       'list_tables',
       {
         title: 'DB 테이블 목록 조회',
-        description: 'Supabase DB에 있는 테이블 목록과 각 테이블의 컬럼 정보를 조회한다. 어떤 테이블이 있는지 모를 때 가장 먼저 호출한다.',
+        description: 'list_tables — DB 테이블 목록 조회. Supabase DB에 있는 테이블 목록과 각 테이블의 컬럼 정보를 반환한다. 어떤 테이블이 있는지 모를 때 가장 먼저 호출한다.',
         inputSchema: {
           schema: z.string().optional().describe('스키마 이름. 기본값: public'),
         },
@@ -1739,7 +1739,7 @@ const baseHandler = createMcpHandler(
       'get_rows',
       {
         title: 'DB 테이블 데이터 조회',
-        description: '특정 테이블의 행을 조회한다. 필터·정렬·페이징 지원. 데이터 확인이나 수정 전 ID 조회에 사용.',
+        description: 'get_rows — DB 테이블 데이터 조회. 특정 테이블의 행을 조회한다. 필터·텍스트검색·정렬·페이징 지원, 최대 500행. 데이터 확인이나 수정 전 ID 조회에 사용.',
         inputSchema: {
           table:   z.string().describe('테이블 이름. 예: ingredients, blog_posts, keyword_stats'),
           select:  z.string().optional().describe('가져올 컬럼 (쉼표 구분). 비우면 전체(*). 예: id,name,created_at'),
@@ -1770,7 +1770,7 @@ const baseHandler = createMcpHandler(
       'upsert_row',
       {
         title: 'DB 행 추가·수정',
-        description: '테이블에 행을 추가하거나 수정한다. id를 포함하면 수정(upsert), 없으면 새 행 추가. 수정 전 get_rows로 기존 데이터를 먼저 확인할 것.',
+        description: 'upsert_row — DB 행 추가·수정. 테이블에 행을 추가하거나 수정한다. id를 포함하면 수정(upsert), 없으면 새 행 추가. 수정 전 get_rows로 기존 데이터를 먼저 확인할 것.',
         inputSchema: {
           table: z.string().describe('테이블 이름. 예: ingredients, blog_posts'),
           row:   z.record(z.any()).describe('추가·수정할 데이터 객체. 예: {"id":"abc","name":"고사리","status":"active"}'),
@@ -1792,7 +1792,7 @@ const baseHandler = createMcpHandler(
       'delete_row',
       {
         title: 'DB 행 삭제',
-        description: '테이블에서 특정 id의 행을 삭제한다. 삭제 전 반드시 get_rows로 대상을 먼저 확인할 것. 되돌릴 수 없음.',
+        description: 'delete_row — DB 행 삭제. 테이블에서 특정 id의 행을 삭제한다. 삭제 전 존재 자동 확인, 되돌릴 수 없음. 삭제 전 반드시 get_rows로 대상을 먼저 확인할 것.',
         inputSchema: {
           table: z.string().describe('테이블 이름'),
           id:    z.string().describe('삭제할 행의 id'),
@@ -1813,7 +1813,7 @@ const baseHandler = createMcpHandler(
       'run_sql',
       {
         title: 'SQL 직접 실행',
-        description: '복잡한 조회나 수정이 필요할 때 SQL을 직접 실행한다. SELECT/UPDATE/DELETE 모두 가능. 위험한 쿼리(DROP, TRUNCATE 등)는 실행 전 사용자에게 반드시 확인.',
+        description: 'run_sql — SQL 직접 실행. 복잡한 조회나 수정이 필요할 때 SQL 쿼리를 직접 실행한다. SELECT/UPDATE/DELETE 모두 가능. DROP·TRUNCATE·ALTER 등 위험 DDL은 자동 차단.',
         inputSchema: {
           sql: z.string().describe('실행할 SQL 쿼리. 예: SELECT id, name FROM ingredients WHERE season_start <= 7 ORDER BY name LIMIT 20'),
         },
