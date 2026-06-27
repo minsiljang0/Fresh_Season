@@ -945,8 +945,8 @@ const baseHandler = createMcpHandler(
       },
       async ({ ingredient_id, benefit_id }) => {
         const { error } = await supabase
-          .from('ingredient_health_benefits')
-          .upsert({ ingredient_id, benefit_id }, { onConflict: 'ingredient_id,benefit_id' })
+          .from('ingredient_health')
+          .upsert({ ingredient_id, health_id: benefit_id }, { onConflict: 'ingredient_id,health_id' })
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         return { content: [{ type: 'text', text: `✅ 연결 완료: 식재료(${ingredient_id}) ↔ 건강효능(${benefit_id})` }] }
       }
@@ -965,10 +965,10 @@ const baseHandler = createMcpHandler(
       },
       async ({ ingredient_id, benefit_id }) => {
         const { error } = await supabase
-          .from('ingredient_health_benefits')
+          .from('ingredient_health')
           .delete()
           .eq('ingredient_id', ingredient_id)
-          .eq('benefit_id', benefit_id)
+          .eq('health_id', benefit_id)
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         return { content: [{ type: 'text', text: `✅ 연결 해제: 식재료(${ingredient_id}) ↔ 건강효능(${benefit_id})` }] }
       }
@@ -997,7 +997,7 @@ const baseHandler = createMcpHandler(
 
         const { data: ing } = await supabase.from('ingredients').select('id,name').eq('id', ingId).single()
         const { data, error } = await supabase
-          .from('ingredient_health_benefits')
+          .from('ingredient_health')
           .select('health_benefits(id,name,category,description)')
           .eq('ingredient_id', ingId)
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
@@ -1028,9 +1028,9 @@ const baseHandler = createMcpHandler(
 
         const { data: hb } = await supabase.from('health_benefits').select('id,name,category').eq('id', hbId).single()
         const { data, error } = await supabase
-          .from('ingredient_health_benefits')
+          .from('ingredient_health')
           .select('ingredients(id,name,category,season_start,season_end)')
-          .eq('benefit_id', hbId)
+          .eq('health_id', hbId)
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         const ingredients = (data || []).map(r => r.ingredients).filter(Boolean)
         return { content: [{ type: 'text', text: JSON.stringify({ health_benefit: hb, ingredients, count: ingredients.length }, null, 2) }] }
@@ -1055,15 +1055,15 @@ const baseHandler = createMcpHandler(
       async ({ ingredient_id, benefit_ids, benefit_id, ingredient_ids }) => {
         const rows = []
         if (ingredient_id && benefit_ids?.length) {
-          benefit_ids.forEach(bid => rows.push({ ingredient_id, benefit_id: bid }))
+          benefit_ids.forEach(bid => rows.push({ ingredient_id, health_id: bid }))
         } else if (benefit_id && ingredient_ids?.length) {
-          ingredient_ids.forEach(iid => rows.push({ ingredient_id: iid, benefit_id }))
+          ingredient_ids.forEach(iid => rows.push({ ingredient_id: iid, health_id: benefit_id }))
         } else {
           return { content: [{ type: 'text', text: '❌ (ingredient_id + benefit_ids) 또는 (benefit_id + ingredient_ids) 조합으로 입력해주세요.' }], isError: true }
         }
         const { error } = await supabase
-          .from('ingredient_health_benefits')
-          .upsert(rows, { onConflict: 'ingredient_id,benefit_id' })
+          .from('ingredient_health')
+          .upsert(rows, { onConflict: 'ingredient_id,health_id' })
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         return { content: [{ type: 'text', text: `✅ 일괄 연결 완료: ${rows.length}건` }] }
       }
@@ -1135,7 +1135,7 @@ const baseHandler = createMcpHandler(
           .select(`
             id, name, category, description,
             age_groups, gender, caution, coupang_url, months,
-            ingredient_health_benefits (
+            ingredient_health (
               ingredient_id,
               ingredients ( id, name, category )
             )
@@ -1157,7 +1157,7 @@ const baseHandler = createMcpHandler(
           caution: hb.caution || '',
           coupang_url: hb.coupang_url || '',
           months: hb.months || [],
-          ingredients: (hb.ingredient_health_benefits || []).map(r => r.ingredients).filter(Boolean),
+          ingredients: (hb.ingredient_health || []).map(r => r.ingredients).filter(Boolean),
         }))
         // age_group 필터 (배열 필드라 JS에서 처리)
         if (age_group) result = result.filter(hb => (hb.age_groups || []).includes(age_group) || hb.age_groups?.includes('all'))
@@ -1333,8 +1333,8 @@ const baseHandler = createMcpHandler(
             id, name, category, description, season_start, season_end,
             months, age_groups, gender, caution, coupang_url,
             is_special, is_limited, limited_days, is_global,
-            ingredient_health_benefits (
-              benefit_id,
+            ingredient_health (
+              health_id,
               health_benefits ( id, name, category )
             )
           `)
@@ -1364,7 +1364,7 @@ const baseHandler = createMcpHandler(
           is_limited: ing.is_limited || false,
           limited_days: ing.limited_days || '',
           is_global: ing.is_global || false,
-          health_benefits: (ing.ingredient_health_benefits || []).map(r => r.health_benefits).filter(Boolean),
+          health_benefits: (ing.ingredient_health || []).map(r => r.health_benefits).filter(Boolean),
         }))
         // 월 필터 (배열 필드라 JS에서 처리)
         if (month) result = result.filter(ing => (ing.months || []).includes(month))
