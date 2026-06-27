@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { REGIONS } from '../lib/regions'
-import { SEASONAL_FOODS_SEED, CATEGORIES, getAllIngredients } from '../lib/seasonalFoods'
+import { SEASONAL_FOODS_SEED, CATEGORIES, CATEGORY_GROUPS, getAllIngredients } from '../lib/seasonalFoods'
 import { KOREA_PATHS } from '../lib/koreaPaths'
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
@@ -43,12 +43,12 @@ const REGION_LABEL_POS = {
 }
 
 function categoryColor(cat) {
-  const m = { fish:'#0ea5e9', veg:'#22c55e', fruit:'#f97316', grain:'#eab308', meat:'#ef4444', mushroom:'#a855f7' }
-  return m[cat] || '#888'
+  const found = CATEGORIES.find(c => c.id === cat)
+  return found?.color || '#888'
 }
 function categoryBg(cat) {
-  const m = { fish:'#0ea5e919', veg:'#22c55e19', fruit:'#f9731619', grain:'#eab30819', meat:'#ef444419', mushroom:'#a855f719' }
-  return m[cat] || '#88888819'
+  const found = CATEGORIES.find(c => c.id === cat)
+  return found ? found.color + '19' : '#88888819'
 }
 
 // 한국 지도 컴포넌트
@@ -540,23 +540,38 @@ export default function MapPage() {
           {/* 카테고리 */}
           <div style={{ marginBottom:14 }}>
             <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🏷 카테고리</p>
-            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+            {/* 전체 버튼 */}
+            <div style={{ marginBottom:8 }}>
               <button onClick={() => setSelCategory('all')}
                 style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
                   borderColor: selCategory==='all' ? '#888' : 'var(--border)',
                   background: selCategory==='all' ? 'var(--surface3)' : 'var(--surface2)',
                   color: selCategory==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selCategory==='all'?700:400,
                 }}>전체</button>
-              {CATEGORIES.map(c => (
-                <button key={c.id} onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
-                  style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                    borderColor: selCategory===c.id ? c.color : 'var(--border)',
-                    background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
-                    color: selCategory===c.id ? c.color : 'var(--text2)',
-                    fontWeight: selCategory===c.id ? 700 : 400,
-                  }}>{c.emoji} {c.label}</button>
-              ))}
             </div>
+            {/* 그룹별 카테고리 */}
+            {CATEGORY_GROUPS.map(group => {
+              const groupCats = CATEGORIES.filter(c => group.ids.includes(c.id))
+              const isGroupActive = groupCats.some(c => c.id === selCategory)
+              return (
+                <div key={group.label} style={{ marginBottom:6 }}>
+                  <p style={{ fontSize:10, fontWeight:700, color: isGroupActive ? 'var(--accent)' : 'var(--text3)', marginBottom:4, letterSpacing:'0.04em' }}>
+                    {group.label}
+                  </p>
+                  <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                    {groupCats.map(c => (
+                      <button key={c.id} onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
+                        style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                          borderColor: selCategory===c.id ? c.color : 'var(--border)',
+                          background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
+                          color: selCategory===c.id ? c.color : 'var(--text2)',
+                          fontWeight: selCategory===c.id ? 700 : 400,
+                        }}>{c.emoji} {c.label}</button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
           {/* 지역 */}
