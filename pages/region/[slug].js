@@ -92,6 +92,46 @@ export default function RegionPage({ regionId }) {
           )}
         </section>
 
+        {/* 특산품 · 기간한정 전용 섹션 */}
+        {(allFoods.some(f => f.is_special) || allFoods.some(f => f.is_limited)) && (
+          <section style={{ marginBottom:28 }}>
+            {allFoods.some(f => f.is_special) && (
+              <div style={{ marginBottom:16 }}>
+                <h3 style={{ fontSize:15, fontWeight:800, marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  🏆 <span style={{ color:'#b45309' }}>특산품</span>
+                </h3>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  {allFoods.filter(f => f.is_special).map((food, i) => (
+                    <a key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'6px 14px',
+                        borderRadius:20, background:'#fef3c7', border:'1.5px solid #f59e0b',
+                        color:'#b45309', fontWeight:700, fontSize:13, textDecoration:'none' }}>
+                      🏆 {food.ingredient}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            {allFoods.some(f => f.is_limited && f.limited_days) && (
+              <div>
+                <h3 style={{ fontSize:15, fontWeight:800, marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+                  ⏰ <span style={{ color:'#059669' }}>기간한정</span>
+                </h3>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  {allFoods.filter(f => f.is_limited && f.limited_days).map((food, i) => (
+                    <a key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'6px 14px',
+                        borderRadius:20, background:'#d1fae5', border:'1.5px solid #10b981',
+                        color:'#059669', fontWeight:700, fontSize:13, textDecoration:'none' }}>
+                      ⏰ {food.ingredient} · {food.limited_days}간 한정
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* 계절 필터 */}
         <section style={{ marginBottom:10 }}>
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
@@ -153,18 +193,16 @@ export default function RegionPage({ regionId }) {
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
                       <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
-                      <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
-                        background: food.is_special ? '#fef3c7' : 'var(--surface2)',
-                        border: `1px solid ${food.is_special ? '#f59e0b' : 'var(--border)'}`,
-                        color: food.is_special ? '#b45309' : 'var(--text3)',
-                        fontWeight: food.is_special ? 700 : 400,
-                      }}>🏆 {food.is_special ? '특산품' : '일반'}</span>
-                      <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
-                        background: food.is_limited ? '#d1fae5' : 'var(--surface2)',
-                        border: `1px solid ${food.is_limited ? '#10b981' : 'var(--border)'}`,
-                        color: food.is_limited ? '#059669' : 'var(--text3)',
-                        fontWeight: food.is_limited ? 700 : 400,
-                      }}>⏰ {food.is_limited && food.limited_days ? `${food.limited_days}간 한정` : '기간제한없음'}</span>
+                      {food.is_special && (
+                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                          background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700,
+                        }}>🏆 특산품</span>
+                      )}
+                      {food.is_limited && food.limited_days && (
+                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                          background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700,
+                        }}>⏰ {food.limited_days}간 한정</span>
+                      )}
                     </div>
                     <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
                       {food.months.slice(0,5).map(m => (
