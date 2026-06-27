@@ -922,6 +922,315 @@ const baseHandler = createMcpHandler(
       }
     )
 
+
+    // ══════════════════════════════════════════════════════════════
+    //  맵 관리 데이터 조회/추가 툴 (건강효능·TV방송·셰프·식재료·요리·조리도구·레시피)
+    // ══════════════════════════════════════════════════════════════
+
+    server.registerTool(
+      'list_health_benefits',
+      {
+        title: '건강효능 목록 조회',
+        description: 'DB에 등록된 건강효능(health_benefits) 목록을 가져온다. 카테고리·이름으로 필터 가능.',
+        inputSchema: {
+          category: z.string().optional().describe('카테고리 필터 (예: 면역·항산화)'),
+          q:        z.string().optional().describe('이름 검색어'),
+          limit:    z.number().optional().describe('최대 반환 개수 (기본 50)'),
+        },
+      },
+      async ({ category, q, limit = 50 }) => {
+        let query = supabase.from('health_benefits').select('id,name,category,description').order('name').limit(limit)
+        if (category) query = query.eq('category', category)
+        if (q)        query = query.ilike('name', `%${q}%`)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_health_benefit',
+      {
+        title: '건강효능 추가',
+        description: '새 건강효능을 DB에 등록한다.',
+        inputSchema: {
+          name:        z.string().describe('효능명 (예: 면역력 강화)'),
+          category:    z.string().optional().describe('카테고리 (예: 면역·항산화)'),
+          description: z.string().optional().describe('상세 설명'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ name, category = '', description = '' }) => {
+        const id = 'hb_' + Date.now()
+        const { data, error } = await supabase.from('health_benefits').insert([{ id, name, category, description }]).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 건강효능 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_tv_shows',
+      {
+        title: 'TV방송 목록 조회',
+        description: 'DB에 등록된 TV 요리방송 목록을 가져온다.',
+        inputSchema: {
+          q:     z.string().optional().describe('방송명 검색어'),
+          limit: z.number().optional().describe('최대 반환 개수 (기본 50)'),
+        },
+      },
+      async ({ q, limit = 50 }) => {
+        let query = supabase.from('tv_shows').select('id,name,channel,category,air_day,description').order('name').limit(limit)
+        if (q) query = query.ilike('name', `%${q}%`)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_tv_show',
+      {
+        title: 'TV방송 추가',
+        description: '새 TV 요리방송을 DB에 등록한다.',
+        inputSchema: {
+          name:        z.string().describe('방송명 (예: 백종원의 골목식당)'),
+          channel:     z.string().optional().describe('채널명 (예: SBS)'),
+          category:    z.string().optional().describe('카테고리 (예: 요리경연)'),
+          air_day:     z.string().optional().describe('방영 요일 (예: 수)'),
+          description: z.string().optional().describe('방송 설명'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ name, channel = '', category = '', air_day = '', description = '' }) => {
+        const id = 'tv_' + Date.now()
+        const { data, error } = await supabase.from('tv_shows').insert([{ id, name, channel, category, air_day, description }]).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ TV방송 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_chefs',
+      {
+        title: '셰프 목록 조회',
+        description: 'DB에 등록된 셰프/요리사 목록을 가져온다.',
+        inputSchema: {
+          q:     z.string().optional().describe('이름 검색어'),
+          limit: z.number().optional().describe('최대 반환 개수 (기본 50)'),
+        },
+      },
+      async ({ q, limit = 50 }) => {
+        let query = supabase.from('chefs').select('id,name,role,specialty,description').order('name').limit(limit)
+        if (q) query = query.ilike('name', `%${q}%`)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_chef',
+      {
+        title: '셰프 추가',
+        description: '새 셰프/요리사를 DB에 등록한다.',
+        inputSchema: {
+          name:        z.string().describe('셰프 이름 (예: 백종원)'),
+          role:        z.string().optional().describe('역할 (예: 셰프, MC, 요리연구가)'),
+          specialty:   z.string().optional().describe('전문 분야 (예: 한식, 양식)'),
+          description: z.string().optional().describe('소개'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ name, role = '', specialty = '', description = '' }) => {
+        const id = 'chef_' + Date.now()
+        const { data, error } = await supabase.from('chefs').insert([{ id, name, role, specialty, description }]).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 셰프 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_ingredients',
+      {
+        title: '식재료 목록 조회',
+        description: 'DB에 등록된 식재료 목록을 가져온다. 카테고리·이름으로 필터 가능.',
+        inputSchema: {
+          category: z.string().optional().describe('카테고리 id (예: fish, leaf_veg)'),
+          q:        z.string().optional().describe('이름 검색어'),
+          limit:    z.number().optional().describe('최대 반환 개수 (기본 50)'),
+        },
+      },
+      async ({ category, q, limit = 50 }) => {
+        let query = supabase.from('ingredients').select('id,name,category,description,season_start,season_end').order('name').limit(limit)
+        if (category) query = query.eq('category', category)
+        if (q)        query = query.ilike('name', `%${q}%`)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_ingredient',
+      {
+        title: '식재료 추가',
+        description: '새 식재료를 DB에 등록한다.',
+        inputSchema: {
+          name:         z.string().describe('식재료명 (예: 고등어)'),
+          category:     z.string().optional().describe('카테고리 id (예: fish)'),
+          description:  z.string().optional().describe('설명'),
+          season_start: z.number().optional().describe('제철 시작 월 (1~12)'),
+          season_end:   z.number().optional().describe('제철 종료 월 (1~12)'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ name, category = '', description = '', season_start, season_end }) => {
+        const id = 'ing_' + Date.now()
+        const { data, error } = await supabase.from('ingredients').insert([{ id, name, category, description, season_start, season_end }]).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 식재료 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_dishes',
+      {
+        title: '요리 목록 조회',
+        description: 'DB에 등록된 요리(dish) 목록을 가져온다.',
+        inputSchema: {
+          category: z.string().optional().describe('카테고리 (예: 한식, 양식)'),
+          q:        z.string().optional().describe('요리명 검색어'),
+          limit:    z.number().optional().describe('최대 반환 개수 (기본 50)'),
+        },
+      },
+      async ({ category, q, limit = 50 }) => {
+        let query = supabase.from('dishes').select('id,name,category,description').order('name').limit(limit)
+        if (category) query = query.eq('category', category)
+        if (q)        query = query.ilike('name', `%${q}%`)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_dish',
+      {
+        title: '요리 추가',
+        description: '새 요리를 DB에 등록한다.',
+        inputSchema: {
+          name:        z.string().describe('요리명 (예: 된장찌개)'),
+          category:    z.string().optional().describe('카테고리 (예: 한식)'),
+          description: z.string().optional().describe('요리 설명'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ name, category = '', description = '' }) => {
+        const id = 'dish_' + Date.now()
+        const { data, error } = await supabase.from('dishes').insert([{ id, name, category, description }]).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 요리 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_utensils',
+      {
+        title: '조리도구 목록 조회',
+        description: 'DB에 등록된 조리도구(utensils) 목록을 가져온다. 카테고리·용도·요리종류로 필터 가능.',
+        inputSchema: {
+          category: z.string().optional().describe('카테고리 (예: 칼·도마, 냄비·팬)'),
+          usage:    z.string().optional().describe('용도 (예: 가정용, 영업용)'),
+          cuisine:  z.string().optional().describe('요리종류 (예: 한식, 양식, 중식)'),
+          q:        z.string().optional().describe('이름 검색어'),
+          limit:    z.number().optional().describe('최대 반환 개수 (기본 50)'),
+        },
+      },
+      async ({ category, usage, cuisine, q, limit = 50 }) => {
+        let query = supabase.from('utensils').select('id,name,category,cuisine,usage,description,coupang_url').order('name').limit(limit)
+        if (category) query = query.eq('category', category)
+        if (usage)    query = query.eq('usage', usage)
+        if (cuisine)  query = query.eq('cuisine', cuisine)
+        if (q)        query = query.ilike('name', `%${q}%`)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_utensil',
+      {
+        title: '조리도구 추가',
+        description: '새 조리도구를 DB에 등록한다. 카테고리·용도·요리종류·쿠팡링크 포함 가능.',
+        inputSchema: {
+          name:        z.string().describe('도구명 (예: 산토쿠 칼)'),
+          category:    z.string().optional().describe('카테고리 (예: 칼·도마)'),
+          usage:       z.string().optional().describe('용도 (예: 가정용, 영업용, 공통)'),
+          cuisine:     z.string().optional().describe('요리종류 (예: 한식, 양식, 공통)'),
+          description: z.string().optional().describe('설명'),
+          coupang_url: z.string().optional().describe('쿠팡 파트너스 URL'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ name, category = '', usage = '', cuisine = '', description = '', coupang_url = '' }) => {
+        const id = 'ut_' + Date.now()
+        const { data, error } = await supabase.from('utensils').insert([{ id, name, category, cuisine, usage, description, coupang_url }]).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 조리도구 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_recipes',
+      {
+        title: '레시피 목록 조회',
+        description: 'DB에 등록된 레시피 목록을 가져온다.',
+        inputSchema: {
+          q:     z.string().optional().describe('레시피 제목 검색어'),
+          limit: z.number().optional().describe('최대 반환 개수 (기본 30)'),
+        },
+      },
+      async ({ q, limit = 30 }) => {
+        let query = supabase.from('recipes').select('id,title,summary,episode,aired_at,source_url').order('created_at', { ascending: false }).limit(limit)
+        if (q) query = query.ilike('title', `%${q}%`)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_recipe',
+      {
+        title: '레시피 추가',
+        description: '새 레시피를 DB에 등록한다. 요리(dish_id)·방송(show_id)·셰프(chef_id)와 연결 가능.',
+        inputSchema: {
+          title:      z.string().describe('레시피 제목'),
+          dish_id:    z.string().optional().describe('연결할 요리 ID (list_dishes로 조회 후 사용)'),
+          show_id:    z.string().optional().describe('연결할 TV방송 ID (list_tv_shows로 조회 후 사용)'),
+          chef_id:    z.string().optional().describe('연결할 셰프 ID (list_chefs로 조회 후 사용)'),
+          episode:    z.string().optional().describe('회차 (예: 3화, 302회)'),
+          aired_at:   z.string().optional().describe('방영일 (YYYY-MM-DD)'),
+          summary:    z.string().optional().describe('레시피 요약'),
+          source_url: z.string().optional().describe('출처 URL'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ title, dish_id, show_id, chef_id, episode = '', aired_at, summary = '', source_url = '' }) => {
+        const id = 'rec_' + Date.now()
+        const { data, error } = await supabase.from('recipes').insert([{
+          id, title,
+          dish_id:  dish_id  || null,
+          show_id:  show_id  || null,
+          chef_id:  chef_id  || null,
+          episode, aired_at: aired_at || null, summary, source_url
+        }]).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 레시피 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
   },
   {},
   { basePath: '/api', maxDuration: 30, verboseLogs: true }
