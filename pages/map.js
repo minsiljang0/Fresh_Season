@@ -335,6 +335,160 @@ export default function MapPage() {
     })
     return counts
   }, [allFoods, selMonth, selCategory, selRegion, selTV, query, dbHealthBenefits])
+  // 월별 카운트 (월 필터 제외)
+  const monthCounts = useMemo(() => {
+    let base = allFoods
+    if (selCategory !== 'all') base = base.filter(f => f.category === selCategory)
+    if (selRegion !== 'all') base = base.filter(f => f.region === selRegion)
+    if (selTV !== 'all') base = base.filter(f => f.tvPrograms && f.tvPrograms.includes(selTV))
+    if (selHealth !== 'all') {
+      base = base.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.includes(selHealth)
+        const hb = dbHealthBenefits.find(h => h.id === selHealth)
+        if (hb) return f.health.includes(hb.name)
+        return false
+      })
+    }
+    if (selAge !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb => (hb.age_groups||[]).includes(selAge)||(hb.age_groups||[]).includes('all')).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (selGender !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb => !hb.gender||hb.gender==='all'||hb.gender===selGender).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      base = base.filter(f => f.ingredient.includes(q)||f.district.includes(q)||f.health.includes(q)||(f.tvPrograms&&f.tvPrograms.some(t=>t.includes(q))))
+    }
+    const counts = {}
+    for (let m = 1; m <= 12; m++) counts[m] = base.filter(f => f.months.includes(m)).length
+    return counts
+  }, [allFoods, selCategory, selRegion, selTV, selHealth, selAge, selGender, query, dbHealthBenefits])
+
+  // 연령별 카운트 (연령 필터 제외)
+  const ageCounts = useMemo(() => {
+    let base = allFoods
+    if (selMonth !== 0) base = base.filter(f => f.months.includes(selMonth))
+    if (selCategory !== 'all') base = base.filter(f => f.category === selCategory)
+    if (selRegion !== 'all') base = base.filter(f => f.region === selRegion)
+    if (selHealth !== 'all') {
+      base = base.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.includes(selHealth)
+        const hb = dbHealthBenefits.find(h => h.id === selHealth)
+        if (hb) return f.health.includes(hb.name)
+        return false
+      })
+    }
+    if (selGender !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb => !hb.gender||hb.gender==='all'||hb.gender===selGender).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      base = base.filter(f => f.ingredient.includes(q)||f.district.includes(q)||f.health.includes(q)||(f.tvPrograms&&f.tvPrograms.some(t=>t.includes(q))))
+    }
+    const AGE_KEYS = ['infant','child','teen','adult','middle','senior']
+    const counts = {}
+    AGE_KEYS.forEach(age => {
+      const ids = new Set(dbHealthBenefits.filter(hb=>(hb.age_groups||[]).includes(age)||(hb.age_groups||[]).includes('all')).map(hb=>hb.id))
+      counts[age] = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id))).length
+    })
+    return counts
+  }, [allFoods, selMonth, selCategory, selRegion, selHealth, selGender, query, dbHealthBenefits])
+
+  // 성별 카운트 (성별 필터 제외)
+  const genderCounts = useMemo(() => {
+    let base = allFoods
+    if (selMonth !== 0) base = base.filter(f => f.months.includes(selMonth))
+    if (selCategory !== 'all') base = base.filter(f => f.category === selCategory)
+    if (selRegion !== 'all') base = base.filter(f => f.region === selRegion)
+    if (selHealth !== 'all') {
+      base = base.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.includes(selHealth)
+        const hb = dbHealthBenefits.find(h => h.id === selHealth)
+        if (hb) return f.health.includes(hb.name)
+        return false
+      })
+    }
+    if (selAge !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb=>(hb.age_groups||[]).includes(selAge)||(hb.age_groups||[]).includes('all')).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      base = base.filter(f => f.ingredient.includes(q)||f.district.includes(q)||f.health.includes(q)||(f.tvPrograms&&f.tvPrograms.some(t=>t.includes(q))))
+    }
+    const maleIds = new Set(dbHealthBenefits.filter(hb=>!hb.gender||hb.gender==='all'||hb.gender==='male').map(hb=>hb.id))
+    const femaleIds = new Set(dbHealthBenefits.filter(hb=>!hb.gender||hb.gender==='all'||hb.gender==='female').map(hb=>hb.id))
+    return {
+      male:   base.filter(f => f.healthIds && f.healthIds.some(id => maleIds.has(id))).length,
+      female: base.filter(f => f.healthIds && f.healthIds.some(id => femaleIds.has(id))).length,
+    }
+  }, [allFoods, selMonth, selCategory, selRegion, selHealth, selAge, query, dbHealthBenefits])
+
+  // 카테고리별 카운트 (카테고리 필터 제외)
+  const categoryCounts = useMemo(() => {
+    let base = allFoods
+    if (selMonth !== 0) base = base.filter(f => f.months.includes(selMonth))
+    if (selRegion !== 'all') base = base.filter(f => f.region === selRegion)
+    if (selTV !== 'all') base = base.filter(f => f.tvPrograms && f.tvPrograms.includes(selTV))
+    if (selHealth !== 'all') {
+      base = base.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.includes(selHealth)
+        const hb = dbHealthBenefits.find(h => h.id === selHealth)
+        if (hb) return f.health.includes(hb.name)
+        return false
+      })
+    }
+    if (selAge !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb=>(hb.age_groups||[]).includes(selAge)||(hb.age_groups||[]).includes('all')).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (selGender !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb=>!hb.gender||hb.gender==='all'||hb.gender===selGender).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      base = base.filter(f => f.ingredient.includes(q)||f.district.includes(q)||f.health.includes(q)||(f.tvPrograms&&f.tvPrograms.some(t=>t.includes(q))))
+    }
+    const counts = {}
+    CATEGORIES.forEach(c => { counts[c.id] = base.filter(f => f.category === c.id).length })
+    return counts
+  }, [allFoods, selMonth, selRegion, selTV, selHealth, selAge, selGender, query, dbHealthBenefits])
+
+  // 지역별 카운트 (지역 필터 제외)
+  const regionCounts = useMemo(() => {
+    let base = allFoods
+    if (selMonth !== 0) base = base.filter(f => f.months.includes(selMonth))
+    if (selCategory !== 'all') base = base.filter(f => f.category === selCategory)
+    if (selTV !== 'all') base = base.filter(f => f.tvPrograms && f.tvPrograms.includes(selTV))
+    if (selHealth !== 'all') {
+      base = base.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.includes(selHealth)
+        const hb = dbHealthBenefits.find(h => h.id === selHealth)
+        if (hb) return f.health.includes(hb.name)
+        return false
+      })
+    }
+    if (selAge !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb=>(hb.age_groups||[]).includes(selAge)||(hb.age_groups||[]).includes('all')).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (selGender !== 'all') {
+      const ids = new Set(dbHealthBenefits.filter(hb=>!hb.gender||hb.gender==='all'||hb.gender===selGender).map(hb=>hb.id))
+      base = base.filter(f => f.healthIds && f.healthIds.some(id => ids.has(id)))
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      base = base.filter(f => f.ingredient.includes(q)||f.district.includes(q)||f.health.includes(q)||(f.tvPrograms&&f.tvPrograms.some(t=>t.includes(q))))
+    }
+    const counts = {}
+    REGION_ORDER.forEach(r => { counts[r] = base.filter(f => f.region === r).length })
+    return counts
+  }, [allFoods, selMonth, selCategory, selTV, selHealth, selAge, selGender, query, dbHealthBenefits])
+
 
   useEffect(() => {
     const handler = (e) => {
@@ -422,7 +576,10 @@ export default function MapPage() {
                       borderColor: on ? 'var(--accent)' : 'var(--border)',
                       background: on ? 'rgba(34,197,94,0.12)' : 'var(--surface2)',
                       color: on ? 'var(--accent)' : 'var(--text2)',
-                    }}>{m}</button>
+                    }}>
+                    {m}
+                    {monthCounts[mon] > 0 && <span style={{ display:'block', fontSize:9, fontWeight:700, color: on ? 'var(--accent)' : 'var(--text3)', marginTop:1 }}>{monthCounts[mon]}</span>}
+                  </button>
                 )
               })}
             </div>
@@ -489,12 +646,12 @@ export default function MapPage() {
                 }}
               >
                 <option value="all">전체 연령</option>
-                <option value="infant">👶 유아 (0-6세)</option>
-                <option value="child">🧒 어린이 (7-12세)</option>
-                <option value="teen">🧑 청소년 (13-18세)</option>
-                <option value="adult">🧑‍💼 성인 (19-39세)</option>
-                <option value="middle">🧑‍🦳 중장년 (40-64세)</option>
-                <option value="senior">👴 노년 (65세+)</option>
+                <option value="infant">{`👶 유아 (0-6세) (${ageCounts.infant||0})`}</option>
+                <option value="child">{`🧒 어린이 (7-12세) (${ageCounts.child||0})`}</option>
+                <option value="teen">{`🧑 청소년 (13-18세) (${ageCounts.teen||0})`}</option>
+                <option value="adult">{`🧑‍💼 성인 (19-39세) (${ageCounts.adult||0})`}</option>
+                <option value="middle">{`🧑‍🦳 중장년 (40-64세) (${ageCounts.middle||0})`}</option>
+                <option value="senior">{`👴 노년 (65세+) (${ageCounts.senior||0})`}</option>
               </select>
               {selAge !== 'all' && (
                 <button onClick={() => setSelAge('all')}
@@ -525,8 +682,8 @@ export default function MapPage() {
                 }}
               >
                 <option value="all">전체</option>
-                <option value="male">♂ 남성</option>
-                <option value="female">♀ 여성</option>
+                <option value="male">{`♂ 남성 (${genderCounts.male||0})`}</option>
+                <option value="female">{`♀ 여성 (${genderCounts.female||0})`}</option>
               </select>
               {selGender !== 'all' && (
                 <button onClick={() => setSelGender('all')}
@@ -566,7 +723,11 @@ export default function MapPage() {
                           background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
                           color: selCategory===c.id ? c.color : 'var(--text2)',
                           fontWeight: selCategory===c.id ? 700 : 400,
-                        }}>{c.emoji} {c.label}</button>
+                          opacity: (categoryCounts[c.id]||0) === 0 ? 0.4 : 1,
+                        }}>
+                        {c.emoji} {c.label}
+                        {(categoryCounts[c.id]||0) > 0 && <span style={{ marginLeft:4, fontSize:10, fontWeight:700, background: selCategory===c.id ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.06)', borderRadius:999, padding:'1px 5px' }}>{categoryCounts[c.id]}</span>}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -590,7 +751,7 @@ export default function MapPage() {
                 }}>
                 <option value="all">전체 지역</option>
                 {REGION_ORDER.map(r => (
-                  <option key={r} value={r}>{REGION_SHORT[r]}</option>
+                  <option key={r} value={r}>{`${REGION_SHORT[r]} (${regionCounts[r]||0})`}</option>
                 ))}
               </select>
               {selRegion !== 'all' && (
@@ -649,6 +810,29 @@ export default function MapPage() {
 
           {/* 오른쪽: 검색 결과 */}
           <div style={{ flex:1, minWidth:0 }}>
+
+            {/* 요약 스탯 — 최상단 */}
+            {totalCount > 0 && (
+              <div style={{ marginBottom:12, display:'flex', gap:8, flexWrap:'wrap' }}>
+                {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
+                  <button key={c.id}
+                    onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
+                    style={{
+                      display:'flex', alignItems:'center', gap:6,
+                      background: selCategory===c.id ? c.color+'22' : 'var(--surface)',
+                      border: `1.5px solid ${selCategory===c.id ? c.color : 'var(--border)'}`,
+                      borderRadius:12, padding:'8px 12px', cursor:'pointer', fontFamily:'inherit',
+                      transition:'all 0.15s',
+                    }}>
+                    <span style={{ fontSize:18 }}>{c.emoji}</span>
+                    <span style={{ display:'flex', flexDirection:'column', alignItems:'flex-start' }}>
+                      <span style={{ fontSize:16, fontWeight:900, color:c.color, lineHeight:1 }}>{categoryCounts[c.id]||0}</span>
+                      <span style={{ fontSize:10, color:'var(--text3)', marginTop:1 }}>{c.label}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* 결과 없음 */}
             {totalCount === 0 && (
@@ -859,22 +1043,7 @@ export default function MapPage() {
               </div>
             )}
 
-            {/* 요약 스탯 */}
-            {totalCount > 0 && (
-              <div style={{ marginTop:16, display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(100px,1fr))', gap:8 }}>
-                {CATEGORIES.map(c => {
-                  const cnt = filtered.filter(f => f.category === c.id).length
-                  if (!cnt) return null
-                  return (
-                    <div key={c.id} style={{ background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:12, padding:'10px 12px', textAlign:'center' }}>
-                      <div style={{ fontSize:20, marginBottom:4 }}>{c.emoji}</div>
-                      <div style={{ fontSize:18, fontWeight:900, color:c.color }}>{cnt}</div>
-                      <div style={{ fontSize:10, color:'var(--text3)', marginTop:2 }}>{c.label}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+
           </div>
         </div>
 
