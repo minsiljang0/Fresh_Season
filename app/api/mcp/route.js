@@ -1073,7 +1073,7 @@ const baseHandler = createMcpHandler(
       'update_ingredient',
       {
         title: '식재료 정보 수정',
-        description: '등록된 식재료의 모든 정보를 수정한다. id로 대상을 찾고, 전달된 필드만 업데이트한다. 이름·카테고리·설명·제철월·연령대·성별·주의사항·쿠팡URL·특산품·기간한정·해외여부 등 전체 필드 지원.',
+        description: '등록된 식재료의 모든 정보를 수정한다. id로 대상을 찾고, 전달된 필드만 업데이트한다. 이름·카테고리·설명·제철월(months 배열)·연령대·성별·주의사항·쿠팡URL·특산품·기간한정·해외여부 등 전체 필드 지원. 제철 월은 months 배열로 반드시 지정할 것 (예: [6,7,8,9,10]).',
         inputSchema: {
           id:           z.string().describe('식재료 ID (필수)'),
           name:         z.string().optional().describe('식재료명'),
@@ -1081,7 +1081,7 @@ const baseHandler = createMcpHandler(
           description:  z.string().optional().describe('설명 (건강효능 요약)'),
           season_start: z.number().int().min(1).max(12).optional().describe('제철 시작 월 (1~12)'),
           season_end:   z.number().int().min(1).max(12).optional().describe('제철 종료 월 (1~12)'),
-          months:       z.array(z.number().int().min(1).max(12)).optional().describe('주요 제철 월 배열 (예: [6,7,8])'),
+          months:       z.array(z.number().int().min(1).max(12)).min(1).optional().describe('주요 제철 월 배열 — 반드시 설정. 예: 여름 제철이면 [6,7,8], 가을이면 [9,10,11]'),
           age_groups:   z.array(z.string()).optional().describe('권장 연령대 배열 (예: ["infant","child","adult","senior","all"] 등)'),
           gender:       z.enum(['all','male','female']).optional().describe('권장 성별 (all·male·female)'),
           caution:      z.string().optional().describe('주의사항 (예: 통풍 환자 퓨린 함량 높음)'),
@@ -1549,6 +1549,83 @@ const baseHandler = createMcpHandler(
         }]).select().single()
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         return { content: [{ type: 'text', text: `✅ 레시피 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    // ── 지역·제철원 연결 툴 ─────────────────────────────────────────────
+
+    server.registerTool(
+      'add_ingredient_region',
+      {
+        title: '식재료 지역·제철원 추가',
+        description: '식재료(ingredient_id)에 지역·제철원을 연결한다. 시도(region)·시군구(district)·제철 월(months) 조합으로 등록. 한 식재료에 여러 지역을 추가할 때는 이 툴을 여러 번 호출한다. 예: 가리비 → 강원+전남 각각 호출.',
+        inputSchema: {
+          ingredient_id: z.string().describe('식재료 ID (list_ingredients로 조회 후 사용)'),
+          region:        z.enum(REGION_CODES).describe('시도 코드. 예: gangwon, jeonnam, jeju'),
+          district:      z.string().optional().describe('시군구 (선택). 예: 속초시, 완도군, 서귀포시'),
+          months:        z.array(z.number().int().min(1).max(12)).min(1).describe('이 지역에서의 제철 월 배열. 예: [6,7,8,9,10]'),
+          label:         z.string().optional().describe('조합명 (자동완성 가능). 비우면 "식재료명-지역명" 자동 생성. 예: 가리비-강원'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ ingredient_id, region, district = '', months, label = '' }) => {
+        const id = 'ir_' + Date.now()
+        // label 미입력 시 자동 생성
+        let finalLabel = label
+        if (!finalLabel) {
+          const { data: ing } = await supabase.from('ingredients').select('name').eq('id', ingredient_id).maybeSingle()
+          const rShort = district
+            ? district.replace(/(시|군|구)$/, '')
+            : (REGION_LABELS[region] || region).replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, '')
+          if (ing?.name && rShort) finalLabel = `${ing.name}-${rShort}`
+        }
+        const { data, error } = await supabase
+          .from('ingredient_regions')
+          .insert([{ id, ingredient_id, region, district, months, label: finalLabel }])
+          .select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 지역·제철원 추가 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_ingredient_regions',
+      {
+        title: '식재료 지역·제철원 조회',
+        description: '특정 식재료에 연결된 지역·제철원 목록을 조회한다. ingredient_id로 필터링. 지역이 이미 등록됐는지 확인하거나 중복 방지에 사용한다.',
+        inputSchema: {
+          ingredient_id: z.string().optional().describe('식재료 ID로 필터링. 비우면 전체 반환 (최대 200건)'),
+          region:        z.enum(REGION_CODES).optional().describe('시도 코드로 필터링'),
+        },
+      },
+      async ({ ingredient_id, region }) => {
+        let q = supabase.from('ingredient_regions').select('*').order('created_at', { ascending: false }).limit(200)
+        if (ingredient_id) q = q.eq('ingredient_id', ingredient_id)
+        if (region)        q = q.eq('region', region)
+        const { data, error } = await q
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        if (!data?.length) return { content: [{ type: 'text', text: '등록된 지역·제철원 없음' }] }
+        const lines = data.map(r =>
+          `ID:${r.id} | ${r.label || '-'} | 시도:${REGION_LABELS[r.region]||r.region} | 시군구:${r.district||'-'} | 제철:${(r.months||[]).join('·')}월 | 식재료ID:${r.ingredient_id}`
+        )
+        return { content: [{ type: 'text', text: lines.join('\n') }] }
+      }
+    )
+
+    server.registerTool(
+      'delete_ingredient_region',
+      {
+        title: '식재료 지역·제철원 삭제',
+        description: '잘못 등록된 지역·제철원 연결을 삭제한다. list_ingredient_regions로 ID를 먼저 조회한 뒤 사용.',
+        inputSchema: {
+          id: z.string().describe('삭제할 ingredient_regions 레코드 ID (list_ingredient_regions로 조회 후 사용)'),
+        },
+        annotations: { destructiveHint: true },
+      },
+      async ({ id }) => {
+        const { error } = await supabase.from('ingredient_regions').delete().eq('id', id)
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 지역·제철원 삭제 완료 (ID: ${id})` }] }
       }
     )
 
