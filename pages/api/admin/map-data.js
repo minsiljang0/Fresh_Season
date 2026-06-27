@@ -55,17 +55,9 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data || [])
       }
-      if (type === 'health_tv_shows') {
-        const { health_id } = req.query
-        let q = supabase.from('health_tv_shows').select('*, tv_shows(id,name,broadcaster)')
-        if (health_id) q = q.eq('health_id', health_id)
-        const { data, error } = await q
-        if (error) throw error
-        return res.status(200).json(data || [])
-      }
       if (type === 'ingredient_health') {
         const { ingredient_id, health_id } = req.query
-        let q = supabase.from('ingredient_health').select('*, health_benefits(id,name,category)')
+        let q = supabase.from('ingredient_health').select('*, ingredients(id,name,category), health_benefits(id,name,category)')
         if (ingredient_id) q = q.eq('ingredient_id', ingredient_id)
         if (health_id) q = q.eq('health_id', health_id)
         const { data, error } = await q
@@ -190,30 +182,6 @@ export default async function handler(req, res) {
         return res.status(200).json(data)
       }
       if (type === 'health_tv_shows') {
-        const { health_id } = req.query
-        let q = supabase.from('health_tv_shows').select('*, tv_shows(id,name,broadcaster,category)')
-        if (health_id) q = q.eq('health_id', health_id)
-        const { data, error } = await q
-        if (error) throw error
-        return res.status(200).json(data || [])
-      }
-      if (type === 'show_ingredients') {
-        const { show_id } = req.query
-        let q = supabase.from('show_ingredients').select('*, ingredients(id,name,category)')
-        if (show_id) q = q.eq('show_id', show_id)
-        const { data, error } = await q
-        if (error) throw error
-        return res.status(200).json(data || [])
-      }
-      if (type === 'health_tv_shows') {
-        const { health_id } = req.query
-        let q = supabase.from('health_tv_shows').select('*, tv_shows(id,name,broadcaster,category)')
-        if (health_id) q = q.eq('health_id', health_id)
-        const { data, error } = await q
-        if (error) throw error
-        return res.status(200).json(data || [])
-      }
-      if (type === 'health_tv_shows') {
         const { data, error } = await supabase.from('health_tv_shows')
           .insert([{ id: genId(), health_id: body.health_id, show_id: body.show_id }])
           .select().single()
@@ -223,21 +191,6 @@ export default async function handler(req, res) {
       if (type === 'show_ingredients') {
         const { data, error } = await supabase.from('show_ingredients')
           .insert([{ id: genId(), show_id: body.show_id, ingredient_id: body.ingredient_id }])
-          .select().single()
-        if (error) throw error
-        return res.status(200).json(data)
-      }
-      if (type === 'health_tv_shows') {
-        const { health_id } = req.query
-        let q = supabase.from('health_tv_shows').select('*, tv_shows(id,name,broadcaster)')
-        if (health_id) q = q.eq('health_id', health_id)
-        const { data, error } = await q
-        if (error) throw error
-        return res.status(200).json(data || [])
-      }
-      if (type === 'health_tv_shows') {
-        const { data, error } = await supabase.from('health_tv_shows')
-          .insert([{ id: genId(), health_id: body.health_id, show_id: body.show_id }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)
@@ -356,7 +309,6 @@ export default async function handler(req, res) {
         ingredients: 'ingredients',
         health_tv_shows: 'health_tv_shows',
         show_ingredients: 'show_ingredients',
-        health_tv_shows: 'health_tv_shows',
         ingredient_health: 'ingredient_health',
         ingredient_regions: 'ingredient_regions',
         recipe_tools: 'recipe_tools',
