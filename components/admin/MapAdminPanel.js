@@ -690,6 +690,10 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   const [saving, setSaving] = useState(false)
   const [searchQ, setSearchQ] = useState('')
   const [catTab, setCatTab] = useState('all')
+  const [filterMonth, setFilterMonth] = useState(0)
+  const [filterRegion, setFilterRegion] = useState('')
+  const [filterSuperfood, setFilterSuperfood] = useState(false)
+  const [filterGlobal, setFilterGlobal] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formRegions, setFormRegions] = useState([])
   const [formRegionForm, setFormRegionForm] = useState(EMPTY_REGION)
@@ -884,7 +888,24 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   }
 
   const byTab = catTab === 'all' ? list : list.filter(i => i.category === catTab)
-  const filtered = searchQ ? byTab.filter(i => i.name.includes(searchQ)) : byTab
+  const filtered = byTab.filter(i => {
+    if (searchQ && !i.name.includes(searchQ)) return false
+    if (filterMonth !== 0 && !(i.months||[]).includes(filterMonth)) return false
+    if (filterRegion && !(i.regions_preview||[]).some(lbl => lbl.includes(filterRegion.slice(0,2)))) return false
+    if (filterSuperfood && !i.is_superfood) return false
+    if (filterGlobal && !i.is_global) return false
+    return true
+  })
+  // 지역 옵션: regions_preview 라벨에서 시도명 추출
+  const allRegionLabels = useMemo(() => {
+    const set = new Set()
+    list.forEach(i => (i.regions_preview||[]).forEach(lbl => {
+      // "가리비-전남" → "전남"
+      const parts = lbl.split('-')
+      if (parts.length >= 2) set.add(parts[parts.length-1])
+    }))
+    return [...set].sort()
+  }, [list])
 
   // 공통 필드 컴포넌트
   const IngFormFields = ({ f, setF }) => (
@@ -1068,10 +1089,76 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
         )}
       </div>
 
-      {/* ── 카테고리 탭 + 검색 ── */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12, flexWrap:'wrap', gap:8 }}>
-        <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 이름 검색" style={{ ...S.input, width:170 }} />
-        <span style={{ fontSize:12, color:'#8aaa8a', alignSelf:'center' }}>{filtered.length}개</span>
+      {/* ── 필터 바 ── */}
+      <div style={{ background:'#f0fdf4', border:'1.5px solid #86efac', borderRadius:12, padding:14, marginBottom:12 }}>
+        {/* 1줄: 검색 + 카운트 */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, gap:8, flexWrap:'wrap' }}>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 이름 검색" style={{ ...S.input, width:170, flex:'none' }} />
+          <span style={{ fontSize:12, color:'#4b6e4b', fontWeight:700 }}>{filtered.length}개</span>
+        </div>
+        {/* 2줄: 월 필터 */}
+        <div style={{ marginBottom:8 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', marginBottom:5 }}>📅 월 필터</div>
+          <div style={{ display:'flex', gap:3, flexWrap:'wrap' }}>
+            <button onClick={()=>setFilterMonth(0)}
+              style={{ padding:'3px 8px', borderRadius:20, border:`1.5px solid ${filterMonth===0?'#16a34a':'#d1e8d1'}`,
+                background:filterMonth===0?'#dcfce7':'#fff', color:filterMonth===0?'#15803d':'#4b6e4b',
+                fontSize:11, fontWeight:filterMonth===0?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>전체</button>
+            {MONTHS.map(m => (
+              <button key={m} onClick={()=>setFilterMonth(filterMonth===m?0:m)}
+                style={{ padding:'3px 8px', borderRadius:20, border:`1.5px solid ${filterMonth===m?'#16a34a':'#d1e8d1'}`,
+                  background:filterMonth===m?'#dcfce7':'#fff', color:filterMonth===m?'#15803d':'#4b6e4b',
+                  fontSize:11, fontWeight:filterMonth===m?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                {m}월 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>(i.months||[]).includes(m)).length})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* 3줄: 지역 필터 */}
+        <div style={{ marginBottom:8 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', marginBottom:5 }}>📍 지역 필터</div>
+          <div style={{ display:'flex', gap:3, flexWrap:'wrap' }}>
+            <button onClick={()=>setFilterRegion('')}
+              style={{ padding:'3px 8px', borderRadius:20, border:`1.5px solid ${filterRegion===''?'#16a34a':'#d1e8d1'}`,
+                background:filterRegion===''?'#dcfce7':'#fff', color:filterRegion===''?'#15803d':'#4b6e4b',
+                fontSize:11, fontWeight:filterRegion===''?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>전체</button>
+            {allRegionLabels.map(region => {
+              const cnt = list.filter(i=>(i.regions_preview||[]).some(lbl=>lbl.includes(region.slice(0,2)))).length
+              return (
+                <button key={region} onClick={()=>setFilterRegion(filterRegion===region?'':region)}
+                  style={{ padding:'3px 8px', borderRadius:20, border:`1.5px solid ${filterRegion===region?'#16a34a':'#d1e8d1'}`,
+                    background:filterRegion===region?'#dcfce7':'#fff', color:filterRegion===region?'#15803d':'#4b6e4b',
+                    fontSize:11, fontWeight:filterRegion===region?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                  {region} <span style={{ fontSize:10, opacity:.7 }}>({cnt})</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        {/* 4줄: 슈퍼푸드 · 해외 토글 */}
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button onClick={()=>setFilterSuperfood(v=>!v)}
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:20,
+              border:`1.5px solid ${filterSuperfood?'#f59e0b':'#d1e8d1'}`,
+              background:filterSuperfood?'#fef3c7':'#fff', color:filterSuperfood?'#92400e':'#4b6e4b',
+              fontSize:12, fontWeight:filterSuperfood?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+            🌟 슈퍼푸드만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_superfood).length})</span>
+          </button>
+          <button onClick={()=>setFilterGlobal(v=>!v)}
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:20,
+              border:`1.5px solid ${filterGlobal?'#3b82f6':'#d1e8d1'}`,
+              background:filterGlobal?'#dbeafe':'#fff', color:filterGlobal?'#1d4ed8':'#4b6e4b',
+              fontSize:12, fontWeight:filterGlobal?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+            🌍 해외만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_global).length})</span>
+          </button>
+          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||searchQ) && (
+            <button onClick={()=>{setFilterMonth(0);setFilterRegion('');setFilterSuperfood(false);setFilterGlobal(false);setSearchQ('')}}
+              style={{ padding:'5px 12px', borderRadius:20, border:'1.5px solid #d1e8d1', background:'#fff', color:'#6b7280',
+                fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+              🔄 초기화
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ marginBottom:14, borderBottom:'1px solid #d1e8d1', paddingBottom:10 }}>
@@ -1169,6 +1256,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                       <span style={{ fontWeight:800, color:'#111', fontSize:13 }}>{ct?.emoji} {i.name}</span>
                       {i.is_special && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700 }}>🏆 특산</span>}
                       {i.is_limited && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700 }}>⏰ {i.limited_days||'기간한정'}</span>}
+                      {i.is_superfood && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#92400e', fontWeight:700 }}>🌟 슈퍼푸드</span>}
                       {i.is_global && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#dbeafe', border:'1px solid #3b82f6', color:'#1d4ed8', fontWeight:700 }}>🌍 해외</span>}
                     </div>
                     {/* 지역 뱃지 */}
