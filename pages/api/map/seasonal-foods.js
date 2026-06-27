@@ -10,7 +10,7 @@ export default async function handler(req, res) {
       .select('*')
       .order('region')
 
-    // ② 맵관리에서 관리하는 ingredient_regions + ingredients 조인
+    // ② 맵관리 ingredient_regions + ingredients + health_benefits 조인
     const { data: managed, error } = await supabase
       .from('ingredient_regions')
       .select(`
@@ -23,12 +23,26 @@ export default async function handler(req, res) {
           name,
           category,
           description,
-          caution
+          caution,
+          ingredient_health (
+            health_benefits (
+              id,
+              name,
+              category
+            )
+          )
         )
       `)
       .order('region')
 
     if (error) throw error
+
+    // ③ DB 건강효능 목록 전체 (map.js에서 필터 버튼 생성용)
+    const { data: healthBenefits } = await supabase
+      .from('health_benefits')
+      .select('id, name, category')
+      .order('category')
+      .order('name')
 
     // 레거시 데이터 포맷
     const legacyFormatted = (legacy || []).map(row => ({
@@ -38,27 +52,36 @@ export default async function handler(req, res) {
       district:   row.district || '',
       months:     Array.isArray(row.months) ? row.months : [],
       health:     row.health || '',
+      healthIds:  [],   // 레거시는 연결 ID 없음
       tvPrograms: row.tv_programs || [],
       caution:    row.caution || '',
       source:     'legacy',
     }))
 
-    // 맵관리 데이터 포맷 (ingredient_regions + ingredients)
+    // 맵관리 데이터 포맷 — healthIds 포함
     const managedFormatted = (managed || [])
-      .filter(row => row.ingredients)  // 식재료 연결된 것만
-      .map(row => ({
-        ingredient: row.ingredients.name,
-        category:   row.ingredients.category || 'veg',
-        region:     row.region,
-        district:   row.district || '',
-        months:     Array.isArray(row.months) ? row.months : [],
-        health:     row.ingredients.description || '',
-        tvPrograms: [],
-        caution:    row.ingredients.caution || '',
-        source:     'managed',
-      }))
+      .filter(row => row.ingredients)
+      .map(row => {
+        // ingredient_health → health_benefits 에서 id 배열 추출
+        const healthIds = (row.ingredients.ingredient_health || [])
+          .map(ih => ih.health_benefits?.id)
+          .filter(Boolean)
 
-    // 맵관리 데이터 우선 — 레거시 중 맵관리에 없는 것만 보완
+        return {
+          ingredient: row.ingredients.name,
+          category:   row.ingredients.category || 'veg',
+          region:     row.region,
+          district:   row.district || '',
+          months:     Array.isArray(row.months) ? row.months : [],
+          health:     row.ingredients.description || '',
+          healthIds,
+          tvPrograms: [],
+          caution:    row.ingredients.caution || '',
+          source:     'managed',
+        }
+      })
+
+    // 맵관리 데이터 우선 — 레거시 중 중복 제거
     const managedKeys = new Set(
       managedFormatted.map(r => `${r.ingredient}::${r.region}::${r.district}`)
     )
@@ -66,7 +89,10 @@ export default async function handler(req, res) {
       r => !managedKeys.has(`${r.ingredient}::${r.region}::${r.district}`)
     )
 
-    return res.status(200).json([...managedFormatted, ...filteredLegacy])
+    return res.status(200).json({
+      foods: [...managedFormatted, ...filteredLegacy],
+      healthBenefits: healthBenefits || [],
+    })
   } catch (e) {
     console.error('seasonal-foods API error:', e)
     return res.status(500).json({ error: e.message })
