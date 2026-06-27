@@ -159,11 +159,12 @@ export default function RegionPage({ regionId }) {
                         color: food.is_special ? '#b45309' : 'var(--text3)',
                         fontWeight: food.is_special ? 700 : 400,
                       }}>🏆 {food.is_special ? '특산품' : '일반'}</span>
-                      {food.is_limited && food.limited_days && (
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
-                          background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700,
-                        }}>⏰ {food.limited_days}간 한정</span>
-                      )}
+                      <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                        background: food.is_limited ? '#d1fae5' : 'var(--surface2)',
+                        border: `1px solid ${food.is_limited ? '#10b981' : 'var(--border)'}`,
+                        color: food.is_limited ? '#059669' : 'var(--text3)',
+                        fontWeight: food.is_limited ? 700 : 400,
+                      }}>⏰ {food.is_limited && food.limited_days ? `${food.limited_days}간 한정` : '기간제한없음'}</span>
                     </div>
                     <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
                       {food.months.slice(0,5).map(m => (
