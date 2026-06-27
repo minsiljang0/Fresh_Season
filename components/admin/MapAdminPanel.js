@@ -2493,19 +2493,6 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
         <div style={S.cardTitle}>🔧 조리기구 등록</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
           <div>
-            <label style={S.label}>기구명 *</label>
-            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
-              placeholder="예: 프라이팬, 믹싱볼, 계량컵" style={S.input}
-              onKeyDown={e=>{ if(e.key==='Enter') submit() }} />
-          </div>
-          <div>
-            <label style={S.label}>카테고리</label>
-            <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} style={S.input}>
-              <option value="">선택</option>
-              {UTENSIL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
             <label style={S.label}>용도</label>
             <select value={form.usage} onChange={e=>setForm(f=>({...f,usage:e.target.value}))} style={S.input}>
               <option value="">선택</option>
@@ -2517,6 +2504,19 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
             <select value={form.cuisine} onChange={e=>setForm(f=>({...f,cuisine:e.target.value}))} style={S.input}>
               <option value="">선택</option>
               {UTENSIL_CUISINES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={S.label}>기구명 *</label>
+            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
+              placeholder="예: 프라이팬, 믹싱볼, 계량컵" style={S.input}
+              onKeyDown={e=>{ if(e.key==='Enter') submit() }} />
+          </div>
+          <div>
+            <label style={S.label}>카테고리</label>
+            <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} style={S.input}>
+              <option value="">선택</option>
+              {UTENSIL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div style={{ gridColumn:'1/-1' }}>
