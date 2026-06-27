@@ -32,6 +32,16 @@ const HEALTH_CATEGORIES = [
 ]
 
 // ── 주의사항 예시 (자동완성 힌트용) ──────────────────────
+const LIMITED_PRESETS = [
+  { label:'1주일',  value:'7일'   },
+  { label:'10일',   value:'10일'  },
+  { label:'2주',    value:'14일'  },
+  { label:'3주',    value:'21일'  },
+  { label:'1개월',  value:'30일'  },
+  { label:'2개월',  value:'60일'  },
+  { label:'3개월',  value:'90일'  },
+]
+
 const CAUTION_PRESETS = [
   '⚠️ 견과류 알레르기 주의 (아나필락시스 위험)',
   '⚠️ 갑각류 알레르기 주의',
@@ -1361,7 +1371,7 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
           </label>
           <div>
             <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none', marginBottom: f.is_limited ? 8 : 0 }}>
-              <div onClick={() => setF(p => ({ ...p, is_limited: !p.is_limited, limited_start:'', limited_end:'' }))}
+              <div onClick={() => setF(p => ({ ...p, is_limited: !p.is_limited, limited_days:'' }))}
                 style={{ width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
                   background: f.is_limited ? '#10b981' : '#d1e8d1', position:'relative', flexShrink:0 }}>
                 <div style={{ position:'absolute', top:3, left: f.is_limited ? 20 : 3,
@@ -1371,10 +1381,17 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
               <span style={{ fontSize:11, color:'#8aaa8a' }}>특정 기간에만 출하되는 식재료</span>
             </label>
             {f.is_limited && (
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:50 }}>
-                <input type="date" value={f.limited_start||''} onChange={e=>setF(p=>({...p,limited_start:e.target.value}))} style={{ ...S.input, width:150 }} />
-                <span style={{ color:'#8aaa8a', fontSize:13 }}>~</span>
-                <input type="date" value={f.limited_end||''} onChange={e=>setF(p=>({...p,limited_end:e.target.value}))} style={{ ...S.input, width:150 }} />
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginLeft:50 }}>
+                {LIMITED_PRESETS.map(p => (
+                  <button key={p.value} type="button"
+                    onClick={() => setF(prev => ({ ...prev, limited_days: p.value }))}
+                    style={{ padding:'4px 12px', borderRadius:20, border:'1.5px solid #10b981',
+                      background: f.limited_days === p.value ? '#10b981' : '#d1fae5',
+                      color: f.limited_days === p.value ? '#fff' : '#059669',
+                      fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                    {p.label}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -1464,7 +1481,7 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
 }
 
 function IngredientTab({ adminToken, showToast, confirmDelete }) {
-  const EMPTY_FORM   = { name:'', display_name:'', region_id:'', category:'fish', description:'', coupang_url:'', caution:'', is_special:false, is_limited:false, limited_start:'', limited_end:'' }
+  const EMPTY_FORM   = { name:'', display_name:'', region_id:'', category:'fish', description:'', coupang_url:'', caution:'', is_special:false, is_limited:false, limited_days:'' }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[], label:'' }
 
   const [list, setList]         = useState([])
@@ -1697,7 +1714,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
   const openEdit = (i) => {
     setSelIng(null)
     setEditId(i.id)
-    setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'', is_special:i.is_special||false, is_limited:i.is_limited||false, limited_start:i.limited_start||'', limited_end:i.limited_end||'' })
+    setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'', is_special:i.is_special||false, is_limited:i.is_limited||false, limited_days:i.limited_days||'' })
     setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
     loadEditLinks(i.id)
   }
@@ -1794,7 +1811,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
             <div>
               <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none', marginBottom: form.is_limited ? 8 : 0 }}>
                 <div
-                  onClick={() => setForm(f => ({ ...f, is_limited: !f.is_limited, limited_start: '', limited_end: '' }))}
+                  onClick={() => setForm(f => ({ ...f, is_limited: !f.is_limited, limited_days: '' }))}
                   style={{
                     width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
                     background: form.is_limited ? '#10b981' : '#d1e8d1',
@@ -1812,12 +1829,17 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                 <span style={{ fontSize:11, color:'#8aaa8a' }}>특정 기간에만 출하되는 식재료</span>
               </label>
               {form.is_limited && (
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:50 }}>
-                  <input type="date" value={form.limited_start||''} onChange={e=>setForm(f=>({...f,limited_start:e.target.value}))}
-                    style={{ ...S.input, width:150 }} />
-                  <span style={{ color:'#8aaa8a', fontSize:13 }}>~</span>
-                  <input type="date" value={form.limited_end||''} onChange={e=>setForm(f=>({...f,limited_end:e.target.value}))}
-                    style={{ ...S.input, width:150 }} />
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginLeft:50 }}>
+                  {LIMITED_PRESETS.map(p => (
+                    <button key={p.value} type="button"
+                      onClick={() => setForm(f => ({ ...f, limited_days: p.value }))}
+                      style={{ padding:'4px 12px', borderRadius:20, border:'1.5px solid #10b981',
+                        background: form.limited_days === p.value ? '#10b981' : '#d1fae5',
+                        color: form.limited_days === p.value ? '#fff' : '#059669',
+                        fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -1942,7 +1964,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                       <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
                         <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{ct?.emoji} {i.name}</div>
                         {i.is_special && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700 }}>🏆 특산품</span>}
-                        {i.is_limited && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700 }}>⏰ 기간한정</span>}
+                        {i.is_limited && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700 }}>⏰ {i.limited_days || '기간한정'}</span>}
                       </div>
                       {i.regions_preview && (
                         <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginTop:2 }}>

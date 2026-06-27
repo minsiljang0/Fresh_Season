@@ -8,16 +8,6 @@ import { SEASONS } from '../../lib/seasons'
 
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12]
 
-function getLimitedDaysLeft(limited_end) {
-  if (!limited_end) return null
-  const end = new Date(limited_end)
-  const today = new Date()
-  today.setHours(0,0,0,0)
-  end.setHours(0,0,0,0)
-  const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24))
-  return diff
-}
-
 export async function getStaticPaths() {
   return { paths: REGIONS.map(r => ({ params: { slug: r.id } })), fallback: false }
 }
@@ -169,24 +159,11 @@ export default function RegionPage({ regionId }) {
                         color: food.is_special ? '#b45309' : 'var(--text3)',
                         fontWeight: food.is_special ? 700 : 400,
                       }}>🏆 {food.is_special ? '특산품' : '일반'}</span>
-                      {(() => {
-                        const days = getLimitedDaysLeft(food.limited_end)
-                        const isActive = !food.limited_start || new Date(food.limited_start) <= new Date()
-                        const isExpired = days !== null && days < 0
-                        const label = !food.is_limited ? '기간제한없음'
-                          : isExpired ? '판매종료'
-                          : !isActive ? '출하예정'
-                          : days !== null ? `${days}일 남음` : '기간한정'
-                        const active = food.is_limited && !isExpired
-                        return (
-                          <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
-                            background: active && days !== null && days <= 7 ? '#fee2e2' : active ? '#d1fae5' : 'var(--surface2)',
-                            border: `1px solid ${active && days !== null && days <= 7 ? '#ef4444' : active ? '#10b981' : 'var(--border)'}`,
-                            color: active && days !== null && days <= 7 ? '#dc2626' : active ? '#059669' : 'var(--text3)',
-                            fontWeight: active ? 700 : 400,
-                          }}>⏰ {label}</span>
-                        )
-                      })()}
+                      {food.is_limited && food.limited_days && (
+                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                          background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700,
+                        }}>⏰ {food.limited_days}간 한정</span>
+                      )}
                     </div>
                     <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
                       {food.months.slice(0,5).map(m => (
