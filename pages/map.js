@@ -155,16 +155,23 @@ export default function MapPage() {
   const [selHealth, setSelHealth]     = useState('all')
   const [query, setQuery]             = useState('')
   const [view, setView]               = useState('cards')
-  const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])  // DB seasonal_foods
-  const [tvShows, setTvShows]                = useState([])   // DB TV 프로그램 목록
+  const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])
+  const [tvShows, setTvShows]                = useState([])
+  const [dbHealthBenefits, setDbHealthBenefits] = useState([])
   const searchRef = useRef(null)
 
   // DB 데이터 로드
   useEffect(() => {
-    // seasonal_foods 테이블에서 제철 데이터 로드
     fetch('/api/map/seasonal-foods')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setDbSeasonalFoods(data || []))
+      .then(r => r.ok ? r.json() : {})
+      .then(data => {
+        if (Array.isArray(data)) {
+          setDbSeasonalFoods(data)
+        } else {
+          setDbSeasonalFoods(data.foods || [])
+          setDbHealthBenefits(data.healthBenefits || [])
+        }
+      })
       .catch(() => {})
     fetch('/api/admin/map-data?type=tv_shows')
       .then(r => r.ok ? r.json() : [])
@@ -180,23 +187,14 @@ export default function MapPage() {
     return all
   }, [tvShows])
 
-  const HEALTH_FILTERS = [
-    { id:'항산화', label:'🛡 항산화', keywords:['항산화','안토시아닌','폴리페놀','레스베라트롤'] },
-    { id:'면역', label:'💪 면역강화', keywords:['면역','면역강화','진세노사이드','사포닌'] },
-    { id:'뼈건강', label:'🦴 뼈·칼슘', keywords:['뼈건강','칼슘','골다공증','성장발육'] },
-    { id:'혈행', label:'❤️ 혈행·심장', keywords:['혈행','혈압','심장','혈압조절','혈압안정','혈행개선'] },
-    { id:'혈당', label:'🩺 혈당·당뇨', keywords:['혈당','혈당조절','당뇨','인슐린','혈당강하'] },
-    { id:'간건강', label:'🫀 간·해독', keywords:['간기능','간 해독','숙취해소','간기능향상'] },
-    { id:'피부', label:'✨ 피부미용', keywords:['피부','피부미용','콜라겐','피부탄력'] },
-    { id:'빈혈', label:'🩸 빈혈예방', keywords:['빈혈예방','철분','조혈기능','헤모글로빈'] },
-    { id:'피로', label:'⚡ 피로회복', keywords:['피로회복','피로해소','원기회복','항피로'] },
-    { id:'소화', label:'🌿 소화·장', keywords:['소화','소화촉진','장건강','식이섬유','장내환경'] },
-    { id:'두뇌', label:'🧠 두뇌·눈', keywords:['두뇌','두뇌건강','두뇌발달','DHA','뇌건강','눈건강','시력'] },
-    { id:'다이어트', label:'🥗 다이어트', keywords:['다이어트','저지방','포만감','체중'] },
-    { id:'호흡기', label:'🫁 호흡기', keywords:['호흡기','기관지','폐건강','기침','가래'] },
-    { id:'수면', label:'😴 수면·신경', keywords:['수면','불면','신경안정','스트레스','진정'] },
-    { id:'갱년기', label:'🌸 갱년기', keywords:['갱년기','호르몬','에스트로겐','폐경'] },
-  ]
+  // DB에서 로드한 건강효능을 필터 형태로 변환 (관리자에서 수정하면 즉시 반영)
+  const HEALTH_FILTERS = useMemo(() => {
+    return dbHealthBenefits.map(hb => ({
+      id:    hb.id,
+      label: hb.name,
+      name:  hb.name,
+    }))
+  }, [dbHealthBenefits])
 
   // DB seasonal_foods + 시드 합산
   const allFoods = useMemo(() => {
@@ -217,8 +215,16 @@ export default function MapPage() {
     if (selRegion !== 'all') data = data.filter(f => f.region === selRegion)
     if (selTV !== 'all') data = data.filter(f => f.tvPrograms && f.tvPrograms.includes(selTV))
     if (selHealth !== 'all') {
-      const hf = HEALTH_FILTERS.find(h => h.id === selHealth)
-      if (hf) data = data.filter(f => hf.keywords.some(kw => f.health.includes(kw)))
+      // DB 연결 기반 필터링 (healthIds) + 레거시 텍스트 폴백
+      data = data.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) {
+          return f.healthIds.includes(selHealth)
+        }
+        // 레거시 데이터는 health 텍스트에서 건강효능 이름으로 검색
+        const hb = dbHealthBenefits.find(h => h.id === selHealth)
+        if (hb) return f.health.includes(hb.name)
+        return false
+      })
     }
     if (query.trim()) {
       const q = query.toLowerCase()
@@ -230,7 +236,7 @@ export default function MapPage() {
       )
     }
     return data
-  }, [selMonth, selCategory, selRegion, selTV, selHealth, query, allFoods])
+  }, [selMonth, selCategory, selRegion, selTV, selHealth, query, allFoods, dbHealthBenefits])
 
   const byRegion = useMemo(() => {
     const map = {}
@@ -250,6 +256,58 @@ export default function MapPage() {
 
   const totalCount = filtered.length
   const regionCount = Object.values(byRegion).filter(v => v.length > 0).length
+
+  // TV 프로그램별 카운트 (TV 필터 제외한 나머지 조건 적용)
+  const tvCounts = useMemo(() => {
+    let base = allFoods
+    if (selMonth !== 0) base = base.filter(f => f.months.includes(selMonth))
+    if (selCategory !== 'all') base = base.filter(f => f.category === selCategory)
+    if (selRegion !== 'all') base = base.filter(f => f.region === selRegion)
+    if (selHealth !== 'all') {
+      base = base.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.includes(selHealth)
+        const hb = dbHealthBenefits.find(h => h.id === selHealth)
+        if (hb) return f.health.includes(hb.name)
+        return false
+      })
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      base = base.filter(f =>
+        f.ingredient.includes(q) || f.district.includes(q) ||
+        f.health.includes(q) || (f.tvPrograms && f.tvPrograms.some(t => t.includes(q)))
+      )
+    }
+    const counts = {}
+    TV_PROGRAMS.forEach(tv => {
+      counts[tv] = base.filter(f => f.tvPrograms && f.tvPrograms.includes(tv)).length
+    })
+    return counts
+  }, [allFoods, selMonth, selCategory, selRegion, selHealth, query, TV_PROGRAMS, dbHealthBenefits])
+
+  // 건강 효능별 카운트 (Health 필터 제외한 나머지 조건 적용)
+  const healthCounts = useMemo(() => {
+    let base = allFoods
+    if (selMonth !== 0) base = base.filter(f => f.months.includes(selMonth))
+    if (selCategory !== 'all') base = base.filter(f => f.category === selCategory)
+    if (selRegion !== 'all') base = base.filter(f => f.region === selRegion)
+    if (selTV !== 'all') base = base.filter(f => f.tvPrograms && f.tvPrograms.includes(selTV))
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      base = base.filter(f =>
+        f.ingredient.includes(q) || f.district.includes(q) ||
+        f.health.includes(q) || (f.tvPrograms && f.tvPrograms.some(t => t.includes(q)))
+      )
+    }
+    const counts = {}
+    dbHealthBenefits.forEach(hb => {
+      counts[hb.id] = base.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.includes(hb.id)
+        return f.health.includes(hb.name)
+      }).length
+    })
+    return counts
+  }, [allFoods, selMonth, selCategory, selRegion, selTV, query, dbHealthBenefits])
 
   useEffect(() => {
     const handler = (e) => {
@@ -381,7 +439,12 @@ export default function MapPage() {
 
           {/* TV 프로그램 필터 */}
           <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>📺 TV 프로그램</p>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
+              📺 TV 프로그램
+              <span style={{ marginLeft:6, fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:999, padding:'1px 6px' }}>
+                {selTV === 'all' ? filtered.length : (tvCounts[selTV] || 0)}
+              </span>
+            </p>
             <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
               <button onClick={() => setSelTV('all')}
                 style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
@@ -396,14 +459,29 @@ export default function MapPage() {
                     background: selTV===tv ? '#f59e0b22' : 'var(--surface2)',
                     color: selTV===tv ? '#f59e0b' : 'var(--text2)',
                     fontWeight: selTV===tv ? 700 : 400,
-                  }}>📺 {tv}</button>
+                  }}>
+                  📺 {tv}
+                  {tvCounts[tv] > 0 && (
+                    <span style={{
+                      marginLeft:5, fontSize:10, fontWeight:700,
+                      background: selTV===tv ? '#f59e0b33' : 'rgba(0,0,0,0.08)',
+                      color: selTV===tv ? '#d97706' : 'var(--text3)',
+                      borderRadius:999, padding:'0px 5px',
+                    }}>{tvCounts[tv]}</span>
+                  )}
+                </button>
               ))}
             </div>
           </div>
 
           {/* 건강 효능 필터 */}
           <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>💊 건강 효능</p>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
+              💊 건강 효능
+              <span style={{ marginLeft:6, fontSize:10, fontWeight:600, color:'var(--text3)', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:999, padding:'1px 6px' }}>
+                {selHealth === 'all' ? filtered.length : (healthCounts[selHealth] || 0)}
+              </span>
+            </p>
             <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
               <button onClick={() => setSelHealth('all')}
                 style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
@@ -418,7 +496,17 @@ export default function MapPage() {
                     background: selHealth===hf.id ? '#10b98122' : 'var(--surface2)',
                     color: selHealth===hf.id ? '#10b981' : 'var(--text2)',
                     fontWeight: selHealth===hf.id ? 700 : 400,
-                  }}>{hf.label}</button>
+                  }}>
+                  {hf.label}
+                  {healthCounts[hf.id] > 0 && (
+                    <span style={{
+                      marginLeft:5, fontSize:10, fontWeight:700,
+                      background: selHealth===hf.id ? '#10b98133' : 'rgba(0,0,0,0.08)',
+                      color: selHealth===hf.id ? '#059669' : 'var(--text3)',
+                      borderRadius:999, padding:'0px 5px',
+                    }}>{healthCounts[hf.id]}</span>
+                  )}
+                </button>
               ))}
             </div>
           </div>
@@ -606,8 +694,8 @@ export default function MapPage() {
                       <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.5, marginBottom:8 }}>
                         💊 {selHealth !== 'all'
                           ? f.health.split('·').map((part, pi) => {
-                              const hf = HEALTH_FILTERS.find(h => h.id === selHealth)
-                              const isMatch = hf && hf.keywords.some(kw => part.includes(kw))
+                              const hb = dbHealthBenefits.find(h => h.id === selHealth)
+                              const isMatch = hb && part.includes(hb.name)
                               return (
                                 <span key={pi} style={isMatch ? { color:'#10b981', fontWeight:700 } : {}}>
                                   {pi > 0 ? '·' : ''}{part}
