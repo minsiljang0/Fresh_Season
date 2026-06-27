@@ -1073,24 +1073,42 @@ const baseHandler = createMcpHandler(
       'update_ingredient',
       {
         title: '식재료 정보 수정',
-        description: '등록된 식재료의 정보(이름·카테고리·설명·제철 시작·종료월)를 수정한다. slug로 대상 식재료를 찾고, 전달된 필드만 업데이트한다.',
+        description: '등록된 식재료의 모든 정보를 수정한다. id로 대상을 찾고, 전달된 필드만 업데이트한다. 이름·카테고리·설명·제철월·연령대·성별·주의사항·쿠팡URL·특산품·기간한정·해외여부 등 전체 필드 지원.',
         inputSchema: {
           id:           z.string().describe('식재료 ID (필수)'),
           name:         z.string().optional().describe('식재료명'),
-          category:     z.string().optional().describe('카테고리 id (예: fish)'),
-          description:  z.string().optional().describe('설명'),
-          season_start: z.number().optional().describe('제철 시작 월 (1~12)'),
-          season_end:   z.number().optional().describe('제철 종료 월 (1~12)'),
+          category:     z.string().optional().describe('카테고리 id (예: fish, veg, fruit 등)'),
+          description:  z.string().optional().describe('설명 (건강효능 요약)'),
+          season_start: z.number().int().min(1).max(12).optional().describe('제철 시작 월 (1~12)'),
+          season_end:   z.number().int().min(1).max(12).optional().describe('제철 종료 월 (1~12)'),
+          months:       z.array(z.number().int().min(1).max(12)).optional().describe('주요 제철 월 배열 (예: [6,7,8])'),
+          age_groups:   z.array(z.string()).optional().describe('권장 연령대 배열 (예: ["infant","child","adult","senior","all"] 등)'),
+          gender:       z.enum(['all','male','female']).optional().describe('권장 성별 (all·male·female)'),
+          caution:      z.string().optional().describe('주의사항 (예: 통풍 환자 퓨린 함량 높음)'),
+          coupang_url:  z.string().optional().describe('쿠팡 파트너스 URL'),
+          is_special:   z.boolean().optional().describe('지역 대표 특산품 여부'),
+          is_limited:   z.boolean().optional().describe('기간한정 출하 여부'),
+          limited_days: z.string().optional().describe('기간한정 기간 (예: 7일, 30일)'),
+          is_global:    z.boolean().optional().describe('해외 식재료 여부'),
         },
         annotations: { destructiveHint: false },
       },
-      async ({ id, name, category, description, season_start, season_end }) => {
+      async ({ id, name, category, description, season_start, season_end, months, age_groups, gender, caution, coupang_url, is_special, is_limited, limited_days, is_global }) => {
         const updates = {}
         if (name         !== undefined) updates.name = name
         if (category     !== undefined) updates.category = category
         if (description  !== undefined) updates.description = description
         if (season_start !== undefined) updates.season_start = season_start
         if (season_end   !== undefined) updates.season_end = season_end
+        if (months       !== undefined) updates.months = months
+        if (age_groups   !== undefined) updates.age_groups = age_groups
+        if (gender       !== undefined) updates.gender = gender
+        if (caution      !== undefined) updates.caution = caution
+        if (coupang_url  !== undefined) updates.coupang_url = coupang_url
+        if (is_special   !== undefined) updates.is_special = is_special
+        if (is_limited   !== undefined) updates.is_limited = is_limited
+        if (limited_days !== undefined) updates.limited_days = limited_days
+        if (is_global    !== undefined) updates.is_global = is_global
         if (!Object.keys(updates).length) return { content: [{ type: 'text', text: '❌ 수정할 필드를 하나 이상 입력해주세요.' }], isError: true }
         const { data, error } = await supabase.from('ingredients').update(updates).eq('id', id).select().single()
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
@@ -1102,18 +1120,21 @@ const baseHandler = createMcpHandler(
       'list_health_benefits',
       {
         title: '건강효능 목록 조회',
-        description: 'DB에 등록된 건강효능(health_benefits) 목록을 가져온다. 카테고리·이름으로 필터 가능. 연결된 식재료 목록도 함께 반환.',
+        description: 'DB에 등록된 건강효능(health_benefits) 목록을 가져온다. 카테고리·이름·연령대·성별로 필터 가능. 연결된 식재료 목록도 함께 반환.',
         inputSchema: {
-          category: z.string().optional().describe('카테고리 필터 (예: 면역·항산화)'),
-          q:        z.string().optional().describe('이름 검색어'),
-          limit:    z.number().optional().describe('최대 반환 개수 (기본 50)'),
+          category:   z.string().optional().describe('카테고리 필터 (예: 면역·항산화)'),
+          q:          z.string().optional().describe('이름 검색어'),
+          age_group:  z.string().optional().describe('연령대 필터 (예: infant, child, adult, senior, all)'),
+          gender:     z.enum(['all','male','female']).optional().describe('성별 필터'),
+          limit:      z.number().optional().describe('최대 반환 개수 (기본 50)'),
         },
       },
-      async ({ category, q, limit = 50 }) => {
+      async ({ category, q, age_group, gender, limit = 50 }) => {
         let query = supabase
           .from('health_benefits')
           .select(`
             id, name, category, description,
+            age_groups, gender, caution, coupang_url, months,
             ingredient_health_benefits (
               ingredient_id,
               ingredients ( id, name, category )
@@ -1123,15 +1144,23 @@ const baseHandler = createMcpHandler(
           .limit(limit)
         if (category) query = query.eq('category', category)
         if (q)        query = query.ilike('name', `%${q}%`)
+        if (gender)   query = query.eq('gender', gender)
         const { data, error } = await query
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
-        const result = (data || []).map(hb => ({
+        let result = (data || []).map(hb => ({
           id: hb.id,
           name: hb.name,
           category: hb.category,
           description: hb.description,
+          age_groups: hb.age_groups || [],
+          gender: hb.gender || 'all',
+          caution: hb.caution || '',
+          coupang_url: hb.coupang_url || '',
+          months: hb.months || [],
           ingredients: (hb.ingredient_health_benefits || []).map(r => r.ingredients).filter(Boolean),
         }))
+        // age_group 필터 (배열 필드라 JS에서 처리)
+        if (age_group) result = result.filter(hb => (hb.age_groups || []).includes(age_group) || hb.age_groups?.includes('all'))
         return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
       }
     )
@@ -1140,19 +1169,62 @@ const baseHandler = createMcpHandler(
       'add_health_benefit',
       {
         title: '건강효능 추가',
-        description: '새 건강효능을 DB에 등록한다.',
+        description: '새 건강효능을 DB에 등록한다. 연령대·성별·주의사항·쿠팡URL·주요제철월까지 한 번에 설정 가능.',
         inputSchema: {
           name:        z.string().describe('효능명 (예: 면역력 강화)'),
           category:    z.string().optional().describe('카테고리 (예: 면역·항산화)'),
           description: z.string().optional().describe('상세 설명'),
+          age_groups:  z.array(z.string()).optional().describe('권장 연령대 배열 (예: ["infant","adult","senior","all"])'),
+          gender:      z.enum(['all','male','female']).optional().describe('권장 성별 (기본 all)'),
+          caution:     z.string().optional().describe('주의사항 (예: 임산부 과다섭취 주의)'),
+          coupang_url: z.string().optional().describe('쿠팡 파트너스 URL'),
+          months:      z.array(z.number().int().min(1).max(12)).optional().describe('주요 제철 월 배열 (예: [6,7,8])'),
         },
         annotations: { destructiveHint: false },
       },
-      async ({ name, category = '', description = '' }) => {
+      async ({ name, category = '', description = '', age_groups = [], gender = 'all', caution = '', coupang_url = '', months = [] }) => {
         const id = 'hb_' + Date.now()
-        const { data, error } = await supabase.from('health_benefits').insert([{ id, name, category, description }]).select().single()
+        const { data, error } = await supabase.from('health_benefits').insert([{
+          id, name, category, description,
+          age_groups, gender, caution, coupang_url, months,
+        }]).select().single()
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         return { content: [{ type: 'text', text: `✅ 건강효능 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'update_health_benefit',
+      {
+        title: '건강효능 수정',
+        description: '등록된 건강효능의 모든 정보를 수정한다. id로 대상을 찾고, 전달된 필드만 업데이트한다. 이름·카테고리·설명·연령대·성별·주의사항·쿠팡URL·주요제철월 전체 지원.',
+        inputSchema: {
+          id:          z.string().describe('건강효능 ID (필수, list_health_benefits로 조회)'),
+          name:        z.string().optional().describe('효능명'),
+          category:    z.string().optional().describe('카테고리 (예: 면역·항산화)'),
+          description: z.string().optional().describe('상세 설명'),
+          age_groups:  z.array(z.string()).optional().describe('권장 연령대 배열 (예: ["adult","senior"])'),
+          gender:      z.enum(['all','male','female']).optional().describe('권장 성별'),
+          caution:     z.string().optional().describe('주의사항'),
+          coupang_url: z.string().optional().describe('쿠팡 파트너스 URL'),
+          months:      z.array(z.number().int().min(1).max(12)).optional().describe('주요 제철 월 배열'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ id, name, category, description, age_groups, gender, caution, coupang_url, months }) => {
+        const updates = {}
+        if (name        !== undefined) updates.name = name
+        if (category    !== undefined) updates.category = category
+        if (description !== undefined) updates.description = description
+        if (age_groups  !== undefined) updates.age_groups = age_groups
+        if (gender      !== undefined) updates.gender = gender
+        if (caution     !== undefined) updates.caution = caution
+        if (coupang_url !== undefined) updates.coupang_url = coupang_url
+        if (months      !== undefined) updates.months = months
+        if (!Object.keys(updates).length) return { content: [{ type: 'text', text: '❌ 수정할 필드를 하나 이상 입력해주세요.' }], isError: true }
+        const { data, error } = await supabase.from('health_benefits').update(updates).eq('id', id).select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 건강효능 수정 완료\n${JSON.stringify(data, null, 2)}` }] }
       }
     )
 
@@ -1241,18 +1313,26 @@ const baseHandler = createMcpHandler(
       'list_ingredients',
       {
         title: '식재료 목록 조회',
-        description: 'DB에 등록된 식재료 목록을 가져온다. 카테고리·이름으로 필터 가능. 연결된 건강효능 목록도 함께 반환.',
+        description: 'DB에 등록된 식재료 목록을 가져온다. 카테고리·이름·연령대·성별·특산품·기간한정·월로 필터 가능. 연결된 건강효능 목록도 함께 반환.',
         inputSchema: {
-          category: z.string().optional().describe('카테고리 id (예: fish, leaf_veg)'),
-          q:        z.string().optional().describe('이름 검색어'),
-          limit:    z.number().optional().describe('최대 반환 개수 (기본 50)'),
+          category:   z.string().optional().describe('카테고리 id (예: fish, veg, fruit 등)'),
+          q:          z.string().optional().describe('이름 검색어'),
+          age_group:  z.string().optional().describe('연령대 필터 (예: infant, child, adult, senior, all)'),
+          gender:     z.enum(['all','male','female']).optional().describe('성별 필터'),
+          is_special: z.boolean().optional().describe('true면 특산품만'),
+          is_limited: z.boolean().optional().describe('true면 기간한정만'),
+          is_global:  z.boolean().optional().describe('true면 해외 식재료만'),
+          month:      z.number().int().min(1).max(12).optional().describe('특정 월이 제철인 식재료만 (months 배열 기준)'),
+          limit:      z.number().optional().describe('최대 반환 개수 (기본 50)'),
         },
       },
-      async ({ category, q, limit = 50 }) => {
+      async ({ category, q, age_group, gender, is_special, is_limited, is_global, month, limit = 50 }) => {
         let query = supabase
           .from('ingredients')
           .select(`
             id, name, category, description, season_start, season_end,
+            months, age_groups, gender, caution, coupang_url,
+            is_special, is_limited, limited_days, is_global,
             ingredient_health_benefits (
               benefit_id,
               health_benefits ( id, name, category )
@@ -1260,20 +1340,36 @@ const baseHandler = createMcpHandler(
           `)
           .order('name')
           .limit(limit)
-        if (category) query = query.eq('category', category)
-        if (q)        query = query.ilike('name', `%${q}%`)
+        if (category)   query = query.eq('category', category)
+        if (q)          query = query.ilike('name', `%${q}%`)
+        if (gender)     query = query.eq('gender', gender)
+        if (is_special !== undefined) query = query.eq('is_special', is_special)
+        if (is_limited !== undefined) query = query.eq('is_limited', is_limited)
+        if (is_global  !== undefined) query = query.eq('is_global', is_global)
         const { data, error } = await query
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
-        // 응답을 보기 좋게 정리
-        const result = (data || []).map(ing => ({
+        let result = (data || []).map(ing => ({
           id: ing.id,
           name: ing.name,
           category: ing.category,
           description: ing.description,
           season_start: ing.season_start,
           season_end: ing.season_end,
+          months: ing.months || [],
+          age_groups: ing.age_groups || [],
+          gender: ing.gender || 'all',
+          caution: ing.caution || '',
+          coupang_url: ing.coupang_url || '',
+          is_special: ing.is_special || false,
+          is_limited: ing.is_limited || false,
+          limited_days: ing.limited_days || '',
+          is_global: ing.is_global || false,
           health_benefits: (ing.ingredient_health_benefits || []).map(r => r.health_benefits).filter(Boolean),
         }))
+        // 월 필터 (배열 필드라 JS에서 처리)
+        if (month) result = result.filter(ing => (ing.months || []).includes(month))
+        // age_group 필터
+        if (age_group) result = result.filter(ing => (ing.age_groups || []).includes(age_group) || ing.age_groups?.includes('all'))
         return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
       }
     )
@@ -1282,19 +1378,36 @@ const baseHandler = createMcpHandler(
       'add_ingredient',
       {
         title: '식재료 추가',
-        description: '새 식재료를 DB에 등록한다.',
+        description: '새 식재료를 DB에 등록한다. 제철월·연령대·성별·주의사항·쿠팡URL·특산품·기간한정·해외여부까지 한 번에 설정 가능.',
         inputSchema: {
           name:         z.string().describe('식재료명 (예: 고등어)'),
-          category:     z.string().optional().describe('카테고리 id (예: fish)'),
-          description:  z.string().optional().describe('설명'),
-          season_start: z.number().optional().describe('제철 시작 월 (1~12)'),
-          season_end:   z.number().optional().describe('제철 종료 월 (1~12)'),
+          category:     z.string().optional().describe('카테고리 id (예: fish, veg, fruit, grain, beef, mushroom 등)'),
+          description:  z.string().optional().describe('설명 (건강효능 요약)'),
+          season_start: z.number().int().min(1).max(12).optional().describe('제철 시작 월 (1~12)'),
+          season_end:   z.number().int().min(1).max(12).optional().describe('제철 종료 월 (1~12)'),
+          months:       z.array(z.number().int().min(1).max(12)).optional().describe('주요 제철 월 배열 (예: [6,7,8])'),
+          age_groups:   z.array(z.string()).optional().describe('권장 연령대 배열 (예: ["infant","child","adult","senior","all"])'),
+          gender:       z.enum(['all','male','female']).optional().describe('권장 성별 (기본 all)'),
+          caution:      z.string().optional().describe('주의사항 (예: 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의)'),
+          coupang_url:  z.string().optional().describe('쿠팡 파트너스 URL'),
+          is_special:   z.boolean().optional().describe('지역 대표 특산품 여부 (기본 false)'),
+          is_limited:   z.boolean().optional().describe('기간한정 출하 여부 (기본 false)'),
+          limited_days: z.string().optional().describe('기간한정 기간 (예: 7일, 30일) — is_limited true일 때 사용'),
+          is_global:    z.boolean().optional().describe('해외 식재료 여부 (기본 false)'),
         },
         annotations: { destructiveHint: false },
       },
-      async ({ name, category = '', description = '', season_start, season_end }) => {
+      async ({ name, category = '', description = '', season_start, season_end, months = [], age_groups = [], gender = 'all', caution = '', coupang_url = '', is_special = false, is_limited = false, limited_days = '', is_global = false }) => {
         const id = 'ing_' + Date.now()
-        const { data, error } = await supabase.from('ingredients').insert([{ id, name, category, description, season_start, season_end }]).select().single()
+        const { data, error } = await supabase.from('ingredients').insert([{
+          id, name, category, description,
+          season_start: season_start ?? null,
+          season_end:   season_end   ?? null,
+          months, age_groups, gender, caution, coupang_url,
+          is_special, is_limited,
+          limited_days: is_limited ? (limited_days || null) : null,
+          is_global,
+        }]).select().single()
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         return { content: [{ type: 'text', text: `✅ 식재료 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
       }
