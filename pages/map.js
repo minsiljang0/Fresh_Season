@@ -153,6 +153,8 @@ export default function MapPage() {
   const [selRegion, setSelRegion]     = useState('all')
   const [selTV, setSelTV]             = useState('all')
   const [selHealth, setSelHealth]     = useState('all')
+  const [selAge, setSelAge]           = useState('all')
+  const [selGender, setSelGender]     = useState('all')
   const [query, setQuery]             = useState('')
   const [view, setView]               = useState('cards')
   const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])
@@ -215,6 +217,30 @@ export default function MapPage() {
     if (selCategory !== 'all') data = data.filter(f => f.category === selCategory)
     if (selRegion !== 'all') data = data.filter(f => f.region === selRegion)
     if (selTV !== 'all') data = data.filter(f => f.tvPrograms && f.tvPrograms.includes(selTV))
+    // 연령 필터 (health_benefits의 age_groups 기반)
+    if (selAge !== 'all') {
+      const matchingHealthIds = new Set(
+        dbHealthBenefits
+          .filter(hb => (hb.age_groups||[]).includes(selAge) || (hb.age_groups||[]).includes('all'))
+          .map(hb => hb.id)
+      )
+      data = data.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.some(id => matchingHealthIds.has(id))
+        return false
+      })
+    }
+    // 성별 필터 (health_benefits의 gender 기반)
+    if (selGender !== 'all') {
+      const matchingHealthIds = new Set(
+        dbHealthBenefits
+          .filter(hb => !hb.gender || hb.gender === 'all' || hb.gender === selGender)
+          .map(hb => hb.id)
+      )
+      data = data.filter(f => {
+        if (f.healthIds && f.healthIds.length > 0) return f.healthIds.some(id => matchingHealthIds.has(id))
+        return false
+      })
+    }
     if (selHealth !== 'all') {
       // DB 연결 기반 필터링 (healthIds) + 레거시 텍스트 폴백
       data = data.filter(f => {
@@ -237,7 +263,7 @@ export default function MapPage() {
       )
     }
     return data
-  }, [selMonth, selCategory, selRegion, selTV, selHealth, query, allFoods, dbHealthBenefits])
+  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, query, allFoods, dbHealthBenefits])
 
   const byRegion = useMemo(() => {
     const map = {}
@@ -402,12 +428,14 @@ export default function MapPage() {
             </div>
           </div>
 
-          {/* 건강 효능 필터 — 드롭다운 (카테고리 위) */}
+          {/* 건강 효능 + 연령 + 성별 — 드롭다운 행 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
             <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              💊 건강 효능
+              💊 건강 효능 · 연령 · 성별
             </p>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+
+              {/* 건강효능 */}
               <select
                 value={selHealth}
                 onChange={e => setSelHealth(e.target.value)}
@@ -421,23 +449,70 @@ export default function MapPage() {
                   minWidth:180,
                 }}
               >
-                <option value="all">전체 효능</option>
-                {HEALTH_FILTERS.map(hf => (
-                  <option key={hf.id} value={hf.id}>
-                    {hf.label}{healthCounts[hf.id] > 0 ? ` (${healthCounts[hf.id]})` : ''}
-                  </option>
-                ))}
+                <option value="all">💊 전체 효능</option>
+                {HEALTH_FILTERS.map(hf => {
+                  const cnt = healthCounts[hf.id] ?? 0
+                  return (
+                    <option key={hf.id} value={hf.id}>
+                      {hf.label} ({cnt})
+                    </option>
+                  )
+                })}
               </select>
-              {selHealth !== 'all' && (
-                <span style={{ fontSize:12, color:'var(--text3)' }}>
-                  <span style={{ fontWeight:700, color:'#10b981' }}>{healthCounts[selHealth] || 0}개</span> 해당
-                </span>
-              )}
-              {selHealth !== 'all' && (
-                <button onClick={() => setSelHealth('all')}
-                  style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
-                  ✕ 초기화
-                </button>
+
+              {/* 연령 */}
+              <select
+                value={selAge}
+                onChange={e => setSelAge(e.target.value)}
+                style={{
+                  padding:'7px 14px', borderRadius:10,
+                  border: selAge !== 'all' ? '1.5px solid #f59e0b' : '1.5px solid var(--border)',
+                  background: selAge !== 'all' ? '#f59e0b11' : 'var(--surface2)',
+                  color: selAge !== 'all' ? '#d97706' : 'var(--text)',
+                  fontSize:13, fontFamily:'inherit', cursor:'pointer',
+                  fontWeight: selAge !== 'all' ? 700 : 400,
+                  minWidth:160,
+                }}
+              >
+                <option value="all">👥 전체 연령</option>
+                <option value="infant">👶 유아 (0-6세)</option>
+                <option value="child">🧒 어린이 (7-12세)</option>
+                <option value="teen">🧑 청소년 (13-18세)</option>
+                <option value="adult">🧑‍💼 성인 (19-39세)</option>
+                <option value="middle">🧑‍🦳 중장년 (40-64세)</option>
+                <option value="senior">👴 노년 (65세+)</option>
+              </select>
+
+              {/* 성별 */}
+              <select
+                value={selGender}
+                onChange={e => setSelGender(e.target.value)}
+                style={{
+                  padding:'7px 14px', borderRadius:10,
+                  border: selGender !== 'all' ? '1.5px solid #8b5cf6' : '1.5px solid var(--border)',
+                  background: selGender !== 'all' ? '#8b5cf611' : 'var(--surface2)',
+                  color: selGender !== 'all' ? '#7c3aed' : 'var(--text)',
+                  fontSize:13, fontFamily:'inherit', cursor:'pointer',
+                  fontWeight: selGender !== 'all' ? 700 : 400,
+                  minWidth:130,
+                }}
+              >
+                <option value="all">⚥ 전체</option>
+                <option value="male">♂ 남성</option>
+                <option value="female">♀ 여성</option>
+              </select>
+
+              {/* 선택된 필터 뱃지 + 초기화 */}
+              {(selHealth !== 'all' || selAge !== 'all' || selGender !== 'all') && (
+                <>
+                  <span style={{ fontSize:12, color:'var(--text3)' }}>
+                    <span style={{ fontWeight:700, color:'#10b981' }}>{filtered.length}개</span> 해당
+                  </span>
+                  <button onClick={() => { setSelHealth('all'); setSelAge('all'); setSelGender('all') }}
+                    style={{ padding:'4px 10px', borderRadius:20, border:'1px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                    ✕ 초기화
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -490,7 +565,7 @@ export default function MapPage() {
                   }}>{label}</button>
               ))}
             </div>
-            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setQuery('') }}
+            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setQuery('') }}
               style={{ padding:'5px 12px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
               🔄 초기화
             </button>
