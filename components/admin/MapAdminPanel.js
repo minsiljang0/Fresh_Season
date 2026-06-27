@@ -2697,10 +2697,55 @@ function RecipeTab({ adminToken, showToast, confirmDelete }) {
             <input type="date" value={form.aired_at} onChange={e=>setForm(f=>({...f,aired_at:e.target.value}))} style={S.input} />
           </div>
           <div style={{ gridColumn:'1/-1' }}>
-            <label style={S.label}>📝 레시피 설명 (순서대로 작성)</label>
-            <textarea value={form.summary} onChange={e=>setForm(f=>({...f,summary:e.target.value}))} rows={6}
-              style={{ ...S.textarea, fontFamily:"'Outfit',sans-serif" }}
-              placeholder={"1. 재료를 손질합니다.\n2. 팬을 달구고 기름을 두릅니다.\n3. 재료를 넣고 볶습니다."} />
+            <label style={S.label}>📝 레시피 순서 (단계별 설명 + 사진)</label>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {(form.steps||[{ desc:'', photo:null }]).map((step, i) => (
+                <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', background:'#f5f9f5', borderRadius:10, padding:10, border:'1px solid #d1e8d1' }}>
+                  <span style={{ fontSize:13, fontWeight:800, color:'#22c55e', minWidth:24, paddingTop:8 }}>{i+1}.</span>
+                  <div style={{ flex:1 }}>
+                    <textarea
+                      value={step.desc} rows={2}
+                      onChange={e => setForm(f => ({ ...f, steps: f.steps.map((s,j) => j===i ? {...s, desc:e.target.value} : s) }))}
+                      placeholder={`${i+1}단계 설명을 입력하세요`}
+                      style={{ ...S.textarea, marginBottom:6, fontFamily:"'Outfit',sans-serif" }} />
+                    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                      <label style={{ fontSize:11, color:'#4b6e4b', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4,
+                        padding:'4px 10px', borderRadius:20, border:'1px solid #d1e8d1', background:'#fff', width:'fit-content' }}>
+                        📸 사진 추가 (여러 장)
+                        <input type="file" accept="image/*" multiple style={{ display:'none' }}
+                          onChange={e => {
+                            const files = Array.from(e.target.files)
+                            const newPhotos = files.map(file => ({ url: URL.createObjectURL(file), file }))
+                            setForm(f => ({ ...f, steps: f.steps.map((s,j) => j===i ? {...s, photos:[...(s.photos||[]), ...newPhotos]} : s) }))
+                          }} />
+                      </label>
+                      {(step.photos||[]).length > 0 && (
+                        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                          {(step.photos||[]).map((p, pi) => (
+                            <div key={pi} style={{ position:'relative' }}>
+                              <img src={p.url} alt="" style={{ width:60, height:60, objectFit:'cover', borderRadius:8, border:'1px solid #d1e8d1' }} />
+                              <button type="button"
+                                onClick={() => setForm(f => ({ ...f, steps: f.steps.map((s,j) => j===i ? {...s, photos:(s.photos||[]).filter((_,k)=>k!==pi)} : s) }))}
+                                style={{ position:'absolute', top:-5, right:-5, width:16, height:16, borderRadius:8,
+                                  background:'#ef4444', color:'#fff', border:'none', cursor:'pointer', fontSize:9 }}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, steps: f.steps.filter((_,j)=>j!==i) }))}
+                    style={{ padding:'3px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2',
+                      color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", flexShrink:0 }}>✕</button>
+                </div>
+              ))}
+              <button type="button"
+                onClick={() => setForm(f => ({ ...f, steps: [...(f.steps||[]), { desc:'', photos:[] }] }))}
+                style={{ padding:'7px', borderRadius:10, border:'1.5px dashed #22c55e', background:'#f0fdf4',
+                  color:'#16a34a', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                + 단계 추가
+              </button>
+            </div>
           </div>
           <div style={{ gridColumn:'1/-1' }}>
             <label style={S.label}>출처 URL</label>
