@@ -258,7 +258,7 @@ export default async function handler(req, res) {
       }
       if (type === 'utensils') {
         const { data, error } = await supabase.from('utensils')
-          .insert([{ id: genId(), name: body.name, category: body.category || '', description: body.description || '', coupang_url: body.coupang_url || '' }])
+          .insert([{ id: genId(), name: body.name, category: body.category || '', cuisine: body.cuisine || '', usage: body.usage || '', description: body.description || '', coupang_url: body.coupang_url || '' }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)
