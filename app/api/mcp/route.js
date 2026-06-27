@@ -1552,6 +1552,74 @@ const baseHandler = createMcpHandler(
       }
     )
 
+    // ── 건강효능 ↔ TV방송 연결 툴 ──────────────────────────────────────
+
+    server.registerTool(
+      'link_health_tv',
+      {
+        title: '건강효능 ↔ TV방송 연결',
+        description: '건강효능(health_id)과 TV방송(show_id)을 health_tv_shows 테이블에 연결한다. 이미 연결된 경우 중복 없이 무시(upsert). list_health_benefits로 health_id, list_tv_shows로 show_id를 먼저 조회 후 사용.',
+        inputSchema: {
+          health_id: z.string().describe('건강효능 ID (list_health_benefits로 조회 후 사용)'),
+          show_id:   z.string().describe('TV방송 ID (list_tv_shows로 조회 후 사용)'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ health_id, show_id }) => {
+        const id = 'htv_' + Date.now()
+        const { data, error } = await supabase
+          .from('health_tv_shows')
+          .insert([{ id, health_id, show_id }])
+          .select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 건강효능↔TV방송 연결 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'unlink_health_tv',
+      {
+        title: '건강효능 ↔ TV방송 연결 해제',
+        description: '건강효능과 TV방송의 연결을 해제한다. get_health_tv로 연결 ID를 먼저 조회한 뒤 사용.',
+        inputSchema: {
+          id: z.string().describe('삭제할 health_tv_shows 레코드 ID (get_health_tv로 조회 후 사용)'),
+        },
+        annotations: { destructiveHint: true },
+      },
+      async ({ id }) => {
+        const { error } = await supabase.from('health_tv_shows').delete().eq('id', id)
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 건강효능↔TV방송 연결 해제 완료 (ID: ${id})` }] }
+      }
+    )
+
+    server.registerTool(
+      'get_health_tv',
+      {
+        title: '건강효능에 연결된 TV방송 조회',
+        description: '특정 건강효능에 연결된 TV방송 목록을 조회한다. health_id로 필터링. 연결 해제(unlink_health_tv) 전 ID 확인에 사용.',
+        inputSchema: {
+          health_id: z.string().optional().describe('건강효능 ID로 필터링. 비우면 전체 반환 (최대 100건)'),
+          show_id:   z.string().optional().describe('TV방송 ID로 역방향 필터링'),
+        },
+      },
+      async ({ health_id, show_id }) => {
+        let q = supabase
+          .from('health_tv_shows')
+          .select('id, health_id, show_id, tv_shows(id, name, channel, category)')
+          .limit(100)
+        if (health_id) q = q.eq('health_id', health_id)
+        if (show_id)   q = q.eq('show_id', show_id)
+        const { data, error } = await q
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        if (!data?.length) return { content: [{ type: 'text', text: '연결된 TV방송 없음' }] }
+        const lines = data.map(r =>
+          `ID:${r.id} | 건강효능ID:${r.health_id} | TV방송:${r.tv_shows?.name||r.show_id} (${r.tv_shows?.channel||'-'})`
+        )
+        return { content: [{ type: 'text', text: lines.join('\n') }] }
+      }
+    )
+
     // ── 지역·제철원 연결 툴 ─────────────────────────────────────────────
 
     server.registerTool(
