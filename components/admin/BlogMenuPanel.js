@@ -61,7 +61,7 @@ export default function BlogMenuPanel({ adminToken }) {
           {DEFAULT_CATS.map(cat => (
             <span key={cat} style={{
               padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600,
-              background: '#1a2a1a', border: '1px solid #2a4a2a', color: '#4ade80',
+              background: '#f0fdf4', border: '1px solid #86efac', color: '#16a34a',
             }}>{categoryLabel ? categoryLabel(cat) : cat}</span>
           ))}
         </div>
@@ -87,8 +87,8 @@ export default function BlogMenuPanel({ adminToken }) {
         {msg && (
           <div style={{
             padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13,
-            background: msg.startsWith('✅') ? '#0a2a0a' : '#0a2a0a',
-            color: msg.startsWith('✅') ? '#4ade80' : '#f87171',
+            background: msg.startsWith('✅') ? '#f0fdf4' : '#fef2f2',
+            color: msg.startsWith('✅') ? '#16a34a' : '#dc2626',
           }}>{msg}</div>
         )}
 
@@ -102,9 +102,9 @@ export default function BlogMenuPanel({ adminToken }) {
               <div key={cat.id} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '7px 10px 7px 16px', borderRadius: 999,
-                background: '#1f1f1f', border: '1.5px solid #333',
+                background: '#f5f9f5', border: '1.5px solid #d1e8d1',
               }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f0' }}>{cat.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0f1f0f' }}>{cat.label}</span>
                 <button onClick={() => deleteCategory(cat.id, cat.label)} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
                   color: '#666', fontSize: 16, lineHeight: 1, padding: '0 2px',

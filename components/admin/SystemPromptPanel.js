@@ -73,9 +73,9 @@ export default function SystemPromptPanel({ adminToken }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={S.cardTitle}>🤖 Claude 시스템 프롬프트</div>
-            <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: '#4b6e4b', lineHeight: 1.6 }}>
               Claude 프로젝트 Instructions에 붙여넣을 지침을 여기서 관리해요.<br />
-              MCP <code style={{ background: '#2a2a2a', padding: '1px 6px', borderRadius: 4, fontSize: 12 }}>get_system_prompt</code> 툴로 Claude가 직접 불러갈 수 있어요.
+              MCP <code style={{ background: '#e8f5e9', padding: '1px 6px', borderRadius: 4, fontSize: 12, color: '#15803d' }}>get_system_prompt</code> 툴로 Claude가 직접 불러갈 수 있어요.
             </div>
           </div>
           {updatedAt && (
@@ -90,11 +90,11 @@ export default function SystemPromptPanel({ adminToken }) {
             {[
               { label: '글자수', value: charCount.toLocaleString() },
               { label: '줄수',   value: lineCount.toLocaleString() },
-              { label: '상태',   value: isDirty ? '⚠️ 미저장' : '✅ 저장됨', color: isDirty ? '#f59e0b' : '#4ade80' },
+              { label: '상태',   value: isDirty ? '⚠️ 미저장' : '✅ 저장됨', color: isDirty ? '#d97706' : '#16a34a' },
             ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: '#1f1f1f', borderRadius: 8, padding: '8px 14px', minWidth: 90 }}>
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 2 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: color || '#f0f0f0' }}>{value}</div>
+              <div key={label} style={{ background: '#f5f9f5', border: '1px solid #d1e8d1', borderRadius: 8, padding: '8px 14px', minWidth: 90 }}>
+                <div style={{ fontSize: 11, color: '#4b6e4b', marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: color || '#0f1f0f' }}>{value}</div>
               </div>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default function SystemPromptPanel({ adminToken }) {
             </div>
 
             {msg && (
-              <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: msg.startsWith('✅') ? '#4ade80' : '#e63946' }}>
+              <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: msg.startsWith('✅') ? '#16a34a' : '#dc2626' }}>
                 {msg}
               </div>
             )}
@@ -147,20 +147,20 @@ export default function SystemPromptPanel({ adminToken }) {
         )}
       </div>
 
-      <div style={{ ...S.card, background: '#111' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#888', marginBottom: 12 }}>💡 사용 방법</div>
-        <div style={{ fontSize: 13, color: '#666', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span>① 위 편집기에서 지침을 수정하고 <b style={{ color: '#f0f0f0' }}>💾 저장</b>을 누르세요.</span>
+      <div style={{ ...S.card, background: '#f0fdf4', border: '1px solid #86efac' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 12 }}>💡 사용 방법</div>
+        <div style={{ fontSize: 13, color: '#166534', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span>① 위 편집기에서 지침을 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
           <span>② Claude 프로젝트 Instructions에는 아래 한 줄만 남겨두세요:</span>
           <code style={{
-            display: 'block', background: '#1f1f1f', border: '1px solid #2a2a2a',
-            borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#a5f3fc',
+            display: 'block', background: '#e8f5e9', border: '1px solid #86efac',
+            borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#15803d',
             marginTop: 4, marginBottom: 4, lineHeight: 1.6,
           }}>
             대화를 시작하면 즉시 get_system_prompt 툴을 호출해서 전체 지침을 로드하고, 그 지침대로만 행동하세요.
           </code>
           <span>③ MCP 커넥터가 연결된 Claude는 대화 시작 시 자동으로 지침을 불러와요.</span>
-          <span>④ <b style={{ color: '#f0f0f0' }}>📋 전체 복사</b>로 복사해서 직접 붙여넣는 것도 가능해요.</span>
+          <span>④ <b style={{ color: '#0f1f0f' }}>📋 전체 복사</b>로 복사해서 직접 붙여넣는 것도 가능해요.</span>
         </div>
       </div>
 

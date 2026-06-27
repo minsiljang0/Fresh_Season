@@ -148,7 +148,7 @@ export default function ContentLogPanel({ adminToken }) {
       <Toast msg={toast} />
       <div style={S.card}>
         <div style={S.cardTitle}>📋 발행 기록 (관리자 전용)</div>
-        <p style={{ color: '#888', fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>
+        <p style={{ color: '#4b6e4b', fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>
           Claude가 글을 작성할 때마다 어떤 시도를, 어떤 각도로 다뤘는지 기록합니다.
           아래 붙여넣기 칸에 Claude가 준 발행 기록을 붙여넣으면 자동으로 입력됩니다.
         </p>
@@ -158,7 +158,7 @@ export default function ContentLogPanel({ adminToken }) {
           <textarea value={pasteText} onChange={e => handlePasteParse(e.target.value)}
             placeholder={'시도: gangwon\n각도: 제철 소개\n제목: 강원도 오징어 제철 시기와 건강 효능\n슬러그: gangwon-ojingeo-season\n발행일: 2026-06-22'}
             rows={5} style={{ ...S.textarea, marginBottom: 6 }} />
-          {parseMsg && <div style={{ fontSize: 12, color: parseMsg.startsWith('✅') ? '#4ade80' : '#fbbf24' }}>{parseMsg}</div>}
+          {parseMsg && <div style={{ fontSize: 12, color: parseMsg.startsWith('✅') ? '#16a34a' : '#d97706' }}>{parseMsg}</div>}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -229,9 +229,9 @@ export default function ContentLogPanel({ adminToken }) {
               {[['all', '전체'], ...DEFAULT_CATEGORIES.map(c => [c, categoryLabel(c)])].map(([key, label]) => (
                 <button key={key} onClick={() => setFilterCat(key)} style={{
                   padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: filterCat === key ? 700 : 500,
-                  border: `1.5px solid ${filterCat === key ? '#22c55e' : '#2a2a2a'}`,
-                  background: filterCat === key ? '#0a2a0a' : '#161616',
-                  color: filterCat === key ? '#22c55e' : '#888', cursor: 'pointer',
+                  border: `1.5px solid ${filterCat === key ? '#16a34a' : '#d1e8d1'}`,
+                  background: filterCat === key ? '#f0fdf4' : '#fff',
+                  color: filterCat === key ? '#15803d' : '#4b6e4b', cursor: 'pointer',
                   fontFamily: "'Outfit', sans-serif",
                 }}>{label}</button>
               ))}
@@ -240,14 +240,14 @@ export default function ContentLogPanel({ adminToken }) {
         </div>
 
         {promptOpen && (
-          <div style={{ background: '#0f1115', border: '1px solid #2a2a2a', borderRadius: 10, padding: 16, marginBottom: 18 }}>
+          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: 16, marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#f0f0f0' }}>💬 아래 내용을 복사해서 Claude 채팅창에 붙여넣으세요</div>
-              <button onClick={() => setPromptOpen(false)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 14 }}>✕</button>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>💬 아래 내용을 복사해서 Claude 채팅창에 붙여넣으세요</div>
+              <button onClick={() => setPromptOpen(false)} style={{ background: 'none', border: 'none', color: '#4b6e4b', cursor: 'pointer', fontSize: 14 }}>✕</button>
             </div>
             <textarea readOnly value={promptText}
               rows={Math.min(Math.max(promptText.split('\n').length + 1, 6), 16)}
-              style={{ ...S.textarea, marginBottom: 10, fontSize: 12, color: '#d4d4d4', background: '#161616' }}
+              style={{ ...S.textarea, marginBottom: 10, fontSize: 12 }}
               onFocus={e => e.target.select()} />
             <button onClick={() => {
               navigator.clipboard?.writeText(promptText).catch(() => {
@@ -261,9 +261,9 @@ export default function ContentLogPanel({ adminToken }) {
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#555' }}>불러오는 중...</div>
+          <div style={{ textAlign: 'center', padding: 40, color: '#4b6e4b' }}>불러오는 중...</div>
         ) : !filtered.length ? (
-          <div style={{ textAlign: 'center', padding: '50px 20px', background: '#161616', borderRadius: 12, border: '1px solid #2a2a2a', color: '#555' }}>
+          <div style={{ textAlign: 'center', padding: '50px 20px', background: '#f5f9f5', borderRadius: 12, border: '1px solid #d1e8d1', color: '#4b6e4b' }}>
             <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
             <div style={{ fontSize: 14, fontWeight: 600 }}>아직 기록이 없습니다</div>
           </div>
@@ -273,54 +273,54 @@ export default function ContentLogPanel({ adminToken }) {
               <div key={log.id} style={{ ...S.row, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#888', background: '#1f1f1f', borderRadius: 4, padding: '2px 8px', border: '1px solid #2a2a2a' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#15803d', background: '#f0fdf4', borderRadius: 4, padding: '2px 8px', border: '1px solid #86efac' }}>
                       {categoryLabel(log.category)}
                     </span>
-                    <span style={{ fontSize: 11, color: '#22c55e' }}>{log.angle}</span>
+                    <span style={{ fontSize: 11, color: '#16a34a' }}>{log.angle}</span>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#f0f0f0', marginBottom: 2 }}>{log.title}</div>
-                  <div style={{ fontSize: 12, color: '#555' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f1f0f', marginBottom: 2 }}>{log.title}</div>
+                  <div style={{ fontSize: 12, color: '#4b6e4b' }}>
                     /blog/{log.slug}
-                    {log.published_at && <span style={{ marginLeft: 8, color: '#888' }}>· {log.published_at}</span>}
+                    {log.published_at && <span style={{ marginLeft: 8, color: '#6b7280' }}>· {log.published_at}</span>}
                     {log.memo && <span style={{ marginLeft: 8, opacity: 0.7 }}>· {log.memo}</span>}
                   </div>
                   {log.target_keyword && (
                     <div style={{ marginTop: 5, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, color: '#60a5fa', background: '#0f1f3d', borderRadius: 4, padding: '2px 8px', border: '1px solid #1e3a5f', fontWeight: 700 }}>
+                      <span style={{ fontSize: 11, color: '#1d4ed8', background: '#eff6ff', borderRadius: 4, padding: '2px 8px', border: '1px solid #bfdbfe', fontWeight: 700 }}>
                         🔑 {log.target_keyword}
                       </span>
                       {log.search_total != null && (
-                        <span style={{ fontSize: 11, color: '#888' }}>
-                          검색수 <strong style={{ color: '#f0f0f0' }}>{Number(log.search_total).toLocaleString()}</strong>
+                        <span style={{ fontSize: 11, color: '#4b6e4b' }}>
+                          검색수 <strong style={{ color: '#0f1f0f' }}>{Number(log.search_total).toLocaleString()}</strong>
                           {log.search_pc != null && <span> (PC {Number(log.search_pc).toLocaleString()} / 모바일 {Number(log.search_mobile).toLocaleString()})</span>}
                         </span>
                       )}
                       {log.competition && (
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                          background: log.competition === '낮음' ? '#052e16' : log.competition === '중간' ? '#1c1c00' : '#2a0a0a',
-                          color: log.competition === '낮음' ? '#4ade80' : log.competition === '중간' ? '#facc15' : '#f87171',
-                          border: `1px solid ${log.competition === '낮음' ? '#166534' : log.competition === '중간' ? '#854d0e' : '#7f1d1d'}`,
+                          background: log.competition === '낮음' ? '#f0fdf4' : log.competition === '중간' ? '#fffbeb' : '#fef2f2',
+                          color: log.competition === '낮음' ? '#16a34a' : log.competition === '중간' ? '#d97706' : '#dc2626',
+                          border: `1px solid ${log.competition === '낮음' ? '#86efac' : log.competition === '중간' ? '#fcd34d' : '#fca5a5'}`,
                         }}>경쟁도 {log.competition}</span>
                       )}
                     </div>
                   )}
                   {(log.google_indexing || log.index_now) && (
                     <div style={{ marginTop: 5, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, color: '#888' }}>색인:</span>
+                      <span style={{ fontSize: 11, color: '#4b6e4b' }}>색인:</span>
                       <span style={{
                         fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                        background: log.google_indexing === 'success' ? '#052e16' : '#2a0a0a',
-                        color: log.google_indexing === 'success' ? '#4ade80' : '#f87171',
-                        border: `1px solid ${log.google_indexing === 'success' ? '#166534' : '#7f1d1d'}`,
+                        background: log.google_indexing === 'success' ? '#f0fdf4' : '#fef2f2',
+                        color: log.google_indexing === 'success' ? '#16a34a' : '#dc2626',
+                        border: `1px solid ${log.google_indexing === 'success' ? '#86efac' : '#fca5a5'}`,
                       }}>
                         {log.google_indexing === 'success' ? '✅ Google' : log.google_indexing ? '❌ Google' : '⏳ Google'}
                       </span>
                       <span style={{
                         fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                        background: log.index_now && log.index_now.startsWith('success') ? '#052e16' : '#2a0a0a',
-                        color: log.index_now && log.index_now.startsWith('success') ? '#4ade80' : '#f87171',
-                        border: `1px solid ${log.index_now && log.index_now.startsWith('success') ? '#166534' : '#7f1d1d'}`,
+                        background: log.index_now && log.index_now.startsWith('success') ? '#f0fdf4' : '#fef2f2',
+                        color: log.index_now && log.index_now.startsWith('success') ? '#16a34a' : '#dc2626',
+                        border: `1px solid ${log.index_now && log.index_now.startsWith('success') ? '#86efac' : '#fca5a5'}`,
                       }}>
                         {log.index_now && log.index_now.startsWith('success') ? '✅ IndexNow' : log.index_now ? '❌ IndexNow' : '⏳ IndexNow'}
                       </span>
@@ -328,7 +328,7 @@ export default function ContentLogPanel({ adminToken }) {
                   )}
                 </div>
                 <button onClick={() => deleteLog(log.id)}
-                  style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #166534', background: '#052e16', color: '#4ade80', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>
+                  style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #d1e8d1', background: '#f5f9f5', color: '#dc2626', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>
                   삭제
                 </button>
               </div>
