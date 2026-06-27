@@ -744,7 +744,7 @@ const baseHandler = createMcpHandler(
       'get_seasonal_foods',
       {
         title: '제철 식재료 조회',
-        description: '월/시도별 제철 식재료 조회. month(1-12) 또는 region 중 하나 이상 필요.',
+        description: '월/시도별 제철 식재료를 조회한다. month(1~12)로 이번 달 제철 재료를, region(시도 코드)으로 특정 지역 제철 재료를 필터링할 수 있다. 블로그 글감 선정 시 STEP 1에서 호출해 이번 달 제철 재료를 확인하는 데 쓴다. seasonal_foods 테이블을 조회하며 month와 region 중 하나 이상 필요.',
         inputSchema: {
           month: z.number().int().min(1).max(12).optional().describe('월 (1~12)'),
           region: z.enum(REGION_CODES).optional().describe('시도 코드'),
@@ -765,7 +765,7 @@ const baseHandler = createMcpHandler(
       'get_tv_recipes',
       {
         title: 'TV 레시피 조회',
-        description: '재료명 또는 TV 프로그램명으로 등록된 레시피 조회.',
+        description: '재료명 또는 TV 프로그램명으로 등록된 TV 레시피를 조회한다. ingredient에 식재료명을 넣으면 해당 재료가 쓰인 레시피를, program에 방송명을 넣으면 해당 프로그램의 레시피를 필터링해 반환한다. 블로그 글 작성 시 TV 레시피 연계 콘텐츠 구성에 활용하며, tv_recipes 테이블을 최신순으로 최대 20건 반환한다.',
         inputSchema: {
           ingredient: z.string().optional().describe('재료명'),
           program: z.string().optional().describe('TV 프로그램명'),
@@ -786,7 +786,7 @@ const baseHandler = createMcpHandler(
       'get_region_info',
       {
         title: '지역 정보 조회',
-        description: '시도 ID로 지역명, 대표 식재료, 시군구 조회.',
+        description: '시도 코드(region_id)로 해당 지역의 지역명, 대표 특산물 설명, 시군구 목록을 반환한다. 시도별 제철 먹거리 블로그 글 작성 시 지역 정보 확인에 사용한다. seoul, busan, daegu, incheon, gwangju, daejeon, ulsan, sejong, gyeonggi, gangwon, chungbuk, chungnam, jeonbuk, jeonnam, gyeongbuk, gyeongnam, jeju 중 하나를 입력한다.',
         inputSchema: {
           region_id: z.enum(REGION_CODES).describe('시도 코드'),
         },
