@@ -15,6 +15,17 @@ const ING_CATEGORIES = [
 ]
 
 const DISH_CATEGORIES = ['한식','양식','중식','일식','분식','디저트','퓨전','이슈','기타']
+const DISH_COLORS = {
+  '한식': '#ef4444',
+  '양식': '#3b82f6',
+  '중식': '#f97316',
+  '일식': '#8b5cf6',
+  '분식': '#ec4899',
+  '디저트': '#f59e0b',
+  '퓨전': '#10b981',
+  '이슈': '#06b6d4',
+  '기타': '#6b7280',
+}
 
 const AIR_DAYS = ['월','화','수','목','금','토','일']
 
@@ -1062,10 +1073,35 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
 
       {/* 방송 목록 */}
       <div style={S.card}>
-        <div style={S.cardTitle}>📋 방송 목록 ({shows.length})</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8 }}>
+          <div style={S.cardTitle}>📋 방송 목록 ({shows.length})</div>
+        </div>
+
+        {/* 요일 탭 */}
+        <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:14, borderBottom:'1px solid #d1e8d1', paddingBottom:10 }}>
+          {['전체','월','화','수','목','금','토','일','미등록'].map(d => {
+            const on = dayFilter === d
+            const cnt = d === '전체' ? shows.length
+              : d === '미등록' ? shows.filter(s => !s.air_days || s.air_days.length === 0).length
+              : shows.filter(s => (s.air_days||[]).includes(d)).length
+            return (
+              <button key={d} onClick={() => setDayFilter(d)}
+                style={{ padding:'5px 12px', borderRadius:20, border:`1.5px solid ${on?'#f59e0b':'#d1e8d1'}`,
+                  background: on?'#fef3c7':'#f5f9f5', color: on?'#92400e':'#4b6e4b',
+                  fontSize:12, fontWeight: on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif", whiteSpace:'nowrap' }}>
+                {d} <span style={{ opacity:.7, fontSize:11 }}>({cnt})</span>
+              </button>
+            )
+          })}
+        </div>
+
         {loading ? <p style={{ color:'#8aaa8a', textAlign:'center', padding:30 }}>불러오는 중...</p> : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:8 }}>
-            {[...shows].sort((a,b) => a.name.localeCompare(b.name, 'ko')).map(s => (
+            {[...shows]
+              .filter(s => dayFilter === '전체' ? true
+                : dayFilter === '미등록' ? (!s.air_days || s.air_days.length === 0)
+                : (s.air_days||[]).includes(dayFilter))
+              .sort((a,b) => a.name.localeCompare(b.name, 'ko')).map(s => (
               editTvId===s.id ? (
                 /* ── 수정 모드 ── */
                 <div key={s.id} style={{ ...S.row, border:'1.5px solid #f59e0b', gridColumn:'1/-1' }}>
@@ -2211,8 +2247,10 @@ function DishTab({ adminToken, showToast, confirmDelete }) {
             const cnt = c === '전체' ? dishes.length : dishes.filter(d=>d.category===c).length
             return (
               <button key={c} onClick={()=>setCatFilter(c)}
-                style={{ padding:'5px 12px', borderRadius:20, border:`1.5px solid ${on?'#f97316':'#d1e8d1'}`,
-                  background:on?'#fff7ed':'#f5f9f5', color:on?'#ea580c':'#4b6e4b',
+                style={{ padding:'5px 12px', borderRadius:20,
+                  border: on ? `1.5px solid ${DISH_COLORS[c]||'#888'}` : '1.5px solid #d1e8d1',
+                  background: on ? (DISH_COLORS[c]||'#888')+'22' : '#f5f9f5',
+                  color: on ? (DISH_COLORS[c]||'#888') : '#4b6e4b',
                   fontSize:12, fontWeight:on?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif", whiteSpace:'nowrap' }}>
                 {c} <span style={{ opacity:.7, fontSize:11 }}>({cnt})</span>
               </button>
@@ -2260,12 +2298,16 @@ function DishTab({ adminToken, showToast, confirmDelete }) {
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>🍽 {d.name}</div>
-                      {d.category && (
-                        <span style={{ fontSize:10, padding:'1px 7px', borderRadius:10, background:'#fff7ed',
-                          border:'1px solid #fed7aa', color:'#ea580c', fontWeight:600, marginTop:3, display:'inline-block' }}>
-                          {d.category}
-                        </span>
-                      )}
+                      {d.category && (() => {
+                        const color = DISH_COLORS[d.category] || '#6b7280'
+                        return (
+                          <span style={{ fontSize:10, padding:'1px 7px', borderRadius:10,
+                            background: color+'22', border:`1px solid ${color}66`,
+                            color, fontWeight:700, marginTop:3, display:'inline-block' }}>
+                            {d.category}
+                          </span>
+                        )
+                      })()}
                       {d.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>{d.description}</div>}
                       {d.caution && (
                         <div style={{ fontSize:10, marginTop:3, padding:'2px 6px', background:'#fef2f2', borderRadius:4, border:'1px solid #fca5a5' }}>

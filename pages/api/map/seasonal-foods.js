@@ -26,8 +26,7 @@ export default async function handler(req, res) {
           caution,
           is_special,
           is_limited,
-          limited_start,
-          limited_end,
+          limited_days,
           ingredient_health (
             health_benefits (
               id,
@@ -83,8 +82,7 @@ export default async function handler(req, res) {
           caution:       row.ingredients.caution || '',
           is_special:    row.ingredients.is_special || false,
           is_limited:    row.ingredients.is_limited || false,
-          limited_start: row.ingredients.limited_start || null,
-          limited_end:   row.ingredients.limited_end || null,
+          limited_days:  row.ingredients.limited_days || null,
           source:        'managed',
         }
       })
