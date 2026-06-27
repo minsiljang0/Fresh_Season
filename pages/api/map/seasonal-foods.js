@@ -20,6 +20,10 @@ export default async function handler(req, res) {
           caution,
           is_special,
           is_limited,
+          is_superfood,
+          is_global,
+          gender,
+          age_groups,
           limited_days,
           ingredient_health (
             health_benefits (
@@ -61,6 +65,10 @@ export default async function handler(req, res) {
           caution:      row.ingredients.caution || '',
           is_special:   row.ingredients.is_special || false,
           is_limited:   row.ingredients.is_limited || false,
+          is_superfood: row.ingredients.is_superfood || false,
+          is_global:    row.ingredients.is_global || false,
+          gender:       row.ingredients.gender || 'all',
+          age_groups:   row.ingredients.age_groups || [],
           limited_days: row.ingredients.limited_days || null,
           source:       'managed',
         }

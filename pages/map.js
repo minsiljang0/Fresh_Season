@@ -155,6 +155,7 @@ export default function MapPage() {
   const [selHealth, setSelHealth]     = useState('all')
   const [selAge, setSelAge]           = useState('all')
   const [selGender, setSelGender]     = useState('all')
+  const [selSuperfood, setSelSuperfood] = useState(false)
   const [query, setQuery]             = useState('')
   const [view, setView]               = useState('cards')
   const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])
@@ -256,8 +257,9 @@ export default function MapPage() {
         (f.tvPrograms && f.tvPrograms.some(t => t.includes(q)))
       )
     }
+    if (selSuperfood) data = data.filter(f => f.is_superfood)
     return data
-  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, query, allFoods, dbHealthBenefits])
+  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, query, allFoods, dbHealthBenefits])
 
   const byRegion = useMemo(() => {
     const map = {}
@@ -688,6 +690,44 @@ export default function MapPage() {
             </div>
           </div>
 
+          {/* 특수 토글: 슈퍼푸드 / 특산품 / 해외 식재료 */}
+          <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
+              ✨ 특수 필터
+            </p>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              {/* 슈퍼푸드 토글 */}
+              <button
+                onClick={() => setSelSuperfood(v => !v)}
+                style={{
+                  display:'flex', alignItems:'center', gap:6,
+                  padding:'6px 12px', borderRadius:20, border:'1.5px solid',
+                  fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  borderColor: selSuperfood ? '#f59e0b' : 'var(--border)',
+                  background: selSuperfood ? '#f59e0b18' : 'var(--surface2)',
+                  color: selSuperfood ? '#d97706' : 'var(--text2)',
+                  transition:'all 0.15s',
+                }}
+              >
+                <span style={{
+                  width:28, height:16, borderRadius:8, border:'1.5px solid',
+                  borderColor: selSuperfood ? '#f59e0b' : '#d1d5db',
+                  background: selSuperfood ? '#f59e0b' : 'transparent',
+                  display:'flex', alignItems:'center', padding:'0 2px',
+                  transition:'all 0.15s', flexShrink:0,
+                }}>
+                  <span style={{
+                    width:10, height:10, borderRadius:'50%', background:'#fff',
+                    marginLeft: selSuperfood ? 'auto' : 0,
+                    boxShadow:'0 1px 2px rgba(0,0,0,0.2)',
+                    transition:'margin 0.15s',
+                  }} />
+                </span>
+                🌟 슈퍼푸드
+              </button>
+            </div>
+          </div>
+
           {/* 카테고리 */}
           <div style={{ marginBottom:14 }}>
             <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🏷 카테고리</p>
@@ -769,7 +809,7 @@ export default function MapPage() {
                   }}>{label}</button>
               ))}
             </div>
-            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setQuery('') }}
+            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setSelSuperfood(false); setQuery('') }}
               style={{ padding:'5px 12px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
               🔄 초기화
             </button>
@@ -939,11 +979,35 @@ export default function MapPage() {
                             <span style={{ fontSize:12, color:'var(--text2)' }}>{regionInfo?.icon} {regionInfo?.name?.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').replace('도','도').trim()}</span>
                           </Link>
                         </div>
-                        <span style={{
-                          fontSize:11, padding:'3px 8px', borderRadius:999, fontWeight:700,
-                          background:categoryBg(f.category), color:categoryColor(f.category),
-                          border:`1px solid ${categoryColor(f.category)}44`, flexShrink:0,
-                        }}>{cat?.emoji} {cat?.label}</span>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+                          <span style={{
+                            fontSize:11, padding:'3px 8px', borderRadius:999, fontWeight:700,
+                            background:categoryBg(f.category), color:categoryColor(f.category),
+                            border:`1px solid ${categoryColor(f.category)}44`, flexShrink:0,
+                          }}>{cat?.emoji} {cat?.label}</span>
+                          <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
+                            {f.is_superfood && (
+                              <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f59e0b18', color:'#d97706', border:'1px solid #f59e0b44' }}>
+                                🌟 슈퍼푸드
+                              </span>
+                            )}
+                            {f.is_global && (
+                              <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#3b82f618', color:'#2563eb', border:'1px solid #3b82f644' }}>
+                                🌍 해외
+                              </span>
+                            )}
+                            {f.is_special && (
+                              <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#8b5cf618', color:'#7c3aed', border:'1px solid #8b5cf644' }}>
+                                🏆 특산품
+                              </span>
+                            )}
+                            {f.is_limited && (
+                              <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#ef444418', color:'#dc2626', border:'1px solid #ef444444' }}>
+                                ⏰ 기간한정
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       <p style={{ fontSize:11, color:'var(--text3)', marginBottom:8 }}>📍 {f.district}</p>
