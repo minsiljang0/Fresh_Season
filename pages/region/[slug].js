@@ -163,22 +163,28 @@ export default function RegionPage({ regionId }) {
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
                       <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
-                      {food.is_special && (
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700 }}>🏆 특산품</span>
-                      )}
-                      {food.is_limited && (() => {
+                      <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                        background: food.is_special ? '#fef3c7' : 'var(--surface2)',
+                        border: `1px solid ${food.is_special ? '#f59e0b' : 'var(--border)'}`,
+                        color: food.is_special ? '#b45309' : 'var(--text3)',
+                        fontWeight: food.is_special ? 700 : 400,
+                      }}>🏆 {food.is_special ? '특산품' : '일반'}</span>
+                      {(() => {
                         const days = getLimitedDaysLeft(food.limited_end)
                         const isActive = !food.limited_start || new Date(food.limited_start) <= new Date()
                         const isExpired = days !== null && days < 0
-                        if (isExpired) return null
+                        const label = !food.is_limited ? '기간제한없음'
+                          : isExpired ? '판매종료'
+                          : !isActive ? '출하예정'
+                          : days !== null ? `${days}일 남음` : '기간한정'
+                        const active = food.is_limited && !isExpired
                         return (
                           <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
-                            background: days !== null && days <= 7 ? '#fee2e2' : '#d1fae5',
-                            border: `1px solid ${days !== null && days <= 7 ? '#ef4444' : '#10b981'}`,
-                            color: days !== null && days <= 7 ? '#dc2626' : '#059669',
-                            fontWeight:700 }}>
-                            ⏰ {!isActive ? `${food.limited_start} 출하예정` : days !== null ? `${days}일 남음` : '기간한정'}
-                          </span>
+                            background: active && days !== null && days <= 7 ? '#fee2e2' : active ? '#d1fae5' : 'var(--surface2)',
+                            border: `1px solid ${active && days !== null && days <= 7 ? '#ef4444' : active ? '#10b981' : 'var(--border)'}`,
+                            color: active && days !== null && days <= 7 ? '#dc2626' : active ? '#059669' : 'var(--text3)',
+                            fontWeight: active ? 700 : 400,
+                          }}>⏰ {label}</span>
                         )
                       })()}
                     </div>
