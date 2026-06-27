@@ -694,6 +694,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   const [filterRegion, setFilterRegion] = useState('')
   const [filterSuperfood, setFilterSuperfood] = useState(false)
   const [filterGlobal, setFilterGlobal] = useState(false)
+  const [filterSpecial, setFilterSpecial] = useState(false)
+  const [filterLimited, setFilterLimited] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formRegions, setFormRegions] = useState([])
   const [formRegionForm, setFormRegionForm] = useState(EMPTY_REGION)
@@ -894,6 +896,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
     if (filterRegion && !(i.regions_preview||[]).some(lbl => lbl.includes(filterRegion.slice(0,2)))) return false
     if (filterSuperfood && !i.is_superfood) return false
     if (filterGlobal && !i.is_global) return false
+    if (filterSpecial && !i.is_special) return false
+    if (filterLimited && !i.is_limited) return false
     return true
   })
   // 지역 옵션: regions_preview 라벨에서 시도명 추출
@@ -1151,7 +1155,21 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
               fontSize:12, fontWeight:filterGlobal?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
             🌍 해외만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_global).length})</span>
           </button>
-          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||searchQ) && (
+          <button onClick={()=>setFilterSpecial(v=>!v)}
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:20,
+              border:`1.5px solid ${filterSpecial?'#f59e0b':'#d1e8d1'}`,
+              background:filterSpecial?'#fef3c7':'#fff', color:filterSpecial?'#b45309':'#4b6e4b',
+              fontSize:12, fontWeight:filterSpecial?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+            🏆 특산품만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_special).length})</span>
+          </button>
+          <button onClick={()=>setFilterLimited(v=>!v)}
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:20,
+              border:`1.5px solid ${filterLimited?'#10b981':'#d1e8d1'}`,
+              background:filterLimited?'#d1fae5':'#fff', color:filterLimited?'#059669':'#4b6e4b',
+              fontSize:12, fontWeight:filterLimited?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+            ⏰ 기간한정만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_limited).length})</span>
+          </button>
+          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||filterSpecial||filterLimited||searchQ) && (
             <button onClick={()=>{setFilterMonth(0);setFilterRegion('');setFilterSuperfood(false);setFilterGlobal(false);setSearchQ('')}}
               style={{ padding:'5px 12px', borderRadius:20, border:'1.5px solid #d1e8d1', background:'#fff', color:'#6b7280',
                 fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
