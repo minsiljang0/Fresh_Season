@@ -151,7 +151,7 @@ export default async function handler(req, res) {
     try {
       if (type === 'health_benefits') {
         const { data, error } = await supabase.from('health_benefits')
-          .insert([{ id: genId(), name: body.name, description: body.description || '', category: body.category || '', coupang_url: body.coupang_url || '', age_groups: body.age_groups || [], caution: body.caution || '' }])
+          .insert([{ id: genId(), name: body.name, description: body.description || '', category: body.category || '', coupang_url: body.coupang_url || '', age_groups: body.age_groups || [], gender: body.gender || 'all', caution: body.caution || '' }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)
