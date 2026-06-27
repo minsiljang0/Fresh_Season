@@ -24,6 +24,10 @@ export default async function handler(req, res) {
           category,
           description,
           caution,
+          is_special,
+          is_limited,
+          limited_start,
+          limited_end,
           ingredient_health (
             health_benefits (
               id,
@@ -68,16 +72,20 @@ export default async function handler(req, res) {
           .filter(Boolean)
 
         return {
-          ingredient: row.ingredients.name,
-          category:   row.ingredients.category || 'veg',
-          region:     row.region,
-          district:   row.district || '',
-          months:     Array.isArray(row.months) ? row.months : [],
-          health:     row.ingredients.description || '',
+          ingredient:    row.ingredients.name,
+          category:      row.ingredients.category || 'veg',
+          region:        row.region,
+          district:      row.district || '',
+          months:        Array.isArray(row.months) ? row.months : [],
+          health:        row.ingredients.description || '',
           healthIds,
-          tvPrograms: [],
-          caution:    row.ingredients.caution || '',
-          source:     'managed',
+          tvPrograms:    [],
+          caution:       row.ingredients.caution || '',
+          is_special:    row.ingredients.is_special || false,
+          is_limited:    row.ingredients.is_limited || false,
+          limited_start: row.ingredients.limited_start || null,
+          limited_end:   row.ingredients.limited_end || null,
+          source:        'managed',
         }
       })
 

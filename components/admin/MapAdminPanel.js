@@ -1345,6 +1345,41 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
           <input value={f.caution||''} onChange={e=>setF(p=>({...p,caution:e.target.value}))}
             placeholder="예: 견과류 알레르기 주의 / 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의"
             style={S.input} list="caution-presets" />
+        </div>
+
+        {/* 특산품 / 기간한정 */}
+        <div style={{ gridColumn:'1/-1', display:'flex', flexDirection:'column', gap:10, marginTop:4 }}>
+          <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none' }}>
+            <div onClick={() => setF(p => ({ ...p, is_special: !p.is_special }))}
+              style={{ width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
+                background: f.is_special ? '#f59e0b' : '#d1e8d1', position:'relative', flexShrink:0 }}>
+              <div style={{ position:'absolute', top:3, left: f.is_special ? 20 : 3,
+                width:16, height:16, borderRadius:8, background:'#fff', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }} />
+            </div>
+            <span style={{ fontSize:13, fontWeight:700, color: f.is_special ? '#f59e0b' : '#4b6e4b' }}>🏆 특산품</span>
+            <span style={{ fontSize:11, color:'#8aaa8a' }}>해당 지역 대표 특산물</span>
+          </label>
+          <div>
+            <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none', marginBottom: f.is_limited ? 8 : 0 }}>
+              <div onClick={() => setF(p => ({ ...p, is_limited: !p.is_limited, limited_start:'', limited_end:'' }))}
+                style={{ width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
+                  background: f.is_limited ? '#10b981' : '#d1e8d1', position:'relative', flexShrink:0 }}>
+                <div style={{ position:'absolute', top:3, left: f.is_limited ? 20 : 3,
+                  width:16, height:16, borderRadius:8, background:'#fff', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }} />
+              </div>
+              <span style={{ fontSize:13, fontWeight:700, color: f.is_limited ? '#10b981' : '#4b6e4b' }}>⏰ 기간한정</span>
+              <span style={{ fontSize:11, color:'#8aaa8a' }}>특정 기간에만 출하되는 식재료</span>
+            </label>
+            {f.is_limited && (
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:50 }}>
+                <input type="date" value={f.limited_start||''} onChange={e=>setF(p=>({...p,limited_start:e.target.value}))} style={{ ...S.input, width:150 }} />
+                <span style={{ color:'#8aaa8a', fontSize:13 }}>~</span>
+                <input type="date" value={f.limited_end||''} onChange={e=>setF(p=>({...p,limited_end:e.target.value}))} style={{ ...S.input, width:150 }} />
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{ display:'none' }}>
           <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 입력창 클릭하면 자주 쓰는 주의문구 나와요</p>
         </div>
       </div>
@@ -1429,7 +1464,7 @@ function IngForm({ f, setF, healths, regions, onAddRegion, onDelRegion, onLinkHe
 }
 
 function IngredientTab({ adminToken, showToast, confirmDelete }) {
-  const EMPTY_FORM   = { name:'', display_name:'', region_id:'', category:'fish', description:'', coupang_url:'', caution:'' }
+  const EMPTY_FORM   = { name:'', display_name:'', region_id:'', category:'fish', description:'', coupang_url:'', caution:'', is_special:false, is_limited:false, limited_start:'', limited_end:'' }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[], label:'' }
 
   const [list, setList]         = useState([])
@@ -1662,7 +1697,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
   const openEdit = (i) => {
     setSelIng(null)
     setEditId(i.id)
-    setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'' })
+    setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category, description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'', is_special:i.is_special||false, is_limited:i.is_limited||false, limited_start:i.limited_start||'', limited_end:i.limited_end||'' })
     setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
     loadEditLinks(i.id)
   }
@@ -1730,6 +1765,62 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
               placeholder="예: 견과류 알레르기 주의 / 통풍 환자 퓨린 함량 높음 / 임산부 과다섭취 주의"
               style={S.input} list="caution-presets" />
             <p style={{ fontSize:11, color:'#8aaa8a', marginTop:3 }}>💡 입력창 클릭하면 자주 쓰는 주의문구 나와요</p>
+          </div>
+
+          {/* 특산품 / 기간한정 */}
+          <div style={{ gridColumn:'1/-1', display:'flex', flexDirection:'column', gap:10 }}>
+            {/* 특산품 */}
+            <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none' }}>
+              <div
+                onClick={() => setForm(f => ({ ...f, is_special: !f.is_special }))}
+                style={{
+                  width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
+                  background: form.is_special ? '#f59e0b' : '#d1e8d1',
+                  position:'relative', flexShrink:0,
+                }}>
+                <div style={{
+                  position:'absolute', top:3, left: form.is_special ? 20 : 3,
+                  width:16, height:16, borderRadius:8, background:'#fff', transition:'left 0.2s',
+                  boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
+                }} />
+              </div>
+              <span style={{ fontSize:13, fontWeight:700, color: form.is_special ? '#f59e0b' : '#4b6e4b' }}>
+                🏆 특산품
+              </span>
+              <span style={{ fontSize:11, color:'#8aaa8a' }}>해당 지역을 대표하는 특산물</span>
+            </label>
+
+            {/* 기간한정 */}
+            <div>
+              <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none', marginBottom: form.is_limited ? 8 : 0 }}>
+                <div
+                  onClick={() => setForm(f => ({ ...f, is_limited: !f.is_limited, limited_start: '', limited_end: '' }))}
+                  style={{
+                    width:40, height:22, borderRadius:11, cursor:'pointer', transition:'background 0.2s',
+                    background: form.is_limited ? '#10b981' : '#d1e8d1',
+                    position:'relative', flexShrink:0,
+                  }}>
+                  <div style={{
+                    position:'absolute', top:3, left: form.is_limited ? 20 : 3,
+                    width:16, height:16, borderRadius:8, background:'#fff', transition:'left 0.2s',
+                    boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </div>
+                <span style={{ fontSize:13, fontWeight:700, color: form.is_limited ? '#10b981' : '#4b6e4b' }}>
+                  ⏰ 기간한정
+                </span>
+                <span style={{ fontSize:11, color:'#8aaa8a' }}>특정 기간에만 출하되는 식재료</span>
+              </label>
+              {form.is_limited && (
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:50 }}>
+                  <input type="date" value={form.limited_start||''} onChange={e=>setForm(f=>({...f,limited_start:e.target.value}))}
+                    style={{ ...S.input, width:150 }} />
+                  <span style={{ color:'#8aaa8a', fontSize:13 }}>~</span>
+                  <input type="date" value={form.limited_end||''} onChange={e=>setForm(f=>({...f,limited_end:e.target.value}))}
+                    style={{ ...S.input, width:150 }} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1848,7 +1939,11 @@ function IngredientTab({ adminToken, showToast, confirmDelete }) {
                   style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${on?'#a855f7':'#d1e8d1'}`, background:on?'#f5f0ff':'#f5f9f5' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{ct?.emoji} {i.name}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
+                        <div style={{ fontWeight:700, color:'#0f1f0f', fontSize:13 }}>{ct?.emoji} {i.name}</div>
+                        {i.is_special && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700 }}>🏆 특산품</span>}
+                        {i.is_limited && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700 }}>⏰ 기간한정</span>}
+                      </div>
                       {i.regions_preview && (
                         <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginTop:2 }}>
                           {i.regions_preview.map((lbl,idx)=>(

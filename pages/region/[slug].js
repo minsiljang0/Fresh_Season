@@ -8,6 +8,16 @@ import { SEASONS } from '../../lib/seasons'
 
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12]
 
+function getLimitedDaysLeft(limited_end) {
+  if (!limited_end) return null
+  const end = new Date(limited_end)
+  const today = new Date()
+  today.setHours(0,0,0,0)
+  end.setHours(0,0,0,0)
+  const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24))
+  return diff
+}
+
 export async function getStaticPaths() {
   return { paths: REGIONS.map(r => ({ params: { slug: r.id } })), fallback: false }
 }
@@ -150,13 +160,34 @@ export default function RegionPage({ regionId }) {
                 <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
                   onMouseEnter={e => e.currentTarget.style.borderColor = region.color}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-                    <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                      <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
+                      {food.is_special && (
+                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700 }}>🏆 특산품</span>
+                      )}
+                      {food.is_limited && (() => {
+                        const days = getLimitedDaysLeft(food.limited_end)
+                        const isActive = !food.limited_start || new Date(food.limited_start) <= new Date()
+                        const isExpired = days !== null && days < 0
+                        if (isExpired) return null
+                        return (
+                          <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
+                            background: days !== null && days <= 7 ? '#fee2e2' : '#d1fae5',
+                            border: `1px solid ${days !== null && days <= 7 ? '#ef4444' : '#10b981'}`,
+                            color: days !== null && days <= 7 ? '#dc2626' : '#059669',
+                            fontWeight:700 }}>
+                            ⏰ {!isActive ? `${food.limited_start} 출하예정` : days !== null ? `${days}일 남음` : '기간한정'}
+                          </span>
+                        )
+                      })()}
+                    </div>
                     <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
                       {food.months.slice(0,5).map(m => (
                         <span key={m} style={{ fontSize:9, padding:'1px 5px', borderRadius:4, background:'var(--surface2)', color:'var(--text3)' }}>{m}월</span>
                       ))}
                     </div>
+                  </div>
                   </div>
                   <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>💚 {food.health}</p>
                   <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
