@@ -915,7 +915,7 @@ export default function MapPage() {
                       </div>
                     ))}
                   </div>
-                  {/* 카테고리 아이콘 그리드 — 바 차트 아래 */}
+                  {/* 카테고리 아이콘 그리드 — 바 차트 아래 (데스크탑 전용) */}
                   {totalCount > 0 && (
                     <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid var(--border)', display:'flex', gap:6, flexWrap:'wrap' }}>
                       {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
@@ -963,7 +963,7 @@ export default function MapPage() {
         <div style={{ width:'100%' }}>
           <div style={{ flex:1, minWidth:0 }}>
 
-            {/* 모바일: 요약 스탯 — 카드 결과 상단 (데스크탑은 바 차트 하단에 표시) */}
+            {/* 요약 스탯 — 모바일은 카드 상단, 데스크탑은 바 차트 하단에 표시 */}
             {isMobile && totalCount > 0 && (
               <div style={{ marginBottom:12, display:'flex', gap:6, flexWrap:'wrap' }}>
                 {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
@@ -973,7 +973,7 @@ export default function MapPage() {
                       display:'flex', alignItems:'center', gap:3,
                       background: selCategory===c.id ? c.color+'22' : 'var(--surface)',
                       border: `1.5px solid ${selCategory===c.id ? c.color : 'var(--border)'}`,
-                      borderRadius:10, padding:'6px 8px', cursor:'pointer', fontFamily:'inherit',
+                      borderRadius:12, padding:'6px 8px', cursor:'pointer', fontFamily:'inherit',
                       transition:'all 0.15s',
                     }}>
                     <span style={{ fontSize:16 }}>{c.emoji}</span>
