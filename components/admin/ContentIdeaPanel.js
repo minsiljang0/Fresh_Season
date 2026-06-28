@@ -4,14 +4,14 @@ import { S } from './AdminUI'
 const ACCENT = '#16a34a'
 
 const SECTIONS = [
+  { value: 'angle',      label: '✏️ 각도/기획', color: '#f59e0b', bg: '#fffbeb' },
+  { value: 'special',    label: '⭐ 특집/테마', color: '#ec4899', bg: '#fdf4ff' },
   { value: 'ingredient', label: '🥕 식재료',    color: '#16a34a', bg: '#f0fdf4' },
   { value: 'season',     label: '🌤️ 계절/날씨', color: '#0ea5e9', bg: '#f0f9ff' },
   { value: 'health',     label: '💊 건강/효능', color: '#8b5cf6', bg: '#faf5ff' },
   { value: 'food',       label: '🍽️ 음식/요리', color: '#f59e0b', bg: '#fffbeb' },
   { value: 'festival',   label: '🎉 절기/행사', color: '#ef4444', bg: '#fff1f2' },
-  { value: 'special',    label: '⭐ 특집/테마', color: '#ec4899', bg: '#fdf4ff' },
   { value: 'event',      label: '🏖️ 특이사항',  color: '#06b6d4', bg: '#ecfeff' },
-  { value: 'angle',      label: '✏️ 각도/기획', color: '#6b7280', bg: '#f9fafb' },
 ]
 
 const TYPE_LABELS = {
@@ -184,9 +184,23 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
         </div>
       </div>
       {open && (
-        <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid #e9d5ff', display:'flex', justifyContent:'flex-end' }} onClick={e=>e.stopPropagation()}>
-          <button onClick={() => setOpen(false)}
-            style={{ padding:'3px 10px', borderRadius:5, border:'1px solid #e5e7eb', background:'#f9fafb', color:'#6b7280', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>닫기</button>
+        <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid #e9d5ff' }} onClick={e=>e.stopPropagation()}>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <div>
+              <label style={S.label}>각도 (선택)</label>
+              <input value={angle} onChange={e => setAngle(e.target.value)} style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
+            </div>
+            <div>
+              <label style={S.label}>타겟 키워드 (선택)</label>
+              <input value={keyword} onChange={e => setKeyword(e.target.value)} style={S.input} placeholder="예: 민어 효능, 민어 제철" />
+            </div>
+            <div>
+              <label style={S.label}>메모 (선택)</label>
+              <input value={memo} onChange={e => setMemo(e.target.value)} style={S.input} placeholder="추가 메모" />
+            </div>
+            <button onClick={() => onSave({ ing, keyword, angle, memo })}
+              style={{ ...S.btn(), padding:'8px 16px', fontSize:13, alignSelf:'flex-end' }}>글감으로 저장</button>
+          </div>
         </div>
       )}
     </div>
@@ -195,7 +209,7 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
 
 // ── 추가 모달 ────────────────────────────────────────────────
 function AddIdeaModal({ activeMonth, onClose, onSave }) {
-  const [form, setForm] = useState({ section: 'ingredient', type: 'idea', content: '', keyword: '', angle: '', memo: '' })
+  const [form, setForm] = useState({ section: 'angle', type: 'idea', content: '', keyword: '', angle: '', memo: '' })
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -545,7 +559,6 @@ export default function ContentIdeaPanel({ adminToken }) {
       {/* 헤더 */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
         <div style={{ fontSize:17, fontWeight:700, color:'#0f1f0f' }}>💡 글감 관리</div>
-        <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'8px 16px', fontSize:13 }}>+ 추가</button>
       </div>
 
       {/* 월별 탭 */}
@@ -681,7 +694,11 @@ export default function ContentIdeaPanel({ adminToken }) {
         </div>
       </div>
 
-      {/* ── 저장된 글감 목록 ── */}
+      {/* ── 글감 목록 + 추가 버튼 ── */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, marginTop:8 }}>
+        <div style={{ fontSize:14, fontWeight:700, color:'#0f1f0f' }}>📋 저장된 글감</div>
+        <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'7px 14px', fontSize:13 }}>+ 추가</button>
+      </div>
       {loading ? (
         <div style={{ color:'#888', fontSize:14, padding:'40px 0', textAlign:'center' }}>불러오는 중...</div>
       ) : tabIdeas.length === 0 ? (
@@ -690,7 +707,7 @@ export default function ContentIdeaPanel({ adminToken }) {
             {filterStatus === 'used' ? `${activeMonth}월에 완료된 글감이 없어요` : `저장된 글감이 없어요`}
           </div>
           {filterStatus !== 'used' && (
-            <div style={{ fontSize:12, color:'#bbb' }}>위 식재료 카드에서 각도 입력 후 저장하거나 + 추가 버튼을 눌러주세요</div>
+            <div style={{ fontSize:12, color:'#bbb' }}>위 식재료 카드에서 저장하거나 + 추가 버튼을 눌러주세요</div>
           )}
         </div>
       ) : (
