@@ -113,7 +113,7 @@ function FarmingBadge({ v }) {
   return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
 }
 
-function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
+function IngredientCard({ ing, onDelete }) {
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [angle, setAngle] = useState('')
@@ -128,12 +128,11 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
 
   return (
     <div onClick={() => setOpen(p => !p)}
-      style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${alreadySaved?'#86efac':'#d1e8d1'}`, background:alreadySaved?'#f0fdf4':'#fff' }}>
+      style={{ ...S.row, cursor:'pointer', border:'1.5px solid #d1e8d1', background:'#fff' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap', marginBottom:3 }}>
             <span style={{ fontWeight:800, color:'#111', fontSize:13 }}>{[...ct][0]} {ing.name}</span>
-            {alreadySaved && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>✓ 저장됨</span>}
             {ing.is_special   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#b45309',fontWeight:700}}>🏆 특산</span>}
             {ing.is_limited   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#d1fae5',border:'1px solid #10b981',color:'#059669',fontWeight:700}}>⏰ {ing.limited_days||'기간한정'}</span>}
             {ing.is_superfood && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#92400e',fontWeight:700}}>🌟 슈퍼푸드</span>}
@@ -175,10 +174,6 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
           </div>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:3, flexShrink:0, marginLeft:6 }}>
-          {!alreadySaved && (
-            <button onClick={e => { e.stopPropagation(); onSave({ ing, keyword:'', angle:'', memo:'' }) }}
-              style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #86efac', background:'#f0fdf4', color:'#16a34a', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif", fontWeight:700 }}>저장</button>
-          )}
           <button onClick={e => { e.stopPropagation(); onDelete(ing.id, ing.name) }}
             style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
         </div>
@@ -431,7 +426,7 @@ export default function ContentIdeaPanel({ adminToken }) {
     setLoading(false)
   }, [adminToken])
 
-  // 월별 제철 식재료 불러오기 + 해당월 일괄 저장
+  // 월별 제철 식재료 불러오기
   const loadIngredients = useCallback(async (month) => {
     setIngLoading(true)
     setIngLoaded(false)
@@ -440,24 +435,12 @@ export default function ContentIdeaPanel({ adminToken }) {
       const data = await res.json()
       if (Array.isArray(data.ingredients)) {
         setIngredients(data.ingredients)
-        // 해당 월에 일괄 저장
-        await Promise.all(data.ingredients.map(ing => {
-          const regionStr = ing.regions_preview?.length ? ` | 산지: ${ing.regions_preview.join('·')}` : ''
-          const benefitStr = ing.health_benefits?.length ? ` | 효능: ${ing.health_benefits.filter(h=>!h.name?.includes('주의')).slice(0,3).map(h=>h.name).join('·')}` : ''
-          const ingContent = `${ing.name} — ${ing.description || ''}${regionStr}${benefitStr}`
-          return fetch('/api/admin/content-ideas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-            body: JSON.stringify({ tab_id: `month_${month}`, section: 'ingredient', type: 'idea', content: ingContent }),
-          })
-        }))
-        await load()
-        showToast(`✅ ${data.ingredients.length}개 식재료 불러오기 완료`)
+        showToast(`✅ ${data.ingredients.length}개 불러오기 완료`)
         setIngLoaded(true)
       }
     } catch {}
     setIngLoading(false)
-  }, [adminToken, load])
+  }, [adminToken])
 
   useEffect(() => { load() }, [load])
 
@@ -485,27 +468,7 @@ export default function ContentIdeaPanel({ adminToken }) {
     }})
   }
 
-  // 식재료 카드에서 글감 저장
-  const saveIngredientIdea = async ({ ing, keyword, angle, memo }) => {
-    const regionStr = ing.regions_preview?.length ? ` | 산지: ${ing.regions_preview.join('·')}` : ''
-    const benefitStr = ing.health_benefits?.length ? ` | 효능: ${ing.health_benefits.filter(h=>!h.name?.includes('주의')).slice(0,3).map(h=>h.name).join('·')}` : ''
-    const content = `${ing.name} — ${ing.description || ''}${regionStr}${benefitStr}`
-    const form = {
-      tab_id: `month_${activeMonth}`,
-      section: 'ingredient',
-      type: angle ? 'angle' : 'idea',
-      content,
-      keyword: keyword || null,
-      angle: angle || null,
-      memo: memo || null,
-    }
-    const res = await fetch('/api/admin/content-ideas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify(form),
-    })
-    if (res.ok) { showToast(`✅ ${ing.name} 글감 저장됨`); load() }
-  }
+
 
   const markUsed = async (slug) => {
     const idea = useTarget
@@ -566,11 +529,6 @@ export default function ContentIdeaPanel({ adminToken }) {
 
   const tabId = `month_${activeMonth}`
   // 이미 content_ideas에 저장된 식재료 이름 목록
-  const savedIngNames = new Set(
-    ideas.filter(i => i.tab_id === tabId && i.tool_id === 'ingredient')
-         .map(i => i.content.split(' —')[0].trim())
-  )
-
   const tabIdeas = ideas.filter(i => {
     if (i.tab_id !== tabId) return false
     if (filterStatus === 'pending' && i.status === 'used') return false
@@ -746,9 +704,7 @@ export default function ContentIdeaPanel({ adminToken }) {
                 <IngredientCard
                   key={ing.id}
                   ing={ing}
-                  onSave={saveIngredientIdea}
                   onDelete={deleteIngredient}
-                  alreadySaved={savedIngNames.has(ing.name)}
                 />
               ))
             )}
