@@ -264,8 +264,8 @@ export default function MapPage() {
     if (selSuperfood) data = data.filter(f => f.is_superfood)
     if (selBrand) data = data.filter(f => f.is_brand)
     if (selSeason)  data = data.filter(f => Array.isArray(f.season_badge) ? f.season_badge.includes(selSeason) : f.season_badge === selSeason)
-    if (selJeolgi)  data = data.filter(f => f.jeolgi_badge === selJeolgi)
-    if (selSpecial) data = data.filter(f => f.special_badge === selSpecial)
+    if (selJeolgi)  data = data.filter(f => Array.isArray(f.jeolgi_badge) ? f.jeolgi_badge.includes(selJeolgi) : f.jeolgi_badge === selJeolgi)
+    if (selSpecial) data = data.filter(f => Array.isArray(f.special_badge) ? f.special_badge.includes(selSpecial) : f.special_badge === selSpecial)
     return data
   }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, selBrand, selSeason, selJeolgi, selSpecial, query, allFoods, dbHealthBenefits])
 
@@ -1010,20 +1010,24 @@ export default function MapPage() {
                               s === 'fall'   ? <span key="fall"   style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff7ed', color:'#c2410c', border:'1px solid #fdba74' }}>🍂 가을</span> :
                               s === 'winter' ? <span key="winter" style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#eff6ff', color:'#1e40af', border:'1px solid #bae6fd' }}>❄️ 겨울</span> : null
                             ))}
-                            {f.jeolgi_badge === 'sambok'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 삼복</span>}
-                            {f.jeolgi_badge === 'chopbok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 초복</span>}
-                            {f.jeolgi_badge === 'jungbok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 중복</span>}
-                            {f.jeolgi_badge === 'malbok'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 말복</span>}
-                            {f.jeolgi_badge === 'chuseok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fefce8', color:'#854d0e', border:'1px solid #fde68a' }}>🌕 추석</span>}
-                            {f.jeolgi_badge === 'gimjang' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🥬 김장철</span>}
-                            {f.jeolgi_badge === 'dongji'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#eff6ff', color:'#1e40af', border:'1px solid #bae6fd' }}>☯️ 동지</span>}
-                            {f.jeolgi_badge === 'seollal' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fdf4ff', color:'#7e22ce', border:'1px solid #e9d5ff' }}>🎍 설날</span>}
-                            {f.jeolgi_badge === 'ipchun'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🌱 입춘</span>}
-                            {f.jeolgi_badge === 'samjinal' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fdf4ff', color:'#7e22ce', border:'1px solid #e9d5ff' }}>🦋 삼짇날</span>}
-                            {f.special_badge === 'boyangshik' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff7ed', color:'#c2410c', border:'1px solid #fed7aa' }}>💪 보양식</span>}
-                            {f.special_badge === 'jeolgi_food' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fdf4ff', color:'#7e22ce', border:'1px solid #e9d5ff' }}>🎋 절기음식</span>}
-                            {f.special_badge === 'hangover' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fefce8', color:'#854d0e', border:'1px solid #fde68a' }}>🍶 해장</span>}
-                            {f.special_badge === 'diet'   && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🥗 다이어트</span>}
+                            {(Array.isArray(f.jeolgi_badge)?f.jeolgi_badge:[f.jeolgi_badge]).filter(Boolean).map(j=>(
+                              j==='sambok'  ?<span key="sambok"  style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 삼복</span>:
+                              j==='chopbok' ?<span key="chopbok" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 초복</span>:
+                              j==='jungbok' ?<span key="jungbok" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 중복</span>:
+                              j==='malbok'  ?<span key="malbok"  style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 말복</span>:
+                              j==='chuseok' ?<span key="chuseok" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#854d0e',border:'1px solid #fde68a'}}>🌕 추석</span>:
+                              j==='gimjang' ?<span key="gimjang" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🥬 김장철</span>:
+                              j==='dongji'  ?<span key="dongji"  style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>☯️ 동지</span>:
+                              j==='seollal' ?<span key="seollal" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎍 설날</span>:
+                              j==='ipchun'  ?<span key="ipchun"  style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌱 입춘</span>:
+                              j==='samjinal'?<span key="samjinal"style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🦋 삼짇날</span>:null
+                            ))}
+                            {(Array.isArray(f.special_badge)?f.special_badge:[f.special_badge]).filter(Boolean).map(s=>(
+                              s==='boyangshik' ?<span key="bo" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa'}}>💪 보양식</span>:
+                              s==='jeolgi_food'?<span key="je" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎋 절기음식</span>:
+                              s==='hangover'   ?<span key="ha" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#854d0e',border:'1px solid #fde68a'}}>🍶 해장</span>:
+                              s==='diet'       ?<span key="di" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🥗 다이어트</span>:null
+                            ))}
                             {f.is_global && (
                               <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#3b82f618', color:'#2563eb', border:'1px solid #3b82f644' }}>
                                 🌍 해외
