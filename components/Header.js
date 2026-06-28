@@ -8,6 +8,7 @@ export default function Header() {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [regionCounts, setRegionCounts] = useState({})
   const headerRef = useRef(null)
 
   useEffect(() => {
@@ -18,7 +19,28 @@ export default function Header() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  useEffect(() => { setOpen(false) }, [router.pathname])
+  // 지역별 식재료 수 로드
+  useEffect(() => {
+    fetch('/api/map/seasonal-foods')
+      .then(r => r.ok ? r.json() : {})
+      .then(data => {
+        const foods = Array.isArray(data) ? data : (data.foods || [])
+        const seen = {}
+        foods.forEach(f => {
+          if (!seen[f.region]) seen[f.region] = new Set()
+          seen[f.region].add(f.ingredient)
+        })
+        const counts = {}
+        Object.entries(seen).forEach(([r, s]) => { counts[r] = s.size })
+        setRegionCounts(counts)
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleNav = (href) => {
+    setOpen(false)
+    router.push(href)
+  }
 
   const showMobile = mounted && isMobile
 
@@ -57,37 +79,49 @@ export default function Header() {
         </div>
       </header>
 
-      {/* 모바일 드롭다운 — header 외부에 portal처럼 렌더링 */}
+      {/* 모바일 드롭다운 */}
       {showMobile && open && (
         <div style={{
           position:'fixed', top:0, left:0, right:0, bottom:0,
           zIndex:199, display:'flex', flexDirection:'column',
         }}>
-          {/* 헤더 높이만큼 투명 여백 */}
           <div style={{ height: headerRef.current?.offsetHeight || 56 }} onClick={() => setOpen(false)} />
-          {/* 메뉴 본체 */}
           <div style={{
             flex:1, background:'var(--bg)', overflowY:'auto',
             borderTop:'1px solid var(--border)', padding:'8px 0 40px',
             boxShadow:'0 8px 24px rgba(0,0,0,0.12)'
           }}>
-            <Link href="/" className={`nav-link${router.pathname === '/' ? ' active' : ''}`}
-              style={{display:'block', padding:'13px 24px', fontSize:15}}>🏠 홈</Link>
+            <a className={`nav-link${router.pathname === '/' ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/')}>🏠 홈</a>
+
             <div style={{padding:'8px 24px 4px', fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:'0.05em'}}>📍 지역별</div>
+
             {REGIONS.map(r => (
-              <Link key={r.id} href={`/region/${r.id}`}
+              <a key={r.id}
                 className={`nav-link${router.pathname === `/region/${r.id}` ? ' active' : ''}`}
-                style={{display:'block', padding:'10px 24px', fontSize:14}}>
-                {r.icon} {r.name}
-              </Link>
+                style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 24px', fontSize:14, cursor:'pointer', textDecoration:'none'}}
+                onClick={() => handleNav(`/region/${r.id}`)}>
+                <span>{r.icon} {r.name}</span>
+                {regionCounts[r.id] > 0 && (
+                  <span style={{fontSize:12, fontWeight:700, color:r.color, background:`${r.color}18`, border:`1px solid ${r.color}44`, borderRadius:999, padding:'1px 8px'}}>
+                    {regionCounts[r.id]}
+                  </span>
+                )}
+              </a>
             ))}
+
             <div style={{height:1, background:'var(--border)', margin:'8px 24px'}} />
-            <Link href="/map" className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}
-              style={{display:'block', padding:'13px 24px', fontSize:15}}>🗺️ 제철지도</Link>
-            <Link href="/global" className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}
-              style={{display:'block', padding:'13px 24px', fontSize:15}}>🌍 글로벌 푸드</Link>
-            <Link href="/blog" className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}
-              style={{display:'block', padding:'13px 24px', fontSize:15}}>📝 블로그</Link>
+
+            <a className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/map')}>🗺️ 제철지도</a>
+            <a className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/global')}>🌍 글로벌 푸드</a>
+            <a className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/blog')}>📝 블로그</a>
           </div>
         </div>
       )}
