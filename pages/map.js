@@ -1020,7 +1020,9 @@ export default function MapPage() {
                               j==='dongji'  ?<span key="dongji"  style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>☯️ 동지</span>:
                               j==='seollal' ?<span key="seollal" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎍 설날</span>:
                               j==='ipchun'  ?<span key="ipchun"  style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌱 입춘</span>:
-                              j==='samjinal'?<span key="samjinal"style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🦋 삼짇날</span>:null
+                              j==='daeboreum'?<span key="daeboreum" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🌕 정월대보름</span>:
+                              j==='dano'    ?<span key="dano"     style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌿 단오</span>:
+                              j==='hansik'  ?<span key="hansik"   style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🌸 한식</span>:null
                             ))}
                             {(Array.isArray(f.special_badge)?f.special_badge:[f.special_badge]).filter(Boolean).map(s=>(
                               s==='boyangshik' ?<span key="bo" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa'}}>💪 보양식</span>:

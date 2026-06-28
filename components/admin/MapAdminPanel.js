@@ -1049,7 +1049,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
             <label style={S.label}>🎋 절기 뱃지 (복수 선택 가능)</label>
             <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:4 }}>
               {[['seollal','🎍 설날','#7e22ce','#fdf4ff'],['ipchun','🌱 입춘','#166534','#f0fdf4'],
-                ['samjinal','🦋 삼짇날','#7e22ce','#fdf4ff'],['sambok','🔥 삼복','#be123c','#fff1f2'],
+                ['daeboreum','🌕 정월대보름','#713f12','#fef9c3'],['dano','🌿 단오','#166534','#f0fdf4'],['hansik','🌸 한식','#7e22ce','#fdf4ff'],
+                ['sambok','🔥 삼복','#be123c','#fff1f2'],
                 ['chuseok','🌕 추석','#854d0e','#fefce8'],['gimjang','🥬 김장철','#166534','#f0fdf4'],
                 ['dongji','☯️ 동지','#1e40af','#eff6ff']
               ].map(([v,label,color,bg])=>{
@@ -1280,7 +1281,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
             <span style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', alignSelf:'center', marginRight:2 }}>🎋 절기:</span>
             {[['sambok','🔥 삼복'],['chuseok','🌕 추석'],['dongji','☯️ 동지'],
               ['seollal','🎍 설날'],['gimjang','🥬 김장철'],['ipchun','🌱 입춘'],
-              ['samjinal','🦋 삼짇날']
+              ['daeboreum','🌕 정월대보름'],['dano','🌿 단오'],['hansik','🌸 한식']
             ].map(([v,label]) => (
               <button key={v} onClick={()=>setFilterJeolgi(filterJeolgi===v?'':v)}
                 style={{ padding:'3px 10px', borderRadius:20, fontSize:11,
@@ -1432,7 +1433,9 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                         j==='gimjang'?<span key="gi" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>🥬 김장철</span>:
                         j==='dongji' ?<span key="do" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#eff6ff',border:'1px solid #bae6fd',color:'#1e40af',fontWeight:700}}>☯️ 동지</span>:
                         j==='ipchun' ?<span key="ip" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>🌱 입춘</span>:
-                        j==='samjinal'?<span key="sj"style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fdf4ff',border:'1px solid #e9d5ff',color:'#7e22ce',fontWeight:700}}>🦋 삼짇날</span>:null
+                        j==='daeboreum'?<span key="db" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef9c3',border:'1px solid #fde68a',color:'#713f12',fontWeight:700}}>🌕 정월대보름</span>:
+                        j==='dano'   ?<span key="dn" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>🌿 단오</span>:
+                        j==='hansik' ?<span key="hs" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fdf4ff',border:'1px solid #e9d5ff',color:'#7e22ce',fontWeight:700}}>🌸 한식</span>:null
                       ))}
                       {(Array.isArray(i.special_badge)?i.special_badge:[i.special_badge]).filter(Boolean).map(s=>(
                         s==='boyangshik' ?<span key="bo" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fff7ed',border:'1px solid #fed7aa',color:'#c2410c',fontWeight:700}}>💪 보양식</span>:
