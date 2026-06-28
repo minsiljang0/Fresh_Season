@@ -1,67 +1,64 @@
-import { supabase, genId } from '../../../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-function nowKST() {
-  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
+
+function auth(req) {
+  const token = req.headers['x-admin-token']
+  return token && token === process.env.ADMIN_TOKEN
 }
 
 export default async function handler(req, res) {
-  const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_SECRET_TOKEN
+  if (!auth(req)) return res.status(401).json({ error: '인증 필요' })
+  if (req.method !== 'GET') return res.status(405).end()
 
-  // GET — 목록 조회 (인증 불필요)
-  if (req.method === 'GET') {
-    const { region, month } = req.query
-    let query = supabase.from('seasonal_foods').select('*')
-    if (region) query = query.eq('region', region)
-    if (month) query = query.contains('months', [Number(month)])
-    const { data, error } = await query.order('ingredient')
-    if (error) return res.status(500).json({ error: error.message })
-    return res.status(200).json(data || [])
-  }
+  const month = parseInt(req.query.month)
+  if (!month || month < 1 || month > 12) return res.status(400).json({ error: 'month 필수 (1~12)' })
 
-  if (!isAdmin) return res.status(401).json({ error: '인증 필요' })
+  // 해당 월 제철 식재료 + 건강효능 + 산지 조인
+  const { data, error } = await supabase.rpc('get_seasonal_ingredients_for_month', { p_month: month })
 
-  // POST — 등록
-  if (req.method === 'POST') {
-    const { ingredient, region, district, months, health, category, tv_programs } = req.body
-    if (!ingredient || !region || !months?.length || !health) {
-      return res.status(400).json({ error: '필수 필드 누락' })
+  if (error) {
+    // RPC 없으면 직접 쿼리
+    const { data: raw, error: e2 } = await supabase
+      .from('ingredient_regions')
+      .select(`
+        region, district, months,
+        ingredients!inner (
+          id, name, category, description, months,
+          ingredient_health ( health_benefits ( name ) )
+        )
+      `)
+      .contains('months', [month])
+    if (e2) return res.status(500).json({ error: e2.message })
+
+    // 식재료별로 합치기
+    const map = {}
+    for (const row of raw || []) {
+      const i = row.ingredients
+      if (!map[i.id]) {
+        map[i.id] = {
+          id: i.id,
+          name: i.name,
+          category: i.category,
+          description: i.description,
+          months: i.months,
+          regions: [],
+          benefits: [],
+        }
+      }
+      if (row.region && !map[i.id].regions.includes(row.region)) {
+        map[i.id].regions.push(row.region)
+      }
+      for (const ih of i.ingredient_health || []) {
+        const bn = ih.health_benefits?.name
+        if (bn && !map[i.id].benefits.includes(bn)) map[i.id].benefits.push(bn)
+      }
     }
-    const { data, error } = await supabase.from('seasonal_foods').insert([{
-      id: genId(),
-      ingredient,
-      region,
-      district: district || '',
-      months,
-      health,
-      category: category || 'fish',
-      tv_programs: tv_programs || [],
-      created_at: nowKST(),
-    }]).select().single()
-    if (error) return res.status(500).json({ error: error.message })
-    return res.status(200).json(data)
+    return res.json({ ingredients: Object.values(map).sort((a,b) => a.name.localeCompare(b.name)) })
   }
 
-  // PATCH — 수정
-  if (req.method === 'PATCH') {
-    const { id } = req.query
-    if (!id) return res.status(400).json({ error: 'id 필요' })
-    const { ingredient, region, district, months, health, category, tv_programs } = req.body
-    const { data, error } = await supabase.from('seasonal_foods')
-      .update({ ingredient, region, district: district||'', months, health, category: category||'fish', tv_programs: tv_programs||[] })
-      .eq('id', id)
-      .select().single()
-    if (error) return res.status(500).json({ error: error.message })
-    return res.status(200).json(data)
-  }
-
-  // DELETE — 삭제
-  if (req.method === 'DELETE') {
-    const { id } = req.query
-    if (!id) return res.status(400).json({ error: 'id 필요' })
-    const { error } = await supabase.from('seasonal_foods').delete().eq('id', id)
-    if (error) return res.status(500).json({ error: error.message })
-    return res.status(200).json({ ok: true })
-  }
-
-  res.status(405).end()
+  return res.json({ ingredients: data || [] })
 }

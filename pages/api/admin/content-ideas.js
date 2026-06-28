@@ -57,10 +57,11 @@ export default async function handler(req, res) {
     const { action } = req.body
 
     if (action === 'update_status') {
-      const { id, status, used_at } = req.body
+      const { id, status, used_at, used_slug } = req.body
       const updateData = { status, updated_at: nowKST() }
       // used_at: 사용 처리 시 현재 시각, 되돌리기 시 null
       updateData.used_at = status === 'used' ? (used_at || nowKST()) : null
+      updateData.used_slug = status === 'used' ? (used_slug || null) : null
       const { error } = await supabase
         .from('content_ideas').update(updateData).eq('id', id)
       if (error) return res.status(500).json({ error: error.message })

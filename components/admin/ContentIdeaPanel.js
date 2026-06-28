@@ -4,12 +4,13 @@ import { S } from './AdminUI'
 const ACCENT = '#16a34a'
 
 const SECTIONS = [
-  { value: 'ingredient', label: '🥕 식재료',   color: '#16a34a', bg: '#f0fdf4' },
+  { value: 'ingredient', label: '🥕 식재료',    color: '#16a34a', bg: '#f0fdf4' },
   { value: 'season',     label: '🌤️ 계절/날씨', color: '#0ea5e9', bg: '#f0f9ff' },
   { value: 'health',     label: '💊 건강/효능', color: '#8b5cf6', bg: '#faf5ff' },
   { value: 'food',       label: '🍽️ 음식/요리', color: '#f59e0b', bg: '#fffbeb' },
   { value: 'festival',   label: '🎉 절기/행사', color: '#ef4444', bg: '#fff1f2' },
   { value: 'special',    label: '⭐ 특집/테마', color: '#ec4899', bg: '#fdf4ff' },
+  { value: 'event',      label: '🏖️ 특이사항',  color: '#06b6d4', bg: '#ecfeff' },
   { value: 'angle',      label: '✏️ 각도/기획', color: '#6b7280', bg: '#f9fafb' },
 ]
 
@@ -23,26 +24,105 @@ const TYPE_LABELS = {
 const MONTH_ICONS   = ['❄️','🌸','🌸','🌿','🌿','☀️','☀️','☀️','🍂','🍂','🍁','❄️']
 const MONTH_SEASONS = ['겨울','봄','봄','봄','초여름','여름','여름','여름','가을','가을','가을','겨울']
 
+const REGION_LABELS = {
+  seoul:'서울', busan:'부산', daegu:'대구', incheon:'인천', gwangju:'광주',
+  daejeon:'대전', ulsan:'울산', sejong:'세종', gyeonggi:'경기', gangwon:'강원',
+  chungbuk:'충북', chungnam:'충남', jeonbuk:'전북', jeonnam:'전남',
+  gyeongbuk:'경북', gyeongnam:'경남', jeju:'제주', '해외':'해외',
+}
+
 function fmtDate(iso) {
   if (!iso) return ''
   const d = new Date(iso)
   return `${d.getMonth()+1}/${d.getDate()}`
 }
-
 function fmtUsedAt(iso) {
   if (!iso) return ''
   const d = new Date(iso)
   return `${d.getMonth()+1}월 ${d.getDate()}일 사용`
 }
 
+// ── 식재료 카드 (자동 로드) ──────────────────────────────────
+function IngredientCard({ ing, onSave, alreadySaved }) {
+  const [open, setOpen] = useState(false)
+  const [keyword, setKeyword] = useState('')
+  const [angle, setAngle] = useState('')
+  const [memo, setMemo] = useState('')
+
+  const regionNames = (ing.regions || []).map(r => REGION_LABELS[r] || r).join('·')
+
+  return (
+    <div style={{
+      background: alreadySaved ? '#f0fdf4' : '#fff',
+      border: `1px solid ${alreadySaved ? '#86efac' : '#e5e7eb'}`,
+      borderLeft: `4px solid ${alreadySaved ? ACCENT : '#d1d5db'}`,
+      borderRadius: 10, overflow: 'hidden',
+    }}>
+      {/* 헤더 */}
+      <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}
+        onClick={() => setOpen(p => !p)}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#0f1f0f' }}>{ing.name}</span>
+            {alreadySaved && <span style={{ fontSize: 11, color: ACCENT, fontWeight: 700 }}>✓ 저장됨</span>}
+            {regionNames && (
+              <span style={{ fontSize: 11, color: '#6b7280', background: '#f3f4f6', padding: '1px 7px', borderRadius: 10 }}>
+                📍 {regionNames}
+              </span>
+            )}
+          </div>
+          {/* 건강효능 뱃지 */}
+          {ing.benefits && ing.benefits.length > 0 && (
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 5 }}>
+              {ing.benefits.filter(b => !b.includes('주의')).slice(0, 4).map(b => (
+                <span key={b} style={{ fontSize: 10, background: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: 8, fontWeight: 600 }}>{b}</span>
+              ))}
+              {ing.benefits.filter(b => b.includes('주의')).slice(0, 2).map(b => (
+                <span key={b} style={{ fontSize: 10, background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: 8, fontWeight: 600 }}>⚠️{b}</span>
+              ))}
+            </div>
+          )}
+          {ing.description && (
+            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, lineHeight: 1.5 }}>{ing.description}</div>
+          )}
+        </div>
+        <span style={{ color: '#aaa', fontSize: 12, flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+      </div>
+
+      {/* 펼치면 각도/키워드 입력 */}
+      {open && (
+        <div style={{ padding: '0 14px 14px', borderTop: '1px solid #f3f4f6' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+            <div>
+              <label style={S.label}>각도 (선택)</label>
+              <input value={angle} onChange={e => setAngle(e.target.value)}
+                style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
+            </div>
+            <div>
+              <label style={S.label}>타겟 키워드 (선택)</label>
+              <input value={keyword} onChange={e => setKeyword(e.target.value)}
+                style={S.input} placeholder="예: 민어 효능, 민어 제철" />
+            </div>
+            <div>
+              <label style={S.label}>메모 (선택)</label>
+              <input value={memo} onChange={e => setMemo(e.target.value)}
+                style={S.input} placeholder="추가 메모" />
+            </div>
+            <button onClick={() => onSave({ ing, keyword, angle, memo })}
+              style={{ ...S.btn(), padding: '8px 16px', fontSize: 13, alignSelf: 'flex-end' }}>
+              글감으로 저장
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── 추가 모달 ────────────────────────────────────────────────
 function AddIdeaModal({ activeMonth, onClose, onSave }) {
-  const [form, setForm] = useState({
-    section: 'ingredient', type: 'idea',
-    content: '', keyword: '', angle: '', memo: '',
-  })
-  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
-
+  const [form, setForm] = useState({ section: 'ingredient', type: 'idea', content: '', keyword: '', angle: '', memo: '' })
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
       <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
@@ -50,7 +130,6 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
           {MONTH_ICONS[activeMonth-1]} {activeMonth}월 글감 추가
         </div>
         <div style={{ fontSize:12, color:'#888', marginBottom:20 }}>{MONTH_SEASONS[activeMonth-1]} 시즌</div>
-
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
           <div>
             <label style={S.label}>섹션</label>
@@ -66,7 +145,6 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
               ))}
             </div>
           </div>
-
           <div>
             <label style={S.label}>종류</label>
             <div style={{ display:'flex', gap:6 }}>
@@ -81,33 +159,30 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
               ))}
             </div>
           </div>
-
           <div>
             <label style={S.label}>내용 *</label>
             <textarea value={form.content} onChange={e => set('content', e.target.value)}
-              placeholder="글감 아이디어를 입력하세요" rows={3} style={{ ...S.textarea }} />
+              placeholder="글감 아이디어를 입력하세요" rows={3} style={S.textarea} />
           </div>
           <div>
             <label style={S.label}>각도 (선택)</label>
             <input value={form.angle} onChange={e => set('angle', e.target.value)}
-              style={{ ...S.input }} placeholder="예: 복날 보양식으로서의 민어" />
+              style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
           </div>
           <div>
             <label style={S.label}>타겟 키워드 (선택)</label>
             <input value={form.keyword} onChange={e => set('keyword', e.target.value)}
-              style={{ ...S.input }} placeholder="예: 민어 효능, 민어 제철" />
+              style={S.input} placeholder="예: 민어 효능, 민어 제철" />
           </div>
           <div>
             <label style={S.label}>메모 (선택)</label>
             <input value={form.memo} onChange={e => set('memo', e.target.value)}
-              style={{ ...S.input }} placeholder="추가 메모" />
+              style={S.input} placeholder="추가 메모" />
           </div>
         </div>
-
         <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
-          <button onClick={onClose} style={{ ...S.btnGhost }}>취소</button>
-          <button
-            onClick={() => { if (form.content.trim()) onSave({ ...form, tab_id: `month_${activeMonth}` }) }}
+          <button onClick={onClose} style={S.btnGhost}>취소</button>
+          <button onClick={() => { if (form.content.trim()) onSave({ ...form, tab_id: `month_${activeMonth}` }) }}
             disabled={!form.content.trim()}
             style={{ ...S.btn(), opacity: form.content.trim() ? 1 : 0.4 }}>저장</button>
         </div>
@@ -116,12 +191,34 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
   )
 }
 
+// ── 사용 처리 모달 ───────────────────────────────────────────
+function UseModal({ idea, onClose, onSave }) {
+  const [slug, setSlug] = useState('')
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:420, boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ fontSize:15, fontWeight:700, marginBottom:6, color:'#0f1f0f' }}>✅ 사용 처리</div>
+        <div style={{ fontSize:13, color:'#6b7280', marginBottom:20, lineHeight:1.6 }}>{idea.content}</div>
+        <div>
+          <label style={S.label}>발행된 글 슬러그 (선택)</label>
+          <input value={slug} onChange={e => setSlug(e.target.value)}
+            style={S.input} placeholder="예: busan-meoneo-boyang-jul" />
+          <div style={{ fontSize:11, color:'#9ca3af', marginTop:4 }}>어떤 글로 썼는지 추적할 수 있어요</div>
+        </div>
+        <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={S.btnGhost}>취소</button>
+          <button onClick={() => onSave(slug)} style={{ ...S.btn(), background: ACCENT }}>사용 처리</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 아이디어 카드 ────────────────────────────────────────────
-function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFirst, isLast }) {
-  const sec = SECTIONS.find(s => s.value === idea.tool_id) || SECTIONS[6]
+function IdeaCard({ idea, onUse, onUndoUse, onDelete, index, onMoveUp, onMoveDown, isFirst, isLast }) {
+  const sec = SECTIONS.find(s => s.value === idea.tool_id) || SECTIONS[7]
   const typ = TYPE_LABELS[idea.type] || TYPE_LABELS.idea
   const isUsed = idea.status === 'used'
-
   return (
     <div style={{
       background: isUsed ? '#fafafa' : '#fff',
@@ -131,7 +228,6 @@ function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFir
       opacity: isUsed ? 0.6 : 1,
       display:'flex', alignItems:'flex-start', gap:10,
     }}>
-      {/* 순서 */}
       <div style={{ display:'flex', flexDirection:'column', gap:2, flexShrink:0, paddingTop:2 }}>
         <button onClick={onMoveUp} disabled={isFirst}
           style={{ background:'none', border:'none', cursor: isFirst ? 'default' : 'pointer', color: isFirst ? '#ddd' : '#aaa', fontSize:11, lineHeight:1, padding:'2px 4px' }}>▲</button>
@@ -139,8 +235,6 @@ function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFir
         <button onClick={onMoveDown} disabled={isLast}
           style={{ background:'none', border:'none', cursor: isLast ? 'default' : 'pointer', color: isLast ? '#ddd' : '#aaa', fontSize:11, lineHeight:1, padding:'2px 4px' }}>▼</button>
       </div>
-
-      {/* 본문 */}
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:6, flexWrap:'wrap' }}>
           <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:sec.bg, color:sec.color }}>{sec.label}</span>
@@ -150,25 +244,25 @@ function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFir
               ✓ {fmtUsedAt(idea.used_at)}
             </span>
           )}
+          {isUsed && idea.used_slug && (
+            <span style={{ fontSize:11, color:'#6b7280', background:'#f3f4f6', padding:'2px 7px', borderRadius:6, fontFamily:'monospace' }}>
+              /{idea.used_slug}
+            </span>
+          )}
           <span style={{ fontSize:11, color:'#bbb', marginLeft:'auto' }}>등록 {fmtDate(idea.created_at)}</span>
         </div>
         <div style={{ fontSize:14, color: isUsed ? '#9ca3af' : '#111', lineHeight:1.6, wordBreak:'break-word' }}>{idea.content}</div>
         {idea.keyword && <div style={{ fontSize:12, color:'#16a34a', marginTop:5 }}>🔑 {idea.keyword}</div>}
         {idea.memo && <div style={{ fontSize:12, color:'#888', marginTop:4, fontStyle:'italic' }}>📝 {idea.memo}</div>}
       </div>
-
-      {/* 액션 */}
       <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-        <button onClick={onToggle}
-          title={isUsed ? '미사용으로 되돌리기' : '사용 완료 처리'}
-          style={{
-            background: isUsed ? '#f0fdf4' : 'none',
-            border: `1px solid ${isUsed ? '#86efac' : '#d1e8d1'}`,
-            borderRadius:7, color: isUsed ? '#16a34a' : '#6b7280',
-            cursor:'pointer', padding:'5px 9px', fontSize:13
-          }}>
-          {isUsed ? '↩' : '✓'}
-        </button>
+        {isUsed ? (
+          <button onClick={onUndoUse} title="미사용으로 되돌리기"
+            style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:7, color:'#16a34a', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>↩</button>
+        ) : (
+          <button onClick={onUse} title="사용 완료 처리"
+            style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:7, color:'#6b7280', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>✓</button>
+        )}
         <button onClick={onDelete}
           style={{ background:'none', border:'1px solid #fecaca', borderRadius:7, color:'#f87171', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>×</button>
       </div>
@@ -177,11 +271,10 @@ function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFir
 }
 
 // ── 섹션 그룹 ────────────────────────────────────────────────
-function SectionGroup({ section, ideas, allIdeas, onToggle, onDelete, onMove }) {
+function SectionGroup({ section, ideas, allIdeas, onUse, onUndoUse, onDelete, onMove }) {
   const [collapsed, setCollapsed] = useState(false)
   if (ideas.length === 0) return null
   const pendingCnt = ideas.filter(i => i.status !== 'used').length
-
   return (
     <div style={{ marginBottom:16 }}>
       <div onClick={() => setCollapsed(p => !p)} style={{
@@ -205,7 +298,8 @@ function SectionGroup({ section, ideas, allIdeas, onToggle, onDelete, onMove }) 
               index={allIdeas.findIndex(i => i.id === idea.id)}
               isFirst={idx === 0}
               isLast={idx === ideas.length - 1}
-              onToggle={() => onToggle(idea.id, idea.status)}
+              onUse={() => onUse(idea)}
+              onUndoUse={() => onUndoUse(idea.id)}
               onDelete={() => onDelete(idea.id)}
               onMoveUp={() => onMove(idea.id, 'up', section.value)}
               onMoveDown={() => onMove(idea.id, 'down', section.value)}
@@ -222,9 +316,13 @@ export default function ContentIdeaPanel({ adminToken }) {
   const thisMonth = new Date().getMonth() + 1
   const [activeMonth, setActiveMonth] = useState(thisMonth)
   const [ideas, setIdeas] = useState([])
+  const [ingredients, setIngredients] = useState([])  // 해당 월 제철 식재료
+  const [ingLoading, setIngLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [useTarget, setUseTarget] = useState(null)
   const [filterStatus, setFilterStatus] = useState('pending')
+  const [showIngredients, setShowIngredients] = useState(true)
   const [toast, setToast] = useState('')
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }
@@ -239,7 +337,19 @@ export default function ContentIdeaPanel({ adminToken }) {
     setLoading(false)
   }, [adminToken])
 
+  // 월별 제철 식재료 로드
+  const loadIngredients = useCallback(async (month) => {
+    setIngLoading(true)
+    try {
+      const res = await fetch(`/api/admin/seasonal-foods?month=${month}`, { headers: { 'x-admin-token': adminToken } })
+      const data = await res.json()
+      if (Array.isArray(data.ingredients)) setIngredients(data.ingredients)
+    } catch {}
+    setIngLoading(false)
+  }, [adminToken])
+
   useEffect(() => { load() }, [load])
+  useEffect(() => { loadIngredients(activeMonth) }, [activeMonth, loadIngredients])
 
   const addIdea = async (form) => {
     setShowAdd(false)
@@ -251,16 +361,47 @@ export default function ContentIdeaPanel({ adminToken }) {
     if (res.ok) { showToast('✅ 추가됨'); load() }
   }
 
-  const toggleStatus = async (id, current) => {
-    const next = current === 'used' ? 'pending' : 'used'
-    const used_at = next === 'used' ? new Date().toISOString() : null
+  // 식재료 카드에서 글감 저장
+  const saveIngredientIdea = async ({ ing, keyword, angle, memo }) => {
+    const content = `${ing.name} — ${ing.description || ''}${ing.regions?.length ? ` | 산지: ${ing.regions.map(r => REGION_LABELS[r]||r).join('·')}` : ''}${ing.benefits?.length ? ` | 효능: ${ing.benefits.filter(b=>!b.includes('주의')).slice(0,3).join('·')}` : ''}`
+    const form = {
+      tab_id: `month_${activeMonth}`,
+      section: 'ingredient',
+      type: angle ? 'angle' : 'idea',
+      content,
+      keyword: keyword || null,
+      angle: angle || null,
+      memo: memo || null,
+    }
+    const res = await fetch('/api/admin/content-ideas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify(form),
+    })
+    if (res.ok) { showToast(`✅ ${ing.name} 글감 저장됨`); load() }
+  }
+
+  const markUsed = async (slug) => {
+    const idea = useTarget
+    setUseTarget(null)
+    const now = new Date().toISOString()
     await fetch('/api/admin/content-ideas', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ action: 'update_status', id, status: next, used_at }),
+      body: JSON.stringify({ action: 'update_status', id: idea.id, status: 'used', used_at: now, used_slug: slug || null }),
     })
-    setIdeas(prev => prev.map(i => i.id === id ? { ...i, status: next, used_at } : i))
-    showToast(next === 'used' ? '✅ 사용 처리됨' : '↩ 미사용으로 되돌림')
+    setIdeas(prev => prev.map(i => i.id === idea.id ? { ...i, status: 'used', used_at: now, used_slug: slug || null } : i))
+    showToast('✅ 사용 처리됨')
+  }
+
+  const undoUse = async (id) => {
+    await fetch('/api/admin/content-ideas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ action: 'update_status', id, status: 'pending', used_at: null, used_slug: null }),
+    })
+    setIdeas(prev => prev.map(i => i.id === id ? { ...i, status: 'pending', used_at: null, used_slug: null } : i))
+    showToast('↩ 미사용으로 되돌림')
   }
 
   const deleteIdea = async (id) => {
@@ -296,6 +437,12 @@ export default function ContentIdeaPanel({ adminToken }) {
   }
 
   const tabId = `month_${activeMonth}`
+  // 이미 content_ideas에 저장된 식재료 이름 목록
+  const savedIngNames = new Set(
+    ideas.filter(i => i.tab_id === tabId && i.tool_id === 'ingredient')
+         .map(i => i.content.split(' —')[0].trim())
+  )
+
   const tabIdeas = ideas.filter(i => {
     if (i.tab_id !== tabId) return false
     if (filterStatus === 'pending' && i.status === 'used') return false
@@ -341,7 +488,7 @@ export default function ContentIdeaPanel({ adminToken }) {
         </div>
       </div>
 
-      {/* 월 요약 헤더 */}
+      {/* 월 요약 */}
       <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'12px 18px', marginBottom:16, display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
         <span style={{ fontSize:22 }}>{MONTH_ICONS[activeMonth-1]}</span>
         <div>
@@ -361,17 +508,51 @@ export default function ContentIdeaPanel({ adminToken }) {
         </div>
       </div>
 
-      {/* 섹션별 목록 */}
+      {/* ── 제철 식재료 자동 로드 섹션 ── */}
+      <div style={{ marginBottom: 20 }}>
+        <div onClick={() => setShowIngredients(p => !p)} style={{
+          display:'flex', alignItems:'center', gap:8, padding:'10px 16px',
+          background:'#fff', border:'1px solid #d1e8d1', borderRadius:10,
+          cursor:'pointer', marginBottom: showIngredients ? 10 : 0,
+        }}>
+          <span style={{ fontSize:14, fontWeight:700, color:'#0f1f0f' }}>🥕 {activeMonth}월 제철 식재료</span>
+          <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>
+            {ingLoading ? '로딩...' : `${ingredients.length}개`}
+          </span>
+          <span style={{ fontSize:11, color:'#9ca3af' }}>— 클릭해서 각도/키워드 입력 후 글감 저장</span>
+          <span style={{ marginLeft:'auto', color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
+        </div>
+
+        {showIngredients && (
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {ingLoading ? (
+              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0' }}>불러오는 중...</div>
+            ) : ingredients.length === 0 ? (
+              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0' }}>등록된 제철 식재료가 없어요</div>
+            ) : (
+              ingredients.map(ing => (
+                <IngredientCard
+                  key={ing.id}
+                  ing={ing}
+                  onSave={saveIngredientIdea}
+                  alreadySaved={savedIngNames.has(ing.name)}
+                />
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── 저장된 글감 목록 ── */}
       {loading ? (
         <div style={{ color:'#888', fontSize:14, padding:'40px 0', textAlign:'center' }}>불러오는 중...</div>
       ) : tabIdeas.length === 0 ? (
-        <div style={{ color:'#aaa', fontSize:14, padding:'60px 0', textAlign:'center' }}>
-          <div style={{ fontSize:32, marginBottom:12 }}>{MONTH_ICONS[activeMonth-1]}</div>
-          <div style={{ marginBottom:16 }}>
-            {filterStatus === 'used' ? `${activeMonth}월에 완료된 글감이 없어요` : `${activeMonth}월 글감이 없어요`}
+        <div style={{ color:'#aaa', fontSize:14, padding:'40px 0', textAlign:'center' }}>
+          <div style={{ marginBottom:8 }}>
+            {filterStatus === 'used' ? `${activeMonth}월에 완료된 글감이 없어요` : `저장된 글감이 없어요`}
           </div>
           {filterStatus !== 'used' && (
-            <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), fontSize:13 }}>+ 첫 글감 추가하기</button>
+            <div style={{ fontSize:12, color:'#bbb' }}>위 식재료 카드에서 각도 입력 후 저장하거나 + 추가 버튼을 눌러주세요</div>
           )}
         </div>
       ) : (
@@ -383,7 +564,8 @@ export default function ContentIdeaPanel({ adminToken }) {
               section={sec}
               ideas={secIdeas}
               allIdeas={tabIdeas}
-              onToggle={toggleStatus}
+              onUse={setUseTarget}
+              onUndoUse={undoUse}
               onDelete={deleteIdea}
               onMove={moveIdea}
             />
@@ -391,9 +573,8 @@ export default function ContentIdeaPanel({ adminToken }) {
         })
       )}
 
-      {showAdd && (
-        <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />
-      )}
+      {showAdd && <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />}
+      {useTarget && <UseModal idea={useTarget} onClose={() => setUseTarget(null)} onSave={markUsed} />}
 
       {toast && (
         <div style={{
