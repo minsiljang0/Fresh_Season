@@ -156,6 +156,7 @@ export default function MapPage() {
   const [selAge, setSelAge]           = useState('all')
   const [selGender, setSelGender]     = useState('all')
   const [selSuperfood, setSelSuperfood] = useState(false)
+  const [selBrand, setSelBrand] = useState(false)
   const [query, setQuery]             = useState('')
   const [view, setView]               = useState('cards')
   const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])
@@ -258,8 +259,9 @@ export default function MapPage() {
       )
     }
     if (selSuperfood) data = data.filter(f => f.is_superfood)
+    if (selBrand) data = data.filter(f => f.is_brand)
     return data
-  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, query, allFoods, dbHealthBenefits])
+  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, selBrand, query, allFoods, dbHealthBenefits])
 
   const byRegion = useMemo(() => {
     const map = {}
@@ -809,7 +811,7 @@ export default function MapPage() {
                   }}>{label}</button>
               ))}
             </div>
-            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setSelSuperfood(false); setQuery('') }}
+            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setSelSuperfood(false); setSelBrand(false); setQuery('') }}
               style={{ padding:'5px 12px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
               🔄 초기화
             </button>
@@ -989,6 +991,11 @@ export default function MapPage() {
                             {f.is_superfood && (
                               <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f59e0b18', color:'#d97706', border:'1px solid #f59e0b44' }}>
                                 🌟 슈퍼푸드
+                              </span>
+                            )}
+                            {f.is_brand && (
+                              <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#e6394618', color:'#e63946', border:'1px solid #e6394644' }}>
+                                🏷️ 지역브랜드
                               </span>
                             )}
                             {f.is_global && (

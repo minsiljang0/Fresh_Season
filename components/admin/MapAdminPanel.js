@@ -679,7 +679,7 @@ function HealthTab({ adminToken, showToast, confirmDelete, allIngredients, allTv
 function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTvShows, refreshHealths }) {
   const EMPTY_FORM = {
     name:'', display_name:'', region_id:'', category:'fish', description:'',
-    coupang_url:'', caution:'', is_special:false, is_limited:false, limited_days:'', is_global:false,
+    coupang_url:'', caution:'', is_special:false, is_limited:false, limited_days:'', is_global:false, is_brand:false,
     age_groups:[], gender:'all', months:[]
   }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[] }
@@ -696,6 +696,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   const [filterGlobal, setFilterGlobal] = useState(false)
   const [filterSpecial, setFilterSpecial] = useState(false)
   const [filterLimited, setFilterLimited] = useState(false)
+  const [filterBrand, setFilterBrand] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formRegions, setFormRegions] = useState([])
   const [formRegionForm, setFormRegionForm] = useState(EMPTY_REGION)
@@ -898,6 +899,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
     if (filterGlobal && !i.is_global) return false
     if (filterSpecial && !i.is_special) return false
     if (filterLimited && !i.is_limited) return false
+    if (filterBrand && !i.is_brand) return false
     return true
   })
   // 지역 옵션: regions_preview 라벨에서 시도명 추출
@@ -1008,6 +1010,10 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
         <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none' }}>
           <Toggle value={f.is_global||false} onChange={v=>setF(p=>({...p,is_global:v}))} color="#3b82f6" />
           <span style={{ fontSize:13, fontWeight:700, color:f.is_global?'#3b82f6':'#4b6e4b' }}>🌍 해외 식재료</span>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <Toggle value={f.is_brand||false} onChange={v=>setF(p=>({...p,is_brand:v}))} color="#e63946" />
+          <span style={{ fontSize:13, fontWeight:700, color:f.is_brand?'#e63946':'#4b6e4b' }}>🏷️ 지역브랜드</span>
           <span style={{ fontSize:11, color:'#aaa' }}>글로벌 슈퍼푸드 등</span>
         </label>
       </div>
@@ -1169,7 +1175,14 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
               fontSize:12, fontWeight:filterLimited?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
             ⏰ 기간한정만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_limited).length})</span>
           </button>
-          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||filterSpecial||filterLimited||searchQ) && (
+          <button onClick={()=>setFilterBrand(v=>!v)}
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:20,
+              border:`1.5px solid ${filterBrand?'#e63946':'#d1e8d1'}`,
+              background:filterBrand?'#ffe4e6':'#fff', color:filterBrand?'#e63946':'#4b6e4b',
+              fontSize:12, fontWeight:filterBrand?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+            🏷️ 지역브랜드만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_brand).length})</span>
+          </button>
+          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||filterSpecial||filterLimited||filterBrand||searchQ) && (
             <button onClick={()=>{setFilterMonth(0);setFilterRegion('');setFilterSuperfood(false);setFilterGlobal(false);setSearchQ('')}}
               style={{ padding:'5px 12px', borderRadius:20, border:'1.5px solid #d1e8d1', background:'#fff', color:'#6b7280',
                 fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
@@ -1276,6 +1289,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                       {i.is_limited && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700 }}>⏰ {i.limited_days||'기간한정'}</span>}
                       {i.is_superfood && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#92400e', fontWeight:700 }}>🌟 슈퍼푸드</span>}
                       {i.is_global && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#dbeafe', border:'1px solid #3b82f6', color:'#1d4ed8', fontWeight:700 }}>🌍 해외</span>}
+                      {i.is_brand && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#ffe4e6', border:'1px solid #e63946', color:'#e63946', fontWeight:700 }}>🏷️ 지역브랜드</span>}
                     </div>
                     {/* 지역 뱃지 */}
                     {i.regions_preview?.length > 0 && (
@@ -1319,7 +1333,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                       setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category,
                         description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'',
                         is_special:i.is_special||false, is_limited:i.is_limited||false, limited_days:i.limited_days||'',
-                        is_global:i.is_global||false, age_groups:i.age_groups||[], gender:i.gender||'all', months:i.months||[] })
+                        is_global:i.is_global||false, is_brand:i.is_brand||false, age_groups:i.age_groups||[], gender:i.gender||'all', months:i.months||[] })
                       setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
                       loadEditLinks(i.id)
                     }} style={{ padding:'2px 8px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
