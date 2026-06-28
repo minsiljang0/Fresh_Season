@@ -13,6 +13,8 @@ const NAV = [
   { id: 'adsense',       label: '광고 관리',       icon: '📢' },
   { id: 'legal',         label: '약관 관리',       icon: '📜' },
   { id: 'password',      label: '비밀번호 변경',   icon: '🔑' },
+  { id: 'popup',         label: '팝업 관리',       icon: '📢' },
+  { id: 'mcp',           label: 'MCP 관리',        icon: '🔌' },
 ]
 
 function NavItem({ item, active, onClick }) {

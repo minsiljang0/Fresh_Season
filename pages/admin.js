@@ -12,6 +12,8 @@ import BoardAdminPanel from '../components/admin/BoardAdminPanel'
 import LegalPanel from '../components/admin/LegalPanel'
 import SystemPromptPanel from '../components/admin/SystemPromptPanel'
 import { S, Toast, Toggle } from '../components/admin/AdminUI'
+import PopupPanel from '../components/admin/PopupPanel'
+import McpPanel from '../components/admin/McpPanel'
 
 const TAB_LABELS = {
   settings:      '🔧 서비스 설정',
@@ -29,6 +31,8 @@ const TAB_LABELS = {
   adsense:       '📢 광고 관리',
   legal:         '📜 약관 관리',
   password:      '🔑 비밀번호 변경',
+  popup:         '📢 팝업 관리',
+  mcp:           '🔌 MCP 관리',
 }
 
 function LoginScreen({ onLogin }) {
@@ -242,6 +246,8 @@ export default function Admin() {
                 termsEn={termsEn} privacyEn={privacyEn} setTermsEn={setTermsEn} setPrivacyEn={setPrivacyEn}
                 onSaved={() => showToast('✅ 저장됨')} />
             )}
+            {activeTab === 'popup' && <PopupPanel adminToken={adminToken} />}
+            {activeTab === 'mcp' && <McpPanel adminToken={adminToken} />}
             {activeTab === 'password' && (
               <div style={S.card}>
                 <div style={S.cardTitle}>🔑 비밀번호 변경</div>
