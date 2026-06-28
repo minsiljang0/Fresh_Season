@@ -171,6 +171,14 @@ export default function MapPage() {
   const [isMobile, setIsMobile] = useState(false)
   const [showFilter, setShowFilter] = useState(false)
   const [showMap, setShowMap] = useState(false)
+  const [openSections, setOpenSections] = useState({month:true, health:true, category:true, region:true, age:false, gender:false, special:false, habitat:false, farming:false})
+  const toggleSection = (key) => setOpenSections(p => ({...p, [key]:!p[key]}))
+  const SectionHeader = ({label, skey}) => (
+    <div onClick={() => toggleSection(skey)} style={{display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', marginBottom: openSections[skey] ? 8 : 0}}>
+      <p style={{fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:'0.05em', margin:0}}>{label}</p>
+      <span style={{fontSize:10, color:'var(--text3)'}}>{openSections[skey] ? '▲' : '▼'}</span>
+    </div>
+  )
 
   // 모바일 감지
   useEffect(() => {
@@ -586,8 +594,8 @@ export default function MapPage() {
 
           {/* 월 선택 */}
           <div style={{ marginBottom:14 }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>📅 월</p>
-            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+            <SectionHeader label="📅 월" skey="month" />
+            {openSections.month && <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
               <button onClick={() => setSelMonth(0)}
                 style={{ padding:'5px 10px', borderRadius:8, border:'1.5px solid', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   borderColor: selMonth===0 ? 'var(--accent)' : 'var(--border)',
@@ -609,18 +617,13 @@ export default function MapPage() {
                   </button>
                 )
               })}
-            </div>
+            </div>}
           </div>
 
           {/* 건강 효능 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              💊 건강 효능
-              <span style={{ marginLeft:6, fontSize:10, fontWeight:700, color:'var(--text3)', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:999, padding:'1px 7px' }}>
-                {HEALTH_FILTERS.length}
-              </span>
-            </p>
-            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            <SectionHeader label={<>💊 건강 효능 <span style={{fontSize:10,fontWeight:700,background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:999,padding:'1px 7px',marginLeft:4}}>{HEALTH_FILTERS.length}</span></>} skey="health" />
+            {openSections.health && <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
               <select
                 value={selHealth}
                 onChange={e => setSelHealth(e.target.value)}
@@ -655,10 +658,8 @@ export default function MapPage() {
 
           {/* 연령 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              👥 연령
-            </p>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <SectionHeader label="👥 연령" skey="age" />
+            {openSections.age && <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <select
                 value={selAge}
                 onChange={e => setSelAge(e.target.value)}
@@ -686,15 +687,13 @@ export default function MapPage() {
                   ✕
                 </button>
               )}
-            </div>
+            </div>}
           </div>
 
           {/* 성별 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              ⚥ 성별
-            </p>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <SectionHeader label="⚥ 성별" skey="gender" />
+            {openSections.gender && <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <select
                 value={selGender}
                 onChange={e => setSelGender(e.target.value)}
@@ -723,10 +722,8 @@ export default function MapPage() {
 
           {/* 특수 토글: 슈퍼푸드 / 특산품 / 해외 식재료 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>
-              ✨ 특수 필터
-            </p>
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            <SectionHeader label="✨ 특수 필터" skey="special" />
+            {openSections.special && <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               {/* 슈퍼푸드 토글 */}
               <button
                 onClick={() => setSelSuperfood(v => !v)}
@@ -761,8 +758,8 @@ export default function MapPage() {
 
           {/* 서식지 뱃지 필터 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🗺️ 서식지</p>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+            <SectionHeader label="🗺️ 서식지" skey="habitat" />
+            {openSections.habitat && <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
               {[
                 { key:'ocean',      label:'🌊 바다',  bg:'#f0f9ff', color:'#0c4a6e', border:'#38bdf8' },
                 { key:'island',     label:'🏝️ 섬',    bg:'#f0f9ff', color:'#0369a1', border:'#7dd3fc' },
@@ -789,7 +786,7 @@ export default function MapPage() {
 
           {/* 카테고리 */}
           <div style={{ marginBottom:14 }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🏷 카테고리</p>
+            <SectionHeader label="🏷 카테고리" skey="category" />
             {/* 전체 버튼 */}
             <div style={{ marginBottom:8 }}>
               <button onClick={() => setSelCategory('all')}
@@ -928,17 +925,20 @@ export default function MapPage() {
                   <button key={c.id}
                     onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
                     style={{
-                      display:'flex', alignItems:'center', gap:6,
+                      display:'flex', alignItems:'center', gap: isMobile ? 3 : 6,
                       background: selCategory===c.id ? c.color+'22' : 'var(--surface)',
                       border: `1.5px solid ${selCategory===c.id ? c.color : 'var(--border)'}`,
-                      borderRadius:12, padding:'8px 12px', cursor:'pointer', fontFamily:'inherit',
+                      borderRadius:12, padding: isMobile ? '6px 8px' : '8px 12px', cursor:'pointer', fontFamily:'inherit',
                       transition:'all 0.15s',
                     }}>
-                    <span style={{ fontSize:18 }}>{c.emoji}</span>
-                    <span style={{ display:'flex', flexDirection:'column', alignItems:'flex-start' }}>
-                      <span style={{ fontSize:16, fontWeight:900, color:c.color, lineHeight:1 }}>{categoryCounts[c.id]||0}</span>
-                      <span style={{ fontSize:10, color:'var(--text3)', marginTop:1 }}>{c.label}</span>
-                    </span>
+                    <span style={{ fontSize: isMobile ? 16 : 18 }}>{c.emoji}</span>
+                    {isMobile
+                      ? <span style={{ fontSize:13, fontWeight:900, color:c.color }}>{categoryCounts[c.id]||0}</span>
+                      : <span style={{ display:'flex', flexDirection:'column', alignItems:'flex-start' }}>
+                          <span style={{ fontSize:16, fontWeight:900, color:c.color, lineHeight:1 }}>{categoryCounts[c.id]||0}</span>
+                          <span style={{ fontSize:10, color:'var(--text3)', marginTop:1 }}>{c.label}</span>
+                        </span>
+                    }
                   </button>
                 ))}
               </div>
@@ -1132,15 +1132,12 @@ export default function MapPage() {
                       <p style={{ fontSize:11, color:'var(--text3)', marginBottom:8 }}>📍 {f.district}</p>
 
                       <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:10 }}>
-                        {f.months.sort((a,b)=>a-b).map(m => (
-                          <span key={m} style={{
-                            fontSize:10, padding:'2px 6px', borderRadius:6,
-                            background: m===selMonth ? 'rgba(34,197,94,0.2)' : 'var(--surface2)',
-                            color: m===selMonth ? 'var(--accent)' : 'var(--text3)',
-                            border: m===selMonth ? '1px solid rgba(34,197,94,0.4)' : '1px solid var(--border)',
-                            fontWeight: m===selMonth ? 700 : 400,
-                          }}>{m}월</span>
-                        ))}
+                        {selMonth !== 0
+                          ? <span style={{fontSize:10,padding:'2px 6px',borderRadius:6,background:'rgba(34,197,94,0.2)',color:'var(--accent)',border:'1px solid rgba(34,197,94,0.4)',fontWeight:700}}>{selMonth}월 ✓</span>
+                          : f.months.sort((a,b)=>a-b).map(m => (
+                            <span key={m} style={{fontSize:10,padding:'2px 6px',borderRadius:6,background:'var(--surface2)',color:'var(--text3)',border:'1px solid var(--border)'}}>{m}월</span>
+                          ))
+                        }
                       </div>
 
                       {/* 건강효능 태그 */}
