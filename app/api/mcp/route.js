@@ -849,18 +849,16 @@ const baseHandler = createMcpHandler(
         title: '글감 아이디어 조회',
         description:
           'admin 글감 관리에 저장된 아이디어·키워드·각도·메모를 가져온다. ' +
-          'STEP 1에서 get_publish_log·get_tool_info와 함께 호출해서, ' +
-          '사람이 미리 메모해둔 글감 후보 중 오늘 쓸 만한 것이 있는지 확인한다. ' +
           '탭은 월별로 구성되어 있다 (month_1~month_12). ' +
-          'month를 주면 해당 월(tab_id=month_N) 글감만 반환한다. ' +
-          'section을 주면 해당 섹션(ingredient/season/health/food/festival/special/angle)만 반환한다. ' +
-          'status를 주면 그 상태만 필터링한다 (pending=미사용, used=사용됨). ' +
-          '기본은 미사용(pending)만 반환한다.',
+          'month를 주면 해당 월 글감만 반환한다. ' +
+          'section을 주면 해당 섹션만 반환한다 (ingredient/season/health/food/festival/special/angle). ' +
+          'status 기본은 pending(미사용)만 반환한다. ' +
+          '결과에 used_at(사용 날짜)도 포함된다.',
         inputSchema: {
           month: z.number().int().min(1).max(12).optional().describe('월 (1~12). 비우면 전체 월'),
-          section: z.enum(['ingredient','season','health','food','festival','special','angle']).optional().describe('섹션으로 필터링. 비우면 전체'),
-          type: z.enum(['keyword', 'idea', 'angle', 'memo']).optional().describe('종류로 필터링'),
-          status: z.enum(['pending', 'used']).optional().describe('기본 pending(미사용만)'),
+          section: z.enum(['ingredient','season','health','food','festival','special','angle']).optional().describe('섹션. 비우면 전체'),
+          type: z.enum(['keyword','idea','angle','memo']).optional().describe('종류 필터'),
+          status: z.enum(['pending','used']).optional().describe('기본 pending(미사용만)'),
           limit: z.number().int().min(1).max(200).optional().describe('최대 개수 (기본 50)'),
         },
       },
@@ -879,7 +877,7 @@ const baseHandler = createMcpHandler(
         const { data, error } = await q
         if (error) return { content: [{ type: 'text', text: `오류: ${error.message}` }], isError: true }
         if (!data || !data.length) {
-          return { content: [{ type: 'text', text: '글감 아이디어 없음 (admin 글감 관리에서 추가 가능)' }] }
+          return { content: [{ type: 'text', text: '글감 아이디어 없음' }] }
         }
 
         const TYPE_KR = { keyword: '키워드', idea: '아이디어', angle: '각도', memo: '메모' }
@@ -898,7 +896,8 @@ const baseHandler = createMcpHandler(
           grouped[m].forEach(i => {
             const secLabel = SEC_KR[i.tool_id] || i.tool_id || '공통'
             const typeLabel = TYPE_KR[i.type] || i.type
-            lines.push(`  [${secLabel}] (${typeLabel}) ${i.content}${i.keyword ? ' 🔑' + i.keyword : ''}${i.memo ? ' 📝' + i.memo : ''}`)
+            const usedStr = i.used_at ? ` [사용: ${new Date(i.used_at).toLocaleDateString('ko-KR')}]` : ''
+            lines.push(`  [${secLabel}] (${typeLabel}) ${i.content}${i.keyword ? ' 🔑' + i.keyword : ''}${i.memo ? ' 📝' + i.memo : ''}${usedStr}`)
           })
         })
         return { content: [{ type: 'text', text: lines.join('\n') }] }
@@ -910,18 +909,17 @@ const baseHandler = createMcpHandler(
       {
         title: '글감 아이디어 추가',
         description:
-          'admin 글감 관리에 새 아이디어·키워드·각도를 추가한다. ' +
-          '글 작성 계획을 세울 때 월별로 글감을 미리 등록해두는 용도로 쓴다. ' +
+          'admin 글감 관리에 새 글감을 추가한다. ' +
+          '글 작성 계획 시 월별·섹션별로 미리 등록해두는 용도. ' +
           'month(1~12)와 content는 필수. ' +
-          'section으로 섹션 분류(ingredient/season/health/food/festival/special/angle)를 지정한다. ' +
-          '각도가 확정됐으면 type을 angle로, 키워드가 확정됐으면 keyword도 함께 넣는다.',
+          '각도가 확정됐으면 type을 angle로, 키워드도 함께 넣는다.',
         inputSchema: {
           month: z.number().int().min(1).max(12).describe('등록할 월 (1~12)'),
-          content: z.string().describe('글감 내용. 예: 무안 낙지 복날 보양식 역사와 연포탕 유래'),
+          content: z.string().describe('글감 내용'),
           section: z.enum(['ingredient','season','health','food','festival','special','angle']).optional().describe('섹션. 기본: ingredient'),
           type: z.enum(['keyword','idea','angle','memo']).optional().describe('종류. 기본: idea'),
-          keyword: z.string().optional().describe('타겟 키워드. 예: 낙지 효능, 무안 낙지 제철'),
-          angle: z.string().optional().describe('글 각도. 예: 복날 보양식으로서의 낙지'),
+          keyword: z.string().optional().describe('타겟 키워드'),
+          angle: z.string().optional().describe('글 각도'),
           memo: z.string().optional().describe('추가 메모'),
         },
         annotations: { idempotentHint: false },
@@ -938,53 +936,39 @@ const baseHandler = createMcpHandler(
           keyword: keyword || null,
           memo: memoFinal,
           status: 'pending',
+          used_at: null,
           created_at: nowKST(),
         }
         const { error } = await supabase.from('content_ideas').insert([row])
         if (error) return { content: [{ type: 'text', text: `❌ 추가 실패: ${error.message}` }], isError: true }
         return {
-          content: [{ type: 'text', text: `✅ 글감 추가 완료\n월: ${month}월\n섹션: ${section || 'ingredient'}\n내용: ${content}${keyword ? '\n키워드: ' + keyword : ''}${angle ? '\n각도: ' + angle : ''}` }]
+          content: [{ type: 'text', text: `✅ 글감 추가 완료\n월: ${month}월 / 섹션: ${section || 'ingredient'}\n내용: ${content}${keyword ? '\n키워드: ' + keyword : ''}${angle ? '\n각도: ' + angle : ''}` }]
         }
       }
     )
 
     server.registerTool(
-      'update_system_prompt',
+      'mark_idea_used',
       {
-        title: 'Claude 시스템 프롬프트(지침) 저장/수정',
+        title: '글감 사용 처리',
         description:
-          'admin에 저장된 Claude 프로젝트 지침을 덮어쓴다. ' +
-          '사용자가 대화 중 지침 수정을 요청할 때만 호출한다. ' +
-          '호출 전 반드시 변경 내용을 사용자에게 확인받는다. ' +
-          '저장 즉시 다음 대화부터 새 지침이 적용된다.',
+          'add_publish_log 호출 직후, 이번 글에 사용한 글감의 status를 used로 바꾸고 used_at(날짜)을 기록한다. ' +
+          '글감 id는 get_content_ideas로 조회해서 확인한다.',
         inputSchema: {
-          content: z.string().describe('저장할 지침 전문'),
+          id: z.string().describe('글감 ID (get_content_ideas 결과에서 확인)'),
         },
-        annotations: { destructiveHint: true, idempotentHint: true },
+        annotations: { idempotentHint: true },
       },
-      async ({ content }) => {
+      async ({ id }) => {
+        const usedAt = nowKST()
         const { error } = await supabase
-          .from('system_prompts')
-          .upsert({ id: 'main', content, updated_at: nowKST() }, { onConflict: 'id' })
-        if (error) {
-          return { content: [{ type: 'text', text: `❌ 저장 실패: ${error.message}` }], isError: true }
-        }
-        return {
-          content: [{
-            type: 'text',
-            text: '✅ 시스템 프롬프트 저장 완료 (' + nowKST() + ')\n저장된 내용:\n\n' + content,
-          }],
-        }
+          .from('content_ideas')
+          .update({ status: 'used', used_at: usedAt, updated_at: usedAt })
+          .eq('id', id)
+        if (error) return { content: [{ type: 'text', text: `❌ 실패: ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 글감 사용 처리 완료 (${usedAt})` }] }
       }
     )
-
-
-    // ══════════════════════════════════════════════════════════════
-    //  맵 관리 데이터 조회/추가 툴 (건강효능·TV방송·셰프·식재료·요리·조리도구·레시피)
-    // ══════════════════════════════════════════════════════════════
-
-    // ── 식재료 ↔ 건강효능 크로스 연결 툴 ─────────────────────────────────
-
     server.registerTool(
       'link_ingredient_benefit',
       {

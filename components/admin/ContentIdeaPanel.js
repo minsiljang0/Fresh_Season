@@ -3,9 +3,8 @@ import { S } from './AdminUI'
 
 const ACCENT = '#16a34a'
 
-// 섹션 정의 (각 월 탭 안의 분류)
 const SECTIONS = [
-  { value: 'ingredient', label: '🥕 식재료',  color: '#16a34a', bg: '#f0fdf4' },
+  { value: 'ingredient', label: '🥕 식재료',   color: '#16a34a', bg: '#f0fdf4' },
   { value: 'season',     label: '🌤️ 계절/날씨', color: '#0ea5e9', bg: '#f0f9ff' },
   { value: 'health',     label: '💊 건강/효능', color: '#8b5cf6', bg: '#faf5ff' },
   { value: 'food',       label: '🍽️ 음식/요리', color: '#f59e0b', bg: '#fffbeb' },
@@ -21,8 +20,7 @@ const TYPE_LABELS = {
   memo:    { label: '메모',     color: '#a78bfa' },
 }
 
-const MONTH_NAMES = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
-const MONTH_ICONS = ['❄️','🌸','🌸','🌿','🌿','☀️','☀️','☀️','🍂','🍂','🍁','❄️']
+const MONTH_ICONS   = ['❄️','🌸','🌸','🌿','🌿','☀️','☀️','☀️','🍂','🍂','🍁','❄️']
 const MONTH_SEASONS = ['겨울','봄','봄','봄','초여름','여름','여름','여름','가을','가을','가을','겨울']
 
 function fmtDate(iso) {
@@ -31,18 +29,19 @@ function fmtDate(iso) {
   return `${d.getMonth()+1}/${d.getDate()}`
 }
 
+function fmtUsedAt(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getMonth()+1}월 ${d.getDate()}일 사용`
+}
+
 // ── 추가 모달 ────────────────────────────────────────────────
 function AddIdeaModal({ activeMonth, onClose, onSave }) {
   const [form, setForm] = useState({
-    section: 'ingredient',
-    type: 'idea',
-    content: '',
-    keyword: '',
-    angle: '',
-    memo: '',
+    section: 'ingredient', type: 'idea',
+    content: '', keyword: '', angle: '', memo: '',
   })
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
-  const tabId = `month_${activeMonth}`
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -53,7 +52,6 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
         <div style={{ fontSize:12, color:'#888', marginBottom:20 }}>{MONTH_SEASONS[activeMonth-1]} 시즌</div>
 
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-          {/* 섹션 */}
           <div>
             <label style={S.label}>섹션</label>
             <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
@@ -69,7 +67,6 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
             </div>
           </div>
 
-          {/* 종류 */}
           <div>
             <label style={S.label}>종류</label>
             <div style={{ display:'flex', gap:6 }}>
@@ -85,28 +82,21 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
             </div>
           </div>
 
-          {/* 내용 */}
           <div>
             <label style={S.label}>내용 *</label>
             <textarea value={form.content} onChange={e => set('content', e.target.value)}
               placeholder="글감 아이디어를 입력하세요" rows={3} style={{ ...S.textarea }} />
           </div>
-
-          {/* 각도 */}
           <div>
             <label style={S.label}>각도 (선택)</label>
             <input value={form.angle} onChange={e => set('angle', e.target.value)}
               style={{ ...S.input }} placeholder="예: 복날 보양식으로서의 민어" />
           </div>
-
-          {/* 키워드 */}
           <div>
             <label style={S.label}>타겟 키워드 (선택)</label>
             <input value={form.keyword} onChange={e => set('keyword', e.target.value)}
               style={{ ...S.input }} placeholder="예: 민어 효능, 민어 제철" />
           </div>
-
-          {/* 메모 */}
           <div>
             <label style={S.label}>메모 (선택)</label>
             <input value={form.memo} onChange={e => set('memo', e.target.value)}
@@ -117,7 +107,7 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
         <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
           <button onClick={onClose} style={{ ...S.btnGhost }}>취소</button>
           <button
-            onClick={() => { if (form.content.trim()) onSave({ ...form, tab_id: tabId }) }}
+            onClick={() => { if (form.content.trim()) onSave({ ...form, tab_id: `month_${activeMonth}` }) }}
             disabled={!form.content.trim()}
             style={{ ...S.btn(), opacity: form.content.trim() ? 1 : 0.4 }}>저장</button>
         </div>
@@ -130,23 +120,24 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
 function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFirst, isLast }) {
   const sec = SECTIONS.find(s => s.value === idea.tool_id) || SECTIONS[6]
   const typ = TYPE_LABELS[idea.type] || TYPE_LABELS.idea
+  const isUsed = idea.status === 'used'
 
   return (
     <div style={{
-      background: idea.status === 'used' ? '#fafafa' : '#fff',
-      border: `1px solid ${idea.status === 'used' ? '#e5e7eb' : '#d1e8d1'}`,
-      borderLeft: `4px solid ${idea.status === 'used' ? '#e5e7eb' : sec.color}`,
+      background: isUsed ? '#fafafa' : '#fff',
+      border: `1px solid ${isUsed ? '#e5e7eb' : '#d1e8d1'}`,
+      borderLeft: `4px solid ${isUsed ? '#d1d5db' : sec.color}`,
       borderRadius: 10, padding:'12px 14px',
-      opacity: idea.status === 'used' ? 0.5 : 1,
+      opacity: isUsed ? 0.6 : 1,
       display:'flex', alignItems:'flex-start', gap:10,
     }}>
-      {/* 순서 조절 */}
+      {/* 순서 */}
       <div style={{ display:'flex', flexDirection:'column', gap:2, flexShrink:0, paddingTop:2 }}>
         <button onClick={onMoveUp} disabled={isFirst}
-          style={{ background:'none', border:'none', cursor: isFirst ? 'default' : 'pointer', color: isFirst ? '#ddd' : '#999', fontSize:12, lineHeight:1, padding:'2px 4px' }}>▲</button>
+          style={{ background:'none', border:'none', cursor: isFirst ? 'default' : 'pointer', color: isFirst ? '#ddd' : '#aaa', fontSize:11, lineHeight:1, padding:'2px 4px' }}>▲</button>
         <span style={{ fontSize:11, color:'#ccc', textAlign:'center', lineHeight:1 }}>{index+1}</span>
         <button onClick={onMoveDown} disabled={isLast}
-          style={{ background:'none', border:'none', cursor: isLast ? 'default' : 'pointer', color: isLast ? '#ddd' : '#999', fontSize:12, lineHeight:1, padding:'2px 4px' }}>▼</button>
+          style={{ background:'none', border:'none', cursor: isLast ? 'default' : 'pointer', color: isLast ? '#ddd' : '#aaa', fontSize:11, lineHeight:1, padding:'2px 4px' }}>▼</button>
       </div>
 
       {/* 본문 */}
@@ -154,21 +145,31 @@ function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFir
         <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:6, flexWrap:'wrap' }}>
           <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:sec.bg, color:sec.color }}>{sec.label}</span>
           <span style={{ fontSize:11, fontWeight:700, color:typ.color }}>#{typ.label}</span>
-          {idea.status === 'used' && <span style={{ fontSize:11, color:'#16a34a', fontWeight:700 }}>✓ 사용됨</span>}
-          <span style={{ fontSize:11, color:'#bbb', marginLeft:'auto' }}>{fmtDate(idea.created_at)}</span>
+          {isUsed && (
+            <span style={{ fontSize:11, color:'#16a34a', fontWeight:700, background:'#dcfce7', padding:'2px 7px', borderRadius:6 }}>
+              ✓ {fmtUsedAt(idea.used_at)}
+            </span>
+          )}
+          <span style={{ fontSize:11, color:'#bbb', marginLeft:'auto' }}>등록 {fmtDate(idea.created_at)}</span>
         </div>
-        <div style={{ fontSize:14, color:'#111', lineHeight:1.6, wordBreak:'break-word' }}>{idea.content}</div>
+        <div style={{ fontSize:14, color: isUsed ? '#9ca3af' : '#111', lineHeight:1.6, wordBreak:'break-word' }}>{idea.content}</div>
         {idea.keyword && <div style={{ fontSize:12, color:'#16a34a', marginTop:5 }}>🔑 {idea.keyword}</div>}
         {idea.memo && <div style={{ fontSize:12, color:'#888', marginTop:4, fontStyle:'italic' }}>📝 {idea.memo}</div>}
       </div>
 
       {/* 액션 */}
       <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-        <button onClick={onToggle} title={idea.status === 'used' ? '미사용으로' : '완료 처리'}
-          style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:7, color:'#16a34a', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>
-          {idea.status === 'used' ? '↩' : '✓'}
+        <button onClick={onToggle}
+          title={isUsed ? '미사용으로 되돌리기' : '사용 완료 처리'}
+          style={{
+            background: isUsed ? '#f0fdf4' : 'none',
+            border: `1px solid ${isUsed ? '#86efac' : '#d1e8d1'}`,
+            borderRadius:7, color: isUsed ? '#16a34a' : '#6b7280',
+            cursor:'pointer', padding:'5px 9px', fontSize:13
+          }}>
+          {isUsed ? '↩' : '✓'}
         </button>
-        <button onClick={onDelete} title="삭제"
+        <button onClick={onDelete}
           style={{ background:'none', border:'1px solid #fecaca', borderRadius:7, color:'#f87171', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>×</button>
       </div>
     </div>
@@ -176,21 +177,23 @@ function IdeaCard({ idea, onToggle, onDelete, index, onMoveUp, onMoveDown, isFir
 }
 
 // ── 섹션 그룹 ────────────────────────────────────────────────
-function SectionGroup({ section, ideas, onToggle, onDelete, onMove, allIdeas }) {
+function SectionGroup({ section, ideas, allIdeas, onToggle, onDelete, onMove }) {
   const [collapsed, setCollapsed] = useState(false)
   if (ideas.length === 0) return null
+  const pendingCnt = ideas.filter(i => i.status !== 'used').length
 
   return (
     <div style={{ marginBottom:16 }}>
-      <div
-        onClick={() => setCollapsed(p => !p)}
-        style={{
-          display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
-          background: section.bg, borderRadius:8, cursor:'pointer', marginBottom:8,
-          border:`1px solid ${section.color}22`,
-        }}>
+      <div onClick={() => setCollapsed(p => !p)} style={{
+        display:'flex', alignItems:'center', gap:8, padding:'8px 14px',
+        background: section.bg, borderRadius:8, cursor:'pointer', marginBottom:8,
+        border:`1px solid ${section.color}22`,
+      }}>
         <span style={{ fontSize:14 }}>{section.label}</span>
-        <span style={{ fontSize:12, color:section.color, fontWeight:700 }}>{ideas.length}개</span>
+        <span style={{ fontSize:12, color:section.color, fontWeight:700 }}>{pendingCnt}개 미사용</span>
+        {ideas.length !== pendingCnt && (
+          <span style={{ fontSize:11, color:'#9ca3af' }}>({ideas.length - pendingCnt}개 완료)</span>
+        )}
         <span style={{ marginLeft:'auto', color:section.color, fontSize:12 }}>{collapsed ? '▶' : '▼'}</span>
       </div>
       {!collapsed && (
@@ -250,12 +253,14 @@ export default function ContentIdeaPanel({ adminToken }) {
 
   const toggleStatus = async (id, current) => {
     const next = current === 'used' ? 'pending' : 'used'
+    const used_at = next === 'used' ? new Date().toISOString() : null
     await fetch('/api/admin/content-ideas', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ action: 'update_status', id, status: next }),
+      body: JSON.stringify({ action: 'update_status', id, status: next, used_at }),
     })
-    setIdeas(prev => prev.map(i => i.id === id ? { ...i, status: next } : i))
+    setIdeas(prev => prev.map(i => i.id === id ? { ...i, status: next, used_at } : i))
+    showToast(next === 'used' ? '✅ 사용 처리됨' : '↩ 미사용으로 되돌림')
   }
 
   const deleteIdea = async (id) => {
@@ -275,14 +280,11 @@ export default function ContentIdeaPanel({ adminToken }) {
     const idx = sectionIdeas.findIndex(i => i.id === id)
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1
     if (swapIdx < 0 || swapIdx >= sectionIdeas.length) return
-
     const newIdeas = [...ideas]
     const aIdx = newIdeas.findIndex(i => i.id === sectionIdeas[idx].id)
     const bIdx = newIdeas.findIndex(i => i.id === sectionIdeas[swapIdx].id)
     ;[newIdeas[aIdx], newIdeas[bIdx]] = [newIdeas[bIdx], newIdeas[aIdx]]
     setIdeas(newIdeas)
-
-    // sort_order 업데이트
     const orders = newIdeas
       .filter(i => i.tab_id === tabId && i.tool_id === sectionValue)
       .map((i, idx) => ({ id: i.id, sort_order: idx }))
@@ -293,7 +295,6 @@ export default function ContentIdeaPanel({ adminToken }) {
     })
   }
 
-  // 현재 탭 아이디어
   const tabId = `month_${activeMonth}`
   const tabIdeas = ideas.filter(i => {
     if (i.tab_id !== tabId) return false
@@ -301,8 +302,8 @@ export default function ContentIdeaPanel({ adminToken }) {
     if (filterStatus === 'used' && i.status !== 'used') return false
     return true
   })
-
   const totalPending = ideas.filter(i => i.tab_id === tabId && i.status === 'pending').length
+  const totalUsed    = ideas.filter(i => i.tab_id === tabId && i.status === 'used').length
 
   return (
     <div>
@@ -312,10 +313,10 @@ export default function ContentIdeaPanel({ adminToken }) {
         <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'8px 16px', fontSize:13 }}>+ 추가</button>
       </div>
 
-      {/* 월별 탭 — 가로 스크롤 */}
+      {/* 월별 탭 */}
       <div style={{ overflowX:'auto', marginBottom:20, paddingBottom:4 }}>
         <div style={{ display:'flex', gap:4, borderBottom:'2px solid #e5e7eb', minWidth:'max-content' }}>
-          {MONTH_NAMES.map((name, i) => {
+          {MONTH_ICONS.map((icon, i) => {
             const m = i + 1
             const mid = `month_${m}`
             const cnt = ideas.filter(x => x.tab_id === mid && x.status === 'pending').length
@@ -328,16 +329,12 @@ export default function ContentIdeaPanel({ adminToken }) {
                 marginBottom:-2,
                 color: isActive ? ACCENT : '#6b7280',
                 fontSize:13, fontWeight: isActive ? 700 : 500,
-                cursor:'pointer', fontFamily:"'Outfit', sans-serif",
-                display:'flex', alignItems:'center', gap:4, whiteSpace:'nowrap',
-                position:'relative',
+                cursor:'pointer', display:'flex', alignItems:'center', gap:4, whiteSpace:'nowrap',
               }}>
-                <span>{MONTH_ICONS[i]}</span>
-                <span>{name}</span>
+                <span>{icon}</span>
+                <span>{m}월</span>
                 {isNow && <span style={{ fontSize:9, background:'#fef3c7', color:'#d97706', padding:'1px 4px', borderRadius:4, fontWeight:700 }}>NOW</span>}
-                {cnt > 0 && (
-                  <span style={{ fontSize:10, background:'#dcfce7', color:ACCENT, padding:'1px 5px', borderRadius:8, fontWeight:700 }}>{cnt}</span>
-                )}
+                {cnt > 0 && <span style={{ fontSize:10, background:'#dcfce7', color:ACCENT, padding:'1px 5px', borderRadius:8, fontWeight:700 }}>{cnt}</span>}
               </button>
             )
           })}
@@ -345,17 +342,20 @@ export default function ContentIdeaPanel({ adminToken }) {
       </div>
 
       {/* 월 요약 헤더 */}
-      <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'12px 18px', marginBottom:16, display:'flex', alignItems:'center', gap:12 }}>
+      <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'12px 18px', marginBottom:16, display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
         <span style={{ fontSize:22 }}>{MONTH_ICONS[activeMonth-1]}</span>
         <div>
           <div style={{ fontSize:15, fontWeight:700, color:'#0f1f0f' }}>{activeMonth}월 — {MONTH_SEASONS[activeMonth-1]} 시즌</div>
-          <div style={{ fontSize:12, color:'#16a34a' }}>미작성 글감 {totalPending}개</div>
+          <div style={{ fontSize:12, color:'#6b7280', marginTop:2 }}>
+            <span style={{ color:ACCENT, fontWeight:700 }}>미작성 {totalPending}개</span>
+            {totalUsed > 0 && <span style={{ marginLeft:10, color:'#9ca3af' }}>완료 {totalUsed}개</span>}
+          </div>
         </div>
-        <div style={{ marginLeft:'auto', display:'flex', gap:6 }}>
+        <div style={{ marginLeft:'auto' }}>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
             style={{ ...S.input, width:'auto', padding:'6px 10px', fontSize:12 }}>
-            <option value="pending">미사용</option>
-            <option value="used">사용됨</option>
+            <option value="pending">미사용만</option>
+            <option value="used">사용됨만</option>
             <option value="">전체</option>
           </select>
         </div>
@@ -367,8 +367,12 @@ export default function ContentIdeaPanel({ adminToken }) {
       ) : tabIdeas.length === 0 ? (
         <div style={{ color:'#aaa', fontSize:14, padding:'60px 0', textAlign:'center' }}>
           <div style={{ fontSize:32, marginBottom:12 }}>{MONTH_ICONS[activeMonth-1]}</div>
-          <div style={{ marginBottom:16 }}>{activeMonth}월 글감이 없습니다</div>
-          <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), fontSize:13 }}>+ 첫 글감 추가하기</button>
+          <div style={{ marginBottom:16 }}>
+            {filterStatus === 'used' ? `${activeMonth}월에 완료된 글감이 없어요` : `${activeMonth}월 글감이 없어요`}
+          </div>
+          {filterStatus !== 'used' && (
+            <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), fontSize:13 }}>+ 첫 글감 추가하기</button>
+          )}
         </div>
       ) : (
         SECTIONS.map(sec => {
@@ -388,11 +392,7 @@ export default function ContentIdeaPanel({ adminToken }) {
       )}
 
       {showAdd && (
-        <AddIdeaModal
-          activeMonth={activeMonth}
-          onClose={() => setShowAdd(false)}
-          onSave={addIdea}
-        />
+        <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />
       )}
 
       {toast && (

@@ -14,12 +14,10 @@ function nowKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
 }
 
-// 월별 탭 (1~12월 고정)
 const MONTH_TABS = Array.from({ length: 12 }, (_, i) => {
   const m = i + 1
   const icons = ['❄️','🌸','🌸','🌿','🌿','☀️','☀️','☀️','🍂','🍂','🍁','❄️']
-  const seasons = ['겨울','봄','봄','봄','초여름','여름','여름','여름','가을','가을','가을','겨울']
-  return { id: `month_${m}`, icon: icons[i], label: `${m}월`, season: seasons[i], month: m }
+  return { id: `month_${m}`, icon: icons[i], label: `${m}월`, month: m }
 })
 
 export default async function handler(req, res) {
@@ -37,16 +35,17 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { tab_id, section, type, content, keyword, angle, memo } = req.body
     if (!tab_id || !content) return res.status(400).json({ error: 'tab_id, content 필수' })
+    const memoFinal = angle ? `[각도] ${angle}${memo ? ' | ' + memo : ''}` : (memo || null)
     const row = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       tab_id,
-      tool_id: section || null,   // section을 tool_id에 저장 (기존 컬럼 재활용)
+      tool_id: section || 'ingredient',
       type: type || 'idea',
       content,
       keyword: keyword || null,
-      memo: angle ? `[각도] ${angle}${memo ? ' | ' + memo : ''}` : (memo || null),
+      memo: memoFinal,
       status: 'pending',
-      sort_order: null,
+      used_at: null,
       created_at: nowKST(),
     }
     const { error } = await supabase.from('content_ideas').insert([row])
@@ -58,20 +57,23 @@ export default async function handler(req, res) {
     const { action } = req.body
 
     if (action === 'update_status') {
-      const { id, status } = req.body
+      const { id, status, used_at } = req.body
+      const updateData = { status, updated_at: nowKST() }
+      // used_at: 사용 처리 시 현재 시각, 되돌리기 시 null
+      updateData.used_at = status === 'used' ? (used_at || nowKST()) : null
       const { error } = await supabase
-        .from('content_ideas').update({ status, updated_at: nowKST() }).eq('id', id)
+        .from('content_ideas').update(updateData).eq('id', id)
       if (error) return res.status(500).json({ error: error.message })
       return res.json({ ok: true })
     }
 
     if (action === 'update_sort') {
-      // 순서 저장: [{ id, sort_order }]
       const { orders } = req.body
-      const updates = orders.map(({ id, sort_order }) =>
-        supabase.from('content_ideas').update({ sort_order }).eq('id', id)
+      await Promise.all(
+        orders.map(({ id, sort_order }) =>
+          supabase.from('content_ideas').update({ sort_order }).eq('id', id)
+        )
       )
-      await Promise.all(updates)
       return res.json({ ok: true })
     }
 
