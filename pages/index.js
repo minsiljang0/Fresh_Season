@@ -138,8 +138,7 @@ export default function Home() {
             ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>불러오는 중...</p>
             : filteredFoods.length === 0
               ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>해당 조건의 제철 재료가 없어요.</p>
-              : (
-                {isMobile ? (
+              : isMobile ? (
                   /* 모바일: 2열 그리드 + 접기/펼치기 카드 */
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8 }}>
                     {filteredFoods.map((food, i) => {
@@ -220,8 +219,7 @@ export default function Home() {
                       )
                     })}
                   </div>
-                )}
-              )
+                )
           }
         </section>
 
