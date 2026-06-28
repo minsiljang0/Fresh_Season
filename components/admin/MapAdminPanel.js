@@ -698,6 +698,9 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   const [filterSpecial, setFilterSpecial] = useState(false)
   const [filterLimited, setFilterLimited] = useState(false)
   const [filterBrand, setFilterBrand] = useState(false)
+  const [filterSeason, setFilterSeason] = useState('')
+  const [filterJeolgi, setFilterJeolgi] = useState('')
+  const [filterSpecialBadge, setFilterSpecialBadge] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
   const [formRegions, setFormRegions] = useState([])
   const [formRegionForm, setFormRegionForm] = useState(EMPTY_REGION)
@@ -901,6 +904,9 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
     if (filterSpecial && !i.is_special) return false
     if (filterLimited && !i.is_limited) return false
     if (filterBrand && !i.is_brand) return false
+    if (filterSeason && i.season_badge !== filterSeason) return false
+    if (filterJeolgi && i.jeolgi_badge !== filterJeolgi) return false
+    if (filterSpecialBadge && i.special_badge !== filterSpecialBadge) return false
     return true
   })
   // 지역 옵션: regions_preview 라벨에서 시도명 추출
@@ -1220,8 +1226,58 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
               fontSize:12, fontWeight:filterBrand?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
             🏷️ 지역브랜드만 <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.is_brand).length})</span>
           </button>
-          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||filterSpecial||filterLimited||filterBrand||searchQ) && (
-            <button onClick={()=>{setFilterMonth(0);setFilterRegion('');setFilterSuperfood(false);setFilterGlobal(false);setSearchQ('')}}
+          {/* 계절 필터 */}
+          <div style={{ width:'100%', display:'flex', gap:4, flexWrap:'wrap', marginTop:6, paddingTop:6, borderTop:'1px dashed #d1e8d1' }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', alignSelf:'center', marginRight:2 }}>🌸 계절:</span>
+            {[['spring','🌸 봄','#166534','#f0fdf4','#86efac'],
+              ['summer','🌞 여름','#92400e','#fefce8','#fde68a'],
+              ['fall','🍂 가을','#c2410c','#fff7ed','#fdba74'],
+              ['winter','❄️ 겨울','#1e40af','#eff6ff','#bae6fd']
+            ].map(([v,label,color,bg,border]) => (
+              <button key={v} onClick={()=>setFilterSeason(filterSeason===v?'':v)}
+                style={{ padding:'3px 10px', borderRadius:20, fontSize:11,
+                  border:`1.5px solid ${filterSeason===v?border:'#d1e8d1'}`,
+                  background:filterSeason===v?bg:'#fff', color:filterSeason===v?color:'#4b6e4b',
+                  fontWeight:filterSeason===v?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                {label} <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.season_badge===v).length})</span>
+              </button>
+            ))}
+          </div>
+          {/* 절기 필터 */}
+          <div style={{ width:'100%', display:'flex', gap:4, flexWrap:'wrap', marginTop:4 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', alignSelf:'center', marginRight:2 }}>🎋 절기:</span>
+            {[['sambok','🔥 삼복'],['chuseok','🌕 추석'],['dongji','☯️ 동지'],
+              ['seollal','🎍 설날'],['gimjang','🥬 김장철'],['ipchun','🌱 입춘'],
+              ['samjinal','🦋 삼짇날']
+            ].map(([v,label]) => (
+              <button key={v} onClick={()=>setFilterJeolgi(filterJeolgi===v?'':v)}
+                style={{ padding:'3px 10px', borderRadius:20, fontSize:11,
+                  border:`1.5px solid ${filterJeolgi===v?'#a855f7':'#d1e8d1'}`,
+                  background:filterJeolgi===v?'#fdf4ff':'#fff', color:filterJeolgi===v?'#7e22ce':'#4b6e4b',
+                  fontWeight:filterJeolgi===v?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                {label} <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.jeolgi_badge===v).length})</span>
+              </button>
+            ))}
+          </div>
+          {/* 특수 필터 */}
+          <div style={{ width:'100%', display:'flex', gap:4, flexWrap:'wrap', marginTop:4 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', alignSelf:'center', marginRight:2 }}>💪 특수:</span>
+            {[['boyangshik','💪 보양식','#c2410c','#fff7ed','#fed7aa'],
+              ['jeolgi_food','🎋 절기음식','#7e22ce','#fdf4ff','#e9d5ff'],
+              ['hangover','🍶 해장','#854d0e','#fefce8','#fde68a'],
+              ['diet','🥗 다이어트','#166534','#f0fdf4','#86efac']
+            ].map(([v,label,color,bg,border]) => (
+              <button key={v} onClick={()=>setFilterSpecialBadge(filterSpecialBadge===v?'':v)}
+                style={{ padding:'3px 10px', borderRadius:20, fontSize:11,
+                  border:`1.5px solid ${filterSpecialBadge===v?border:'#d1e8d1'}`,
+                  background:filterSpecialBadge===v?bg:'#fff', color:filterSpecialBadge===v?color:'#4b6e4b',
+                  fontWeight:filterSpecialBadge===v?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                {label} <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.special_badge===v).length})</span>
+              </button>
+            ))}
+          </div>
+          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||filterSpecial||filterLimited||filterBrand||filterSeason||filterJeolgi||filterSpecialBadge||searchQ) && (
+            <button onClick={()=>{setFilterMonth(0);setFilterRegion('');setFilterSuperfood(false);setFilterGlobal(false);setFilterSpecial(false);setFilterLimited(false);setFilterBrand(false);setFilterSeason('');setFilterJeolgi('');setFilterSpecialBadge('');setSearchQ('')}}
               style={{ padding:'5px 12px', borderRadius:20, border:'1.5px solid #d1e8d1', background:'#fff', color:'#6b7280',
                 fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
               🔄 초기화
