@@ -6,20 +6,30 @@ import Footer from '../../components/Footer'
 import { REGIONS } from '../../lib/regions'
 import { SEASONAL_FOODS_SEED } from '../../lib/seasonalFoods'
 
-// getStaticPaths는 SEED 기반으로 기본 경로 생성
-// fallback: 'blocking' → DB 신규 식재료도 즉시 처리
+// getStaticPaths — 빌드 시 DB에서 전체 식재료 이름 가져와 정적 경로 생성
 export async function getStaticPaths() {
-  const names = [...new Set(SEASONAL_FOODS_SEED.map(f => f.ingredient))]
+  let names = []
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const { data } = await sb.from('ingredients').select('name')
+    if (data) names = [...new Set(data.map(r => r.name))]
+  } catch {
+    // DB 실패 시 SEED 폴백
+    names = [...new Set(SEASONAL_FOODS_SEED.map(f => f.ingredient))]
+  }
   return {
     paths: names.map(n => ({ params: { name: encodeURIComponent(n) } })),
-    fallback: 'blocking',
+    fallback: false,
   }
 }
 
 export async function getStaticProps({ params }) {
   return {
     props: { ingredientName: decodeURIComponent(params.name) },
-    revalidate: 60,
   }
 }
 
