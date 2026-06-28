@@ -653,7 +653,7 @@ export default function MapPage() {
                   ✕
                 </button>
               )}
-            </div>
+            </div>}
           </div>
 
           {/* 연령 */}
@@ -717,7 +717,7 @@ export default function MapPage() {
                   ✕
                 </button>
               )}
-            </div>
+            </div>}
           </div>
 
           {/* 특수 토글: 슈퍼푸드 / 특산품 / 해외 식재료 */}
@@ -753,7 +753,7 @@ export default function MapPage() {
                 </span>
                 🌟 슈퍼푸드
               </button>
-            </div>
+            </div>}
           </div>
 
           {/* 서식지 뱃지 필터 */}
@@ -781,12 +781,13 @@ export default function MapPage() {
                   </span>
                 </button>
               ))}
-            </div>
+            </div>}
           </div>
 
           {/* 카테고리 */}
           <div style={{ marginBottom:14 }}>
             <SectionHeader label="🏷 카테고리" skey="category" />
+            {openSections.category && <>
             {/* 전체 버튼 */}
             <div style={{ marginBottom:8 }}>
               <button onClick={() => setSelCategory('all')}
@@ -1235,8 +1236,7 @@ export default function MapPage() {
                 })}
               </div>
             )}
-
-
+            </>
           </div>
         </div>
 
