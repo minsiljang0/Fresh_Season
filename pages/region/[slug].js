@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { REGIONS, getRegion } from '../../lib/regions'
+import { SkeletonGrid } from '../../components/SkeletonCard'
 import { SEASONS } from '../../lib/seasons'
 
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12]
@@ -190,7 +191,7 @@ export default function RegionPage({ regionId }) {
             제철 식재료 <span>{loading ? '...' : `${filtered.length}가지`}</span>
           </h2>
           {loading ? (
-            <p style={{ color:'var(--text3)', fontSize:14, padding:'20px 0' }}>불러오는 중...</p>
+            <SkeletonGrid count={6} isMobile={isMobile} />
           ) : filtered.length === 0 ? (
             <p style={{ color:'var(--text3)', fontSize:14, padding:'20px 0' }}>해당 조건의 식재료가 없어요.</p>
           ) : isMobile ? (

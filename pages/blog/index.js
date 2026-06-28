@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import { SkeletonBlogList } from '../../components/SkeletonCard'
 import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -46,7 +47,7 @@ export default function BlogIndex() {
         </section>
 
         <section style={{ marginBottom: 64 }}>
-          {loading && <p style={{ color: 'var(--text2)', fontSize: 14 }}>불러오는 중...</p>}
+          {loading && <SkeletonBlogList count={5} />}
           {!loading && posts.length === 0 && (
             <div className="empty-state">
               <p>아직 발행된 글이 없어요.</p>

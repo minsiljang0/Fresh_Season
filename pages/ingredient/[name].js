@@ -69,8 +69,16 @@ export default function IngredientPage({ ingredientName }) {
   if (loading) return (
     <>
       <Header />
-      <main className="wrap" style={{ maxWidth: 860 }}>
-        <p style={{ padding: 40, color: 'var(--text2)' }}>불러오는 중...</p>
+      <main className="wrap" style={{ maxWidth: 860, padding: '32px 16px' }}>
+        <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          <div style={{ background:'linear-gradient(90deg,var(--border) 25%,var(--surface2) 50%,var(--border) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.4s infinite', borderRadius:8, height:36, width:'40%' }} />
+          <div style={{ background:'linear-gradient(90deg,var(--border) 25%,var(--surface2) 50%,var(--border) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.4s infinite', borderRadius:8, height:14, width:'60%' }} />
+          <div style={{ display:'flex', gap:8 }}>
+            {[80,60,70,50].map((w,i) => <div key={i} style={{ background:'linear-gradient(90deg,var(--border) 25%,var(--surface2) 50%,var(--border) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.4s infinite', borderRadius:999, height:28, width:w }} />)}
+          </div>
+          <div style={{ background:'linear-gradient(90deg,var(--border) 25%,var(--surface2) 50%,var(--border) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.4s infinite', borderRadius:12, height:120 }} />
+        </div>
       </main>
       <Footer />
     </>

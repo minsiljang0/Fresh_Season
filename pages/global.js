@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import Head from 'next/head'
+import { SkeletonGrid } from '../components/SkeletonCard'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 
@@ -219,10 +220,8 @@ export default function GlobalPage() {
 
         {/* 카드 그리드 */}
         {loading ? (
-          <div style={{ textAlign:'center', padding:'80px 0', color:'#9ca3af' }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>🌍</div>
-            <div style={{ fontSize:15 }}>불러오는 중...</div>
-          </div>
+          <><style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+          <SkeletonGrid count={8} isMobile={false} /></>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:'80px 0', color:'#9ca3af' }}>
             <div style={{ fontSize:40, marginBottom:12 }}>🔍</div>

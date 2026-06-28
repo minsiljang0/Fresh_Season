@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { SkeletonGrid } from '../components/SkeletonCard'
 import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../components/Header'
@@ -167,6 +168,7 @@ export default function MapPage() {
   const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])
   const [tvShows, setTvShows]                = useState([])
   const [dbHealthBenefits, setDbHealthBenefits] = useState([])
+  const [loading, setLoading] = useState(true)
   const searchRef = useRef(null)
   const [isMobile, setIsMobile] = useState(false)
   const [showFilter, setShowFilter] = useState(false)
@@ -192,22 +194,20 @@ export default function MapPage() {
 
   // DB 데이터 로드
   useEffect(() => {
-    // 3개 API 병렬 로드
-    Promise.all([
-      fetch('/api/map/seasonal-foods').then(r => r.ok ? r.json() : {}),
-      fetch('/api/admin/map-data?type=tv_shows').then(r => r.ok ? r.json() : []),
-      fetch('/api/admin/map-data?type=health_benefits').then(r => r.ok ? r.json() : []),
-    ]).then(([sfData, tvData, hbData]) => {
-      // seasonal-foods: 새 포맷 { foods, healthBenefits } 또는 구 포맷 배열
-      if (Array.isArray(sfData)) {
-        setDbSeasonalFoods(sfData)
-      } else {
-        setDbSeasonalFoods(sfData.foods || [])
-      }
-      setTvShows(tvData || [])
-      // health_benefits는 map-data API에서 직접 — 관리자와 항상 동일한 소스
-      setDbHealthBenefits(Array.isArray(hbData) ? hbData : [])
-    }).catch(() => {})
+    // API 1회 호출로 foods + healthBenefits + tvShows 전부 수신
+    fetch('/api/map/seasonal-foods')
+      .then(r => r.ok ? r.json() : {})
+      .then(data => {
+        if (Array.isArray(data)) {
+          setDbSeasonalFoods(data)
+        } else {
+          setDbSeasonalFoods(data.foods || [])
+          setDbHealthBenefits(data.healthBenefits || [])
+          setTvShows(data.tvShows || [])
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   // TV 프로그램 목록 (시드 + DB 합산)
@@ -1012,10 +1012,12 @@ export default function MapPage() {
 
         {/* 카드 결과 영역 */}
         <div style={{ width:'100%' }}>
+          {/* 로딩 스켈레톤 */}
+          {loading && <SkeletonGrid count={isMobile ? 4 : 8} isMobile={isMobile} />}
+          {loading && <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>}
           <div style={{ flex:1, minWidth:0 }}>
 
-            {/* 결과 없음 */}
-            {totalCount === 0 && (
+            {!loading && totalCount === 0 && (
               <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text2)', background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:16 }}>
                 <div style={{ fontSize:48, marginBottom:16 }}>🔍</div>
                 <p style={{ fontSize:16, fontWeight:700 }}>검색 결과가 없어요</p>

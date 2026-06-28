@@ -5,6 +5,7 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { REGIONS } from '../lib/regions'
 import { SEASONS, getCurrentSeason, getSeasonByMonth } from '../lib/seasons'
+import { SkeletonGrid } from '../components/SkeletonCard'
 
 export default function Home() {
   const [activeMonth, setActiveMonth] = useState(new Date().getMonth() + 1)
@@ -147,7 +148,7 @@ export default function Home() {
             <span>{loading ? '...' : `${filteredFoods.length}가지`}</span>
           </h2>
           {loading
-            ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>불러오는 중...</p>
+            ? <SkeletonGrid count={6} isMobile={isMobile} />
             : filteredFoods.length === 0
               ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>해당 조건의 제철 재료가 없어요.</p>
               : isMobile ? (
