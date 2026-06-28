@@ -947,7 +947,7 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* 모바일: 지도 토글 버튼 */}
+        {/* 모바일: 지도 토글 버튼 + 지도/바차트 가로 배치 */}
         {isMobile && (
           <div style={{ marginBottom:12 }}>
             <button onClick={() => setShowMap(v=>!v)} style={{
@@ -956,11 +956,39 @@ export default function MapPage() {
               fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit'
             }}>🗺️ 지도 {showMap ? '닫기 ▲' : '보기 ▼'}</button>
             {showMap && (
-              <div style={{ marginTop:8, borderRadius:16, overflow:'hidden', border:'1.5px solid var(--border)', height:280 }}>
-                <KoreaMap filtered={filtered} selRegion={selRegion} setSelRegion={setSelRegion} selMonth={selMonth} />
+              <div style={{ marginTop:8, display:'flex', gap:8, alignItems:'flex-start' }}>
+                {/* 지도 */}
+                <div style={{ flex:'0 0 140px', borderRadius:12, overflow:'hidden', border:'1.5px solid var(--border)', height:200 }}>
+                  <KoreaMap filtered={filtered} selRegion={selRegion} setSelRegion={setSelRegion} selMonth={selMonth} />
+                </div>
+                {/* 바 차트 */}
+                {allFoods.length > 0 && (() => {
+                  const chartData = REGION_ORDER.map(id => {
+                    const r = REGIONS.find(x => x.id === id)
+                    return { id, name: r ? r.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').trim() : id, color: r?.color || '#888', count: regionCounts[id] || 0 }
+                  })
+                  const maxVal = Math.max(...chartData.map(d => d.count), 1)
+                  return (
+                    <div style={{ flex:1, background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:12, padding:'10px 8px', height:200, display:'flex', flexDirection:'column' }}>
+                      <p style={{ fontSize:9, color:'var(--text3)', fontWeight:700, marginBottom:6 }}>📊 지역별</p>
+                      <div style={{ display:'flex', alignItems:'flex-end', gap:1, flex:1 }}>
+                        {chartData.map(d => (
+                          <div key={d.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, height:'100%', justifyContent:'flex-end' }}>
+                            <span style={{ fontSize:7, color:'var(--text3)', fontWeight:700, lineHeight:1 }}>{d.count||''}</span>
+                            <div style={{ width:'100%', height:`${Math.max((d.count/maxVal)*80,1)}%`, background:d.color, borderRadius:'3px 3px 0 0', opacity:0.8 }} />
+                            <span style={{ fontSize:7, color:'var(--text3)', lineHeight:1.2, textAlign:'center',
+                              whiteSpace:'pre-wrap', height:22 }}>
+                              {d.name.length > 2 ? d.name.slice(0,2)+'\n'+d.name.slice(2) : d.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
-            {/* 카테고리 그리드 — 지도 아래 항상 표시 */}
+            {/* 카테고리 그리드 */}
             {totalCount > 0 && (
               <div style={{ marginTop:10, display:'flex', gap:5, flexWrap:'wrap' }}>
                 {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
@@ -985,26 +1013,6 @@ export default function MapPage() {
         {/* 카드 결과 영역 */}
         <div style={{ width:'100%' }}>
           <div style={{ flex:1, minWidth:0 }}>
-
-            {/* 요약 스탯 — 모바일은 카드 상단, 데스크탑은 바 차트 하단에 표시 */}
-            {isMobile && totalCount > 0 && (
-              <div style={{ marginBottom:12, display:'flex', gap:6, flexWrap:'wrap' }}>
-                {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
-                  <button key={c.id}
-                    onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
-                    style={{
-                      display:'flex', alignItems:'center', gap:3,
-                      background: selCategory===c.id ? c.color+'22' : 'var(--surface)',
-                      border: `1.5px solid ${selCategory===c.id ? c.color : 'var(--border)'}`,
-                      borderRadius:12, padding:'6px 8px', cursor:'pointer', fontFamily:'inherit',
-                      transition:'all 0.15s',
-                    }}>
-                    <span style={{ fontSize:16 }}>{c.emoji}</span>
-                    <span style={{ fontSize:13, fontWeight:900, color:c.color }}>{categoryCounts[c.id]||0}</span>
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* 결과 없음 */}
             {totalCount === 0 && (
