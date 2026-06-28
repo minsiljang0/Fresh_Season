@@ -119,95 +119,82 @@ function IngredientCard({ ing, onSave, alreadySaved }) {
   const [angle, setAngle] = useState('')
   const [memo, setMemo] = useState('')
   const ct = ING_CAT[ing.category] || ''
+  const seasonMap  = { spring:['🌸 봄','#f0fdf4','#86efac','#166534'], summer:['🌞 여름','#fefce8','#fde68a','#92400e'], fall:['🍂 가을','#fff7ed','#fdba74','#c2410c'], winter:['❄️ 겨울','#eff6ff','#bae6fd','#1e40af'] }
+  const jeolgiMap  = { seollal:['🎍 설날','#fdf4ff','#e9d5ff','#7e22ce'], sambok:['🔥 삼복','#fff1f2','#fecdd3','#be123c'], chopbok:['🔥 초복','#fff1f2','#fecdd3','#be123c'], jungbok:['🔥 중복','#fff1f2','#fecdd3','#be123c'], malbok:['🔥 말복','#fff1f2','#fecdd3','#be123c'], chuseok:['🌕 추석','#fefce8','#fde68a','#854d0e'], gimjang:['🥬 김장철','#f0fdf4','#86efac','#166534'], dongji:['☯️ 동지','#eff6ff','#bae6fd','#1e40af'], dano:['🌿 단오','#f0fdf4','#86efac','#166534'] }
+  const specialMap = { boyangshik:['💪 보양식','#fff7ed','#fed7aa','#c2410c'], jeolgi_food:['🎋 절기음식','#fdf4ff','#e9d5ff','#7e22ce'], hangover:['🍶 해장','#fefce8','#fde68a','#854d0e'], diet:['🥗 다이어트','#f0fdf4','#86efac','#166534'] }
+  const habitatMap = { island:['🏝️ 섬','#f0f9ff','#7dd3fc','#0369a1'], freshwater:['🐟 민물','#eff6ff','#93c5fd','#1d4ed8'], tidal:['🌊 갯벌','#f0fdfa','#5eead4','#0f766e'], mountain:['🏔️ 산','#f7fee7','#a3e635','#3f6212'], ocean:['🌊 바다','#f0f9ff','#38bdf8','#0c4a6e'] }
+  const farmingMap = { aquaculture:['🤿 양식','#fdf4ff','#d8b4fe','#7e22ce'], wild:['🎣 자연산','#fff7ed','#fdba74','#c2410c'], fermented:['🥟 발효','#fef9c3','#fde68a','#713f12'] }
+  const SB = ({v, map}) => { const d=map[v]; if(!d) return null; return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span> }
 
   return (
-    <div style={{
-      background: alreadySaved ? '#f0fdf4' : '#fff',
-      border: `1.5px solid ${alreadySaved ? '#86efac' : '#d1e8d1'}`,
-      borderRadius: 10, overflow: 'hidden',
-    }}>
-      {/* 카드 헤더 — 맵 관리와 동일 구조 */}
-      <div style={{ padding:'10px 14px', cursor:'pointer' }} onClick={() => setOpen(p => !p)}>
-        {/* 이름 + 뱃지 행 */}
-        <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap', marginBottom:3 }}>
-          <span style={{ fontWeight:800, color:'#111', fontSize:13 }}>{ct.split(/(?<=\p{Emoji})/u)[0]} {ing.name}</span>
-          {alreadySaved && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>✓ 저장됨</span>}
-          {ing.is_special   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#b45309',fontWeight:700}}>🏆 특산</span>}
-          {ing.is_limited   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#d1fae5',border:'1px solid #10b981',color:'#059669',fontWeight:700}}>⏰ {ing.limited_days||'기간한정'}</span>}
-          {ing.is_superfood && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#92400e',fontWeight:700}}>🌟 슈퍼푸드</span>}
-          {ing.is_global    && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#dbeafe',border:'1px solid #3b82f6',color:'#1d4ed8',fontWeight:700}}>🌍 해외</span>}
-          {ing.is_brand     && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#ffe4e6',border:'1px solid #e63946',color:'#e63946',fontWeight:700}}>🏷️ 지역브랜드</span>}
-          {(Array.isArray(ing.season_badge)?ing.season_badge:[ing.season_badge]).filter(Boolean).map((v,i) => <SeasonBadge key={i} v={v}/>)}
-          {(Array.isArray(ing.jeolgi_badge)?ing.jeolgi_badge:[ing.jeolgi_badge]).filter(Boolean).map((v,i) => <JeolgiBadge key={i} v={v}/>)}
-          {(Array.isArray(ing.special_badge)?ing.special_badge:[ing.special_badge]).filter(Boolean).map((v,i) => <SpecialBadge key={i} v={v}/>)}
-          {(Array.isArray(ing.habitat_badge)?ing.habitat_badge:[ing.habitat_badge]).filter(Boolean).map((v,i) => <HabitatBadge key={i} v={v}/>)}
-          {(Array.isArray(ing.farming_badge)?ing.farming_badge:[ing.farming_badge]).filter(Boolean).map((v,i) => <FarmingBadge key={i} v={v}/>)}
+    <div onClick={() => setOpen(p => !p)}
+      style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${alreadySaved?'#86efac':'#d1e8d1'}`, background:alreadySaved?'#f0fdf4':'#fff' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap', marginBottom:3 }}>
+            <span style={{ fontWeight:800, color:'#111', fontSize:13 }}>{ct.split(' ')[0]} {ing.name}</span>
+            {alreadySaved && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>✓ 저장됨</span>}
+            {ing.is_special   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#b45309',fontWeight:700}}>🏆 특산</span>}
+            {ing.is_limited   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#d1fae5',border:'1px solid #10b981',color:'#059669',fontWeight:700}}>⏰ {ing.limited_days||'기간한정'}</span>}
+            {ing.is_superfood && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#92400e',fontWeight:700}}>🌟 슈퍼푸드</span>}
+            {ing.is_global    && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#dbeafe',border:'1px solid #3b82f6',color:'#1d4ed8',fontWeight:700}}>🌍 해외</span>}
+            {ing.is_brand     && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#ffe4e6',border:'1px solid #e63946',color:'#e63946',fontWeight:700}}>🏷️ 지역브랜드</span>}
+            {(Array.isArray(ing.season_badge)?ing.season_badge:[ing.season_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={seasonMap}/>)}
+            {(Array.isArray(ing.jeolgi_badge)?ing.jeolgi_badge:[ing.jeolgi_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={jeolgiMap}/>)}
+            {(Array.isArray(ing.special_badge)?ing.special_badge:[ing.special_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={specialMap}/>)}
+            {(Array.isArray(ing.habitat_badge)?ing.habitat_badge:[ing.habitat_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={habitatMap}/>)}
+            {(Array.isArray(ing.farming_badge)?ing.farming_badge:[ing.farming_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={farmingMap}/>)}
+          </div>
+          {ing.regions_preview?.length > 0 && (
+            <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:3 }}>
+              {ing.regions_preview.map((lbl,idx) => (
+                <span key={idx} style={{fontSize:10,padding:'1px 6px',borderRadius:10,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{lbl}</span>
+              ))}
+            </div>
+          )}
+          {(ing.months||[]).length > 0 && (
+            <div style={{ display:'flex', gap:2, flexWrap:'wrap', marginBottom:3 }}>
+              {ing.months.map(m => (
+                <span key={m} style={{fontSize:10,padding:'1px 5px',borderRadius:10,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>{m}월</span>
+              ))}
+            </div>
+          )}
+          <div style={{ fontSize:11, color:'#6b7280' }}>{ct}</div>
+          {ing.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{ing.description.slice(0,35)}{ing.description.length>35?'…':''}</div>}
+          {ing.caution && (
+            <div style={{ fontSize:10, marginTop:3, padding:'2px 6px', background:'#fef2f2', borderRadius:4, border:'1px solid #fca5a5' }}>
+              <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ </span>
+              <span style={{ color:'#dc2626' }}>{ing.caution.slice(0,35)}{ing.caution.length>35?'…':''}</span>
+            </div>
+          )}
+          {ing.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:2 }}>🛒 쿠팡</div>}
+          <div style={{ display:'flex', gap:4, marginTop:4 }}>
+            <span style={{fontSize:10,padding:'2px 8px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',fontWeight:700}}>
+              💊 건강효능 {(ing.health_benefits||[]).length}개
+            </span>
+          </div>
         </div>
-        {/* 지역 뱃지 */}
-        {ing.regions_preview?.length > 0 && (
-          <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:3 }}>
-            {ing.regions_preview.map((lbl,idx) => (
-              <span key={idx} style={{fontSize:10,padding:'1px 6px',borderRadius:10,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{lbl}</span>
-            ))}
-          </div>
-        )}
-        {/* 제철 월 */}
-        {(ing.months||[]).length > 0 && (
-          <div style={{ display:'flex', gap:2, flexWrap:'wrap', marginBottom:3 }}>
-            {ing.months.map(m => (
-              <span key={m} style={{fontSize:10,padding:'1px 5px',borderRadius:10,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>{m}월</span>
-            ))}
-          </div>
-        )}
-        {/* 카테고리 + 설명 */}
-        <div style={{ fontSize:11, color:'#6b7280' }}>{ct}</div>
-        {ing.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{ing.description}</div>}
-        {ing.caution && (
-          <div style={{ fontSize:10, marginTop:3, padding:'2px 6px', background:'#fef2f2', borderRadius:4, border:'1px solid #fca5a5' }}>
-            <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ </span>
-            <span style={{ color:'#dc2626' }}>{ing.caution}</span>
-          </div>
-        )}
-        {/* 건강효능 뱃지 전체 */}
-        {(ing.health_benefits||[]).length > 0 && (
-          <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginTop:5 }}>
-            {(ing.health_benefits||[]).map((hb,i) => (
-              <span key={i} style={{fontSize:10,padding:'1px 6px',borderRadius:10,
-                background: hb.name?.includes('주의') ? '#fef3c7' : '#f0fdf4',
-                border: `1px solid ${hb.name?.includes('주의') ? '#fde68a' : '#86efac'}`,
-                color: hb.name?.includes('주의') ? '#d97706' : '#15803d',
-                fontWeight:600}}>
-                {hb.name?.includes('주의') ? '⚠️' : '💊'} {hb.name}
-              </span>
-            ))}
-          </div>
-        )}
-        <div style={{ textAlign:'right', fontSize:11, color:'#aaa', marginTop:4 }}>{open ? '▲ 닫기' : '▼ 각도·키워드 입력'}</div>
+        <div style={{ flexShrink:0, marginLeft:6 }}>
+          <span style={{ fontSize:11, color:'#aaa' }}>{open ? '▲' : '✏️'}</span>
+        </div>
       </div>
-
-      {/* 펼치면 각도/키워드 입력 */}
       {open && (
-        <div style={{ padding:'0 14px 14px', borderTop:'1px solid #f3f4f6' }}>
-          <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:12 }}>
+        <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid #e9d5ff' }} onClick={e=>e.stopPropagation()}>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             <div>
               <label style={S.label}>각도 (선택)</label>
-              <input value={angle} onChange={e => setAngle(e.target.value)}
-                style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
+              <input value={angle} onChange={e => setAngle(e.target.value)} style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
             </div>
             <div>
               <label style={S.label}>타겟 키워드 (선택)</label>
-              <input value={keyword} onChange={e => setKeyword(e.target.value)}
-                style={S.input} placeholder="예: 민어 효능, 민어 제철" />
+              <input value={keyword} onChange={e => setKeyword(e.target.value)} style={S.input} placeholder="예: 민어 효능, 민어 제철" />
             </div>
             <div>
               <label style={S.label}>메모 (선택)</label>
-              <input value={memo} onChange={e => setMemo(e.target.value)}
-                style={S.input} placeholder="추가 메모" />
+              <input value={memo} onChange={e => setMemo(e.target.value)} style={S.input} placeholder="추가 메모" />
             </div>
             <button onClick={() => onSave({ ing, keyword, angle, memo })}
-              style={{ ...S.btn(), padding:'8px 16px', fontSize:13, alignSelf:'flex-end' }}>
-              글감으로 저장
-            </button>
+              style={{ ...S.btn(), padding:'8px 16px', fontSize:13, alignSelf:'flex-end' }}>글감으로 저장</button>
           </div>
         </div>
       )}
