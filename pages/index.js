@@ -44,6 +44,18 @@ export default function Home() {
   }, [monthFoods, activeRegion])
 
   const [expandedCards, setExpandedCards] = useState({})
+
+  // 지역별 식재료 수 (중복 제거)
+  const regionCounts = useMemo(() => {
+    const counts = {}
+    const seen = {}
+    allFoods.forEach(f => {
+      if (!seen[f.region]) seen[f.region] = new Set()
+      seen[f.region].add(f.ingredient)
+    })
+    Object.entries(seen).forEach(([r, s]) => { counts[r] = s.size })
+    return counts
+  }, [allFoods])
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -256,6 +268,11 @@ export default function Home() {
                   <div style={{ fontSize:11, fontWeight:800, color:'var(--text)', lineHeight:1.3 }}>
                     {r.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').trim()}
                   </div>
+                  {regionCounts[r.id] > 0 && (
+                    <div style={{ fontSize:10, color:r.color, fontWeight:700, marginTop:3 }}>
+                      ({regionCounts[r.id]})
+                    </div>
+                  )}
                 </Link>
               ))}
             </div>
