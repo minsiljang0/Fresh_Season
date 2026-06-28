@@ -410,6 +410,7 @@ export default function ContentIdeaPanel({ adminToken }) {
   const [ideas, setIdeas] = useState([])
   const [ingredients, setIngredients] = useState([])  // 해당 월 제철 식재료
   const [ingLoading, setIngLoading] = useState(false)
+  const [ingLoaded, setIngLoaded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [useTarget, setUseTarget] = useState(null)
@@ -430,19 +431,35 @@ export default function ContentIdeaPanel({ adminToken }) {
     setLoading(false)
   }, [adminToken])
 
-  // 월별 제철 식재료 로드
+  // 월별 제철 식재료 불러오기 + 해당월 일괄 저장
   const loadIngredients = useCallback(async (month) => {
     setIngLoading(true)
+    setIngLoaded(false)
     try {
       const res = await fetch(`/api/admin/seasonal-foods?month=${month}`, { headers: { 'x-admin-token': adminToken } })
       const data = await res.json()
-      if (Array.isArray(data.ingredients)) setIngredients(data.ingredients)
+      if (Array.isArray(data.ingredients)) {
+        setIngredients(data.ingredients)
+        // 해당 월에 일괄 저장
+        await Promise.all(data.ingredients.map(ing => {
+          const regionStr = ing.regions_preview?.length ? ` | 산지: ${ing.regions_preview.join('·')}` : ''
+          const benefitStr = ing.health_benefits?.length ? ` | 효능: ${ing.health_benefits.filter(h=>!h.name?.includes('주의')).slice(0,3).map(h=>h.name).join('·')}` : ''
+          const ingContent = `${ing.name} — ${ing.description || ''}${regionStr}${benefitStr}`
+          return fetch('/api/admin/content-ideas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+            body: JSON.stringify({ tab_id: `month_${month}`, section: 'ingredient', type: 'idea', content: ingContent }),
+          })
+        }))
+        await load()
+        showToast(`✅ ${data.ingredients.length}개 식재료 불러오기 완료`)
+        setIngLoaded(true)
+      }
     } catch {}
     setIngLoading(false)
-  }, [adminToken])
+  }, [adminToken, load])
 
   useEffect(() => { load() }, [load])
-  useEffect(() => { loadIngredients(activeMonth) }, [activeMonth, loadIngredients])
 
   const addIdea = async (form) => {
     setShowAdd(false)
@@ -626,11 +643,19 @@ export default function ContentIdeaPanel({ adminToken }) {
         }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px' }}>
             <span style={{ fontSize:14, fontWeight:700, color:'#0f1f0f' }}>🥕 {activeMonth}월 제철 식재료</span>
-            <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>
-              {ingLoading ? '로딩...' : `${ingredients.length}개`}
+            {ingredients.length > 0 && (
+              <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>{ingredients.length}개</span>
+            )}
+            <span style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8 }}>
+              {!ingLoaded && (
+                <button onClick={e => { e.stopPropagation(); loadIngredients(activeMonth) }}
+                  disabled={ingLoading}
+                  style={{ padding:'4px 12px', borderRadius:6, border:'none', background:ACCENT, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', opacity: ingLoading ? 0.6 : 1 }}>
+                  {ingLoading ? '불러오는 중...' : '불러오기'}
+                </button>
+              )}
+              <span style={{ color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
             </span>
-            <span style={{ fontSize:11, color:'#9ca3af' }}>— 클릭해서 각도/키워드 입력 후 글감 저장</span>
-            <span style={{ marginLeft:'auto', color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
           </div>
           {!ingLoading && ingredients.length > 0 && showIngredients && (() => {
             const monthToSeason = {1:'winter',2:'winter',3:'spring',4:'spring',5:'spring',6:'summer',7:'summer',8:'summer',9:'fall',10:'fall',11:'fall',12:'winter'}
@@ -684,8 +709,6 @@ export default function ContentIdeaPanel({ adminToken }) {
           })()}
         </div>
 
-
-
         {/* ── 저장된 글감 목록 ── */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', margin:'12px 0 8px' }}>
           <div style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📋 저장된 글감</div>
@@ -734,7 +757,7 @@ export default function ContentIdeaPanel({ adminToken }) {
 
 
 
-      {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />}
+      {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />
       {showAdd && <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />}
       {useTarget && <UseModal idea={useTarget} onClose={() => setUseTarget(null)} onSave={markUsed} />}
 
