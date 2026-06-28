@@ -597,7 +597,7 @@ export default function ContentIdeaPanel({ adminToken }) {
             const isActive = activeMonth === m
             const isNow = m === thisMonth
             return (
-              <button key={m} onClick={() => setActiveMonth(m)} style={{
+              <button key={m} onClick={() => { setActiveMonth(m); setIngLoaded(false); setIngredients([]) }} style={{
                 padding:'10px 14px', background:'none', border:'none',
                 borderBottom: isActive ? `2px solid ${ACCENT}` : '2px solid transparent',
                 marginBottom:-2,
@@ -757,7 +757,7 @@ export default function ContentIdeaPanel({ adminToken }) {
 
 
 
-      {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />
+      {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />}
       {showAdd && <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />}
       {useTarget && <UseModal idea={useTarget} onClose={() => setUseTarget(null)} onSave={markUsed} />}
 
