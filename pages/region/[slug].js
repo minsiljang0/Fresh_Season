@@ -188,24 +188,57 @@ export default function RegionPage({ regionId }) {
                   onMouseEnter={e => e.currentTarget.style.borderColor = region.color}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-                      <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
-                      {food.is_special && (
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
-                          background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309', fontWeight:700,
-                        }}>🏆 특산품</span>
-                      )}
-                      {food.is_limited && food.limited_days && (
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20,
-                          background:'#d1fae5', border:'1px solid #10b981', color:'#059669', fontWeight:700,
-                        }}>⏰ {food.limited_days}간 한정</span>
-                      )}
-                    </div>
+                    <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
                     <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
                       {food.months.slice(0,5).map(m => (
                         <span key={m} style={{ fontSize:9, padding:'1px 5px', borderRadius:4, background:'var(--surface2)', color:'var(--text3)' }}>{m}월</span>
                       ))}
                     </div>
+                  </div>
+                  <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:8 }}>
+                    {food.is_superfood && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f59e0b18',color:'#d97706',border:'1px solid #f59e0b44'}}>🌟 슈퍼푸드</span>}
+                    {food.is_brand     && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#e6394618',color:'#e63946',border:'1px solid #e6394644'}}>🏷️ 지역브랜드</span>}
+                    {food.is_special   && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🏆 특산품</span>}
+                    {food.is_limited && food.limited_days && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#d1fae5',color:'#059669',border:'1px solid #10b981'}}>⏰ {food.limited_days}간 한정</span>}
+                    {food.is_global    && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#3b82f618',color:'#2563eb',border:'1px solid #3b82f644'}}>🌍 해외</span>}
+                    {(Array.isArray(food.season_badge)?food.season_badge:[food.season_badge]).filter(Boolean).map(s=>(
+                      s==='spring'?<span key="sp" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌸 봄</span>:
+                      s==='summer'?<span key="su" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#92400e',border:'1px solid #fde68a'}}>🌞 여름</span>:
+                      s==='fall'  ?<span key="fa" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🍂 가을</span>:
+                      s==='winter'?<span key="wi" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>❄️ 겨울</span>:null
+                    ))}
+                    {(Array.isArray(food.jeolgi_badge)?food.jeolgi_badge:[food.jeolgi_badge]).filter(Boolean).map(j=>(
+                      j==='sambok'    ?<span key="sambok"     style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 삼복</span>:
+                      j==='chopbok'   ?<span key="chopbok"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 초복</span>:
+                      j==='jungbok'   ?<span key="jungbok"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 중복</span>:
+                      j==='malbok'    ?<span key="malbok"     style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 말복</span>:
+                      j==='chuseok'   ?<span key="chuseok"   style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#854d0e',border:'1px solid #fde68a'}}>🌕 추석</span>:
+                      j==='gimjang'   ?<span key="gimjang"   style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🥬 김장철</span>:
+                      j==='dongji'    ?<span key="dongji"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>☯️ 동지</span>:
+                      j==='seollal'   ?<span key="seollal"   style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎍 설날</span>:
+                      j==='ipchun'    ?<span key="ipchun"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌱 입춘</span>:
+                      j==='daeboreum' ?<span key="daeboreum" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🌕 정월대보름</span>:
+                      j==='dano'      ?<span key="dano"      style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌿 단오</span>:
+                      j==='hansik'    ?<span key="hansik"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🌸 한식</span>:null
+                    ))}
+                    {(Array.isArray(food.special_badge)?food.special_badge:[food.special_badge]).filter(Boolean).map(s=>(
+                      s==='boyangshik' ?<span key="bo" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa'}}>💪 보양식</span>:
+                      s==='jeolgi_food'?<span key="je" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎋 절기음식</span>:
+                      s==='hangover'   ?<span key="ha" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#854d0e',border:'1px solid #fde68a'}}>🍶 해장</span>:
+                      s==='diet'       ?<span key="di" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🥗 다이어트</span>:null
+                    ))}
+                    {(Array.isArray(food.habitat_badge)?food.habitat_badge:[food.habitat_badge]).filter(Boolean).map(h=>(
+                      h==='island'    ?<span key="isl" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0369a1',border:'1px solid #7dd3fc'}}>🏝️ 섬</span>:
+                      h==='freshwater'?<span key="frw" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #93c5fd'}}>🐟 민물</span>:
+                      h==='tidal'     ?<span key="tid" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdfa',color:'#0f766e',border:'1px solid #5eead4'}}>🌊 갯벌</span>:
+                      h==='mountain'  ?<span key="mtn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f7fee7',color:'#3f6212',border:'1px solid #a3e635'}}>🏔️ 산</span>:
+                      h==='ocean'     ?<span key="ocn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0c4a6e',border:'1px solid #38bdf8'}}>🌊 바다</span>:null
+                    ))}
+                    {(Array.isArray(food.farming_badge)?food.farming_badge:[food.farming_badge]).filter(Boolean).map(p=>(
+                      p==='aquaculture'?<span key="aqu" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #d8b4fe'}}>🤿 양식</span>:
+                      p==='wild'       ?<span key="wld" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🎣 자연산</span>:
+                      p==='fermented'  ?<span key="fer" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🥟 발효</span>:null
+                    ))}
                   </div>
                   <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>💚 {food.health}</p>
                   <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
