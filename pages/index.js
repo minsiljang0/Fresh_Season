@@ -240,21 +240,46 @@ export default function Home() {
         {/* 지역 카드 */}
         <section style={{ marginBottom: 64 }}>
           <h2 className="section-title">지역별 제철 탐색</h2>
-          <div className="grid-regions">
-            {REGIONS.map(r => (
-              <Link key={r.id} href={`/region/${r.id}`} className="card"
-                onMouseEnter={e => e.currentTarget.style.borderColor = r.color}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12, marginBottom: 14,
-                  background: `${r.color}22`, border: `1.5px solid ${r.color}44`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-                }}>{r.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>{r.name}</div>
-                <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>{r.desc}</p>
-              </Link>
-            ))}
-          </div>
+          {isMobile ? (
+            /* 모바일: 3열 그리드, 소형 카드 */
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8 }}>
+              {REGIONS.map(r => (
+                <Link key={r.id} href={`/region/${r.id}`} className="card"
+                  style={{ padding:'10px 8px', textAlign:'center' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = r.color}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                  <div style={{
+                    width:36, height:36, borderRadius:10, margin:'0 auto 6px',
+                    background:`${r.color}22`, border:`1.5px solid ${r.color}44`,
+                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
+                  }}>{r.icon}</div>
+                  <div style={{ fontSize:11, fontWeight:800, color:'var(--text)', lineHeight:1.3 }}>
+                    {r.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').trim()}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            /* 데스크탑: 아이콘+이름 가로 배치, 설명 1줄 */
+            <div className="grid-regions">
+              {REGIONS.map(r => (
+                <Link key={r.id} href={`/region/${r.id}`} className="card"
+                  style={{ padding:'12px 14px' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = r.color}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+                    <div style={{
+                      width:36, height:36, borderRadius:10, flexShrink:0,
+                      background:`${r.color}22`, border:`1.5px solid ${r.color}44`,
+                      display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
+                    }}>{r.icon}</div>
+                    <div style={{ fontSize:14, fontWeight:800 }}>{r.name}</div>
+                  </div>
+                  <p style={{ fontSize:11, color:'var(--text2)', lineHeight:1.4, overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{r.desc}</p>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
       </main>
