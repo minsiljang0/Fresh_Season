@@ -160,6 +160,8 @@ export default function MapPage() {
   const [selSeason, setSelSeason] = useState('')
   const [selJeolgi, setSelJeolgi] = useState('')
   const [selSpecial, setSelSpecial] = useState('')
+  const [selHabitat, setSelHabitat] = useState('')
+  const [selFarming, setSelFarming] = useState('')
   const [query, setQuery]             = useState('')
   const [view, setView]               = useState('cards')
   const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])
@@ -266,8 +268,10 @@ export default function MapPage() {
     if (selSeason)  data = data.filter(f => Array.isArray(f.season_badge) ? f.season_badge.includes(selSeason) : f.season_badge === selSeason)
     if (selJeolgi)  data = data.filter(f => Array.isArray(f.jeolgi_badge) ? f.jeolgi_badge.includes(selJeolgi) : f.jeolgi_badge === selJeolgi)
     if (selSpecial) data = data.filter(f => Array.isArray(f.special_badge) ? f.special_badge.includes(selSpecial) : f.special_badge === selSpecial)
+    if (selHabitat) data = data.filter(f => Array.isArray(f.habitat_badge) ? f.habitat_badge.includes(selHabitat) : f.habitat_badge === selHabitat)
+    if (selFarming) data = data.filter(f => Array.isArray(f.farming_badge) ? f.farming_badge.includes(selFarming) : f.farming_badge === selFarming)
     return data
-  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, selBrand, selSeason, selJeolgi, selSpecial, query, allFoods, dbHealthBenefits])
+  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, selBrand, selSeason, selJeolgi, selSpecial, selHabitat, selFarming, query, allFoods, dbHealthBenefits])
 
   const byRegion = useMemo(() => {
     const map = {}
@@ -817,7 +821,7 @@ export default function MapPage() {
                   }}>{label}</button>
               ))}
             </div>
-            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setSelSuperfood(false); setSelBrand(false); setSelSeason(''); setSelJeolgi(''); setSelSpecial(''); setQuery('') }}
+            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setSelSuperfood(false); setSelBrand(false); setSelSeason(''); setSelJeolgi(''); setSelSpecial(''); setSelHabitat(''); setSelFarming(''); setQuery('') }}
               style={{ padding:'5px 12px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
               🔄 초기화
             </button>
@@ -1029,6 +1033,17 @@ export default function MapPage() {
                               s==='jeolgi_food'?<span key="je" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎋 절기음식</span>:
                               s==='hangover'   ?<span key="ha" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#854d0e',border:'1px solid #fde68a'}}>🍶 해장</span>:
                               s==='diet'       ?<span key="di" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🥗 다이어트</span>:null
+                            ))}
+                            {(Array.isArray(f.habitat_badge)?f.habitat_badge:[f.habitat_badge]).filter(Boolean).map(h=>(
+                              h==='island'     ?<span key="isl" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0369a1',border:'1px solid #7dd3fc'}}>🏝️ 섬</span>:
+                              h==='freshwater' ?<span key="frw" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #93c5fd'}}>🐟 민물</span>:
+                              h==='tidal'      ?<span key="tid" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdfa',color:'#0f766e',border:'1px solid #5eead4'}}>🌊 갯벌</span>:
+                              h==='mountain'   ?<span key="mtn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f7fee7',color:'#3f6212',border:'1px solid #a3e635'}}>🏔️ 산</span>:null
+                            ))}
+                            {(Array.isArray(f.farming_badge)?f.farming_badge:[f.farming_badge]).filter(Boolean).map(p=>(
+                              p==='aquaculture'?<span key="aqu" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #d8b4fe'}}>🤿 양식</span>:
+                              p==='wild'       ?<span key="wld" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🎣 자연산</span>:
+                              p==='fermented'  ?<span key="fer" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🥟 발효</span>:null
                             ))}
                             {f.is_global && (
                               <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#3b82f618', color:'#2563eb', border:'1px solid #3b82f644' }}>

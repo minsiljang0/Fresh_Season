@@ -680,7 +680,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   const EMPTY_FORM = {
     name:'', display_name:'', region_id:'', category:'fish', description:'',
     coupang_url:'', caution:'', is_special:false, is_limited:false, limited_days:'', is_global:false, is_brand:false,
-    season_badge:[], jeolgi_badge:[], special_badge:[],
+    season_badge:[], jeolgi_badge:[], special_badge:[], habitat_badge:[], farming_badge:[],
     age_groups:[], gender:'all', months:[]
   }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[] }
@@ -701,6 +701,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   const [filterSeason, setFilterSeason] = useState('')
   const [filterJeolgi, setFilterJeolgi] = useState('')
   const [filterSpecialBadge, setFilterSpecialBadge] = useState('')
+  const [filterHabitat, setFilterHabitat] = useState('')
+  const [filterFarming, setFilterFarming] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
   const [formRegions, setFormRegions] = useState([])
   const [formRegionForm, setFormRegionForm] = useState(EMPTY_REGION)
@@ -907,6 +909,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
     if (filterSeason && !(Array.isArray(i.season_badge) ? i.season_badge.includes(filterSeason) : i.season_badge === filterSeason)) return false
     if (filterJeolgi && !(Array.isArray(i.jeolgi_badge)?i.jeolgi_badge.includes(filterJeolgi):i.jeolgi_badge===filterJeolgi)) return false
     if (filterSpecialBadge && !(Array.isArray(i.special_badge)?i.special_badge.includes(filterSpecialBadge):i.special_badge===filterSpecialBadge)) return false
+    if (filterHabitat && !(Array.isArray(i.habitat_badge)?i.habitat_badge.includes(filterHabitat):i.habitat_badge===filterHabitat)) return false
+    if (filterFarming && !(Array.isArray(i.farming_badge)?i.farming_badge.includes(filterFarming):i.farming_badge===filterFarming)) return false
     return true
   })
   // 지역 옵션: regions_preview 라벨에서 시도명 추출
@@ -1309,8 +1313,41 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
               </button>
             ))}
           </div>
-          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||filterSpecial||filterLimited||filterBrand||filterSeason||filterJeolgi||filterSpecialBadge||searchQ) && (
-            <button onClick={()=>{setFilterMonth(0);setFilterRegion('');setFilterSuperfood(false);setFilterGlobal(false);setFilterSpecial(false);setFilterLimited(false);setFilterBrand(false);setFilterSeason('');setFilterJeolgi('');setFilterSpecialBadge('');setSearchQ('')}}
+          {/* 서식지 필터 */}
+          <div style={{ width:'100%', display:'flex', gap:4, flexWrap:'wrap', marginTop:4 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', alignSelf:'center', marginRight:2 }}>🏝️ 서식지:</span>
+            {[['island','🏝️ 섬','#0369a1','#f0f9ff','#7dd3fc'],
+              ['freshwater','🐟 민물','#1d4ed8','#eff6ff','#93c5fd'],
+              ['tidal','🌊 갯벌','#0f766e','#f0fdfa','#5eead4'],
+              ['mountain','🏔️ 산','#3f6212','#f7fee7','#a3e635']
+            ].map(([v,label,color,bg,border])=>(
+              <button key={v} onClick={()=>setFilterHabitat(filterHabitat===v?'':v)}
+                style={{ padding:'3px 10px', borderRadius:20, fontSize:11,
+                  border:`1.5px solid ${filterHabitat===v?border:'#d1e8d1'}`,
+                  background:filterHabitat===v?bg:'#fff', color:filterHabitat===v?color:'#4b6e4b',
+                  fontWeight:filterHabitat===v?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                {label} <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>Array.isArray(i.habitat_badge)?i.habitat_badge.includes(v):i.habitat_badge===v).length})</span>
+              </button>
+            ))}
+          </div>
+          {/* 생산방식 필터 */}
+          <div style={{ width:'100%', display:'flex', gap:4, flexWrap:'wrap', marginTop:4 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', alignSelf:'center', marginRight:2 }}>🤿 생산방식:</span>
+            {[['aquaculture','🤿 양식','#7e22ce','#fdf4ff','#d8b4fe'],
+              ['wild','🎣 자연산','#c2410c','#fff7ed','#fdba74'],
+              ['fermented','🥟 발효','#713f12','#fef9c3','#fde68a']
+            ].map(([v,label,color,bg,border])=>(
+              <button key={v} onClick={()=>setFilterFarming(filterFarming===v?'':v)}
+                style={{ padding:'3px 10px', borderRadius:20, fontSize:11,
+                  border:`1.5px solid ${filterFarming===v?border:'#d1e8d1'}`,
+                  background:filterFarming===v?bg:'#fff', color:filterFarming===v?color:'#4b6e4b',
+                  fontWeight:filterFarming===v?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                {label} <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>Array.isArray(i.farming_badge)?i.farming_badge.includes(v):i.farming_badge===v).length})</span>
+              </button>
+            ))}
+          </div>
+          {(filterMonth!==0||filterRegion||filterSuperfood||filterGlobal||filterSpecial||filterLimited||filterBrand||filterSeason||filterJeolgi||filterSpecialBadge||filterHabitat||filterFarming||searchQ) && (
+            <button onClick={()=>{setFilterMonth(0);setFilterRegion('');setFilterSuperfood(false);setFilterGlobal(false);setFilterSpecial(false);setFilterLimited(false);setFilterBrand(false);setFilterSeason('');setFilterJeolgi('');setFilterSpecialBadge('');setFilterHabitat('');setFilterFarming('');setSearchQ('')}}
               style={{ padding:'5px 12px', borderRadius:20, border:'1.5px solid #d1e8d1', background:'#fff', color:'#6b7280',
                 fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
               🔄 초기화
@@ -1443,6 +1480,17 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                         s==='hangover'   ?<span key="ha" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fefce8',border:'1px solid #fde68a',color:'#854d0e',fontWeight:700}}>🍶 해장</span>:
                         s==='diet'       ?<span key="di" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>🥗 다이어트</span>:null
                       ))}
+                      {(Array.isArray(i.habitat_badge)?i.habitat_badge:[i.habitat_badge]).filter(Boolean).map(h=>(
+                        h==='island'     ?<span key="isl" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0f9ff',border:'1px solid #7dd3fc',color:'#0369a1',fontWeight:700}}>🏝️ 섬</span>:
+                        h==='freshwater' ?<span key="frw" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#eff6ff',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>🐟 민물</span>:
+                        h==='tidal'      ?<span key="tid" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0fdfa',border:'1px solid #5eead4',color:'#0f766e',fontWeight:700}}>🌊 갯벌</span>:
+                        h==='mountain'   ?<span key="mtn" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f7fee7',border:'1px solid #a3e635',color:'#3f6212',fontWeight:700}}>🏔️ 산</span>:null
+                      ))}
+                      {(Array.isArray(i.farming_badge)?i.farming_badge:[i.farming_badge]).filter(Boolean).map(p=>(
+                        p==='aquaculture'?<span key="aqu" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fdf4ff',border:'1px solid #d8b4fe',color:'#7e22ce',fontWeight:700}}>🤿 양식</span>:
+                        p==='wild'       ?<span key="wld" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fff7ed',border:'1px solid #fdba74',color:'#c2410c',fontWeight:700}}>🎣 자연산</span>:
+                        p==='fermented'  ?<span key="fer" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef9c3',border:'1px solid #fde68a',color:'#713f12',fontWeight:700}}>🥟 발효</span>:null
+                      ))}
                     </div>
                     {/* 지역 뱃지 */}
                     {i.regions_preview?.length > 0 && (
@@ -1487,7 +1535,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                         description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'',
                         is_special:i.is_special||false, is_limited:i.is_limited||false, limited_days:i.limited_days||'',
                         is_global:i.is_global||false, is_brand:i.is_brand||false,
-                        season_badge:i.season_badge||[], jeolgi_badge:i.jeolgi_badge||[], special_badge:i.special_badge||[],
+                        season_badge:i.season_badge||[], jeolgi_badge:i.jeolgi_badge||[], special_badge:i.special_badge||[], habitat_badge:i.habitat_badge||[], farming_badge:i.farming_badge||[],
                         age_groups:i.age_groups||[], gender:i.gender||'all', months:i.months||[] })
                       setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
                       loadEditLinks(i.id)
