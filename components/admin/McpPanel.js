@@ -1,23 +1,31 @@
 import { useState, useEffect, useCallback } from 'react'
-import { S, Toggle, Toast } from './AdminUI'
+import { S, Toast } from './AdminUI'
 
 const ACCENT = '#16a34a'
 
-function AddMcpModal({ onClose, onSave }) {
+const GROUP_ICONS = {
+  '핵심 블로그 자동화':    '✍️',
+  '식재료 ↔ 건강효능 연결': '🔗',
+  '맵 관리':               '🗺️',
+  '건강효능 ↔ TV방송 연결': '📺',
+  '식재료 지역·제철원 연결': '📍',
+  'Supabase 직접 조회·수정': '🗄️',
+  '기타':                  '🔧',
+}
+
+function AddServerModal({ onClose, onSave }) {
   const [form, setForm] = useState({ name: '', url: '', description: '' })
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const valid = form.name.trim() && form.url.trim()
-
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:500, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
-        <div style={{ fontSize:16, fontWeight:700, marginBottom:20, color:'#0f1f0f' }}>🔌 MCP 툴 추가</div>
-
-        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:480, boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ fontSize:16, fontWeight:700, marginBottom:20, color:'#0f1f0f' }}>🖥️ MCP 서버 추가</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           <div>
-            <label style={S.label}>툴 이름 *</label>
+            <label style={S.label}>서버 이름 *</label>
             <input value={form.name} onChange={e => set('name', e.target.value)}
-              style={S.input} placeholder="예: get_publish_log" />
+              style={S.input} placeholder="예: 제철먹거라-네이버Mcp" />
           </div>
           <div>
             <label style={S.label}>MCP URL *</label>
@@ -26,15 +34,50 @@ function AddMcpModal({ onClose, onSave }) {
           </div>
           <div>
             <label style={S.label}>설명</label>
-            <textarea value={form.description} onChange={e => set('description', e.target.value)}
-              rows={4} style={S.textarea} placeholder="이 툴이 하는 일을 설명해주세요" />
+            <input value={form.description} onChange={e => set('description', e.target.value)}
+              style={S.input} placeholder="서버 설명" />
           </div>
         </div>
-
         <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
           <button onClick={onClose} style={S.btnGhost}>취소</button>
-          <button onClick={() => valid && onSave({ ...form, is_active: true })}
-            disabled={!valid}
+          <button onClick={() => valid && onSave(form)} disabled={!valid}
+            style={{ ...S.btn(), opacity: valid ? 1 : 0.4 }}>등록</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AddToolModal({ serverId, groups, onClose, onSave }) {
+  const [form, setForm] = useState({ name: '', group_name: groups[0] || '기타', description: '' })
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const valid = form.name.trim()
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:480, boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ fontSize:16, fontWeight:700, marginBottom:20, color:'#0f1f0f' }}>🔧 툴 추가</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          <div>
+            <label style={S.label}>그룹 *</label>
+            <select value={form.group_name} onChange={e => set('group_name', e.target.value)} style={S.input}>
+              {groups.map(g => <option key={g} value={g}>{g}</option>)}
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div>
+            <label style={S.label}>툴 이름 *</label>
+            <input value={form.name} onChange={e => set('name', e.target.value)}
+              style={{ ...S.input, fontFamily:'monospace' }} placeholder="예: get_publish_log" />
+          </div>
+          <div>
+            <label style={S.label}>설명</label>
+            <textarea value={form.description} onChange={e => set('description', e.target.value)}
+              rows={3} style={S.textarea} placeholder="이 툴이 하는 일을 설명해주세요" />
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={S.btnGhost}>취소</button>
+          <button onClick={() => valid && onSave({ ...form, server_id: serverId })} disabled={!valid}
             style={{ ...S.btn(), opacity: valid ? 1 : 0.4 }}>등록</button>
         </div>
       </div>
@@ -43,11 +86,13 @@ function AddMcpModal({ onClose, onSave }) {
 }
 
 export default function McpPanel({ adminToken }) {
-  const [mcps, setMcps] = useState([])
+  const [servers, setServers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showAdd, setShowAdd] = useState(false)
+  const [expandedServer, setExpandedServer] = useState(null)
+  const [expandedGroup, setExpandedGroup] = useState({})
+  const [showAddServer, setShowAddServer] = useState(false)
+  const [addToolFor, setAddToolFor] = useState(null)
   const [toast, setToast] = useState('')
-  const [expandedId, setExpandedId] = useState(null)
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }
 
@@ -56,129 +101,201 @@ export default function McpPanel({ adminToken }) {
     try {
       const res = await fetch('/api/admin/mcps', { headers: { 'x-admin-token': adminToken } })
       const data = await res.json()
-      if (Array.isArray(data.mcps)) setMcps(data.mcps)
+      if (Array.isArray(data.servers)) {
+        setServers(data.servers)
+        // 첫 서버 자동 펼치기
+        if (data.servers.length > 0) setExpandedServer(data.servers[0].id)
+      }
     } catch {}
     setLoading(false)
   }, [adminToken])
 
   useEffect(() => { load() }, [load])
 
-  const addMcp = async (form) => {
-    setShowAdd(false)
+  const addServer = async (form) => {
+    setShowAddServer(false)
     const res = await fetch('/api/admin/mcps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ type: 'server', ...form }),
+    })
+    if (res.ok) { showToast('✅ 서버 등록됨'); load() }
+  }
+
+  const addTool = async (form) => {
+    setAddToolFor(null)
+    const res = await fetch('/api/admin/mcps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ type: 'tool', ...form }),
     })
     if (res.ok) { showToast('✅ 툴 등록됨'); load() }
   }
 
-  const toggleActive = async (id, current) => {
-    await fetch('/api/admin/mcps', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ action: 'toggle', id, is_active: !current }),
-    })
-    setMcps(prev => prev.map(m => m.id === id ? { ...m, is_active: !current } : m))
-    showToast(!current ? '✅ 활성화됨' : '⏸ 비활성화됨')
-  }
-
-  const deleteMcp = async (id) => {
-    if (!confirm('이 툴을 삭제할까요?')) return
+  const deleteServer = async (id) => {
+    if (!confirm('서버와 소속 툴이 모두 삭제됩니다. 계속할까요?')) return
     await fetch('/api/admin/mcps', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ type: 'server', id }),
     })
-    setMcps(prev => prev.filter(m => m.id !== id))
+    setServers(prev => prev.filter(s => s.id !== id))
     showToast('삭제됨')
+  }
+
+  const deleteTool = async (serverId, toolId) => {
+    if (!confirm('툴을 삭제할까요?')) return
+    await fetch('/api/admin/mcps', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ type: 'tool', id: toolId }),
+    })
+    setServers(prev => prev.map(s => s.id === serverId
+      ? { ...s, tools: s.tools.filter(t => t.id !== toolId) }
+      : s
+    ))
+    showToast('툴 삭제됨')
   }
 
   const copyUrl = (url) => {
     navigator.clipboard?.writeText(url).then(() => showToast('URL 복사됨'))
   }
 
-  const activeCount = mcps.filter(m => m.is_active).length
+  const toggleGroup = (serverId, groupName) => {
+    const key = `${serverId}__${groupName}`
+    setExpandedGroup(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const isGroupOpen = (serverId, groupName) => {
+    const key = `${serverId}__${groupName}`
+    return expandedGroup[key] !== false // 기본 열림
+  }
+
+  const totalTools = servers.reduce((a, s) => a + (s.tools?.length || 0), 0)
 
   return (
     <div>
+      {/* 헤더 */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
         <div>
-          <div style={{ fontSize:17, fontWeight:700, color:'#0f1f0f' }}>🔌 MCP 툴 관리</div>
+          <div style={{ fontSize:17, fontWeight:700, color:'#0f1f0f' }}>🔌 MCP 관리</div>
           <div style={{ fontSize:12, color:'#888', marginTop:3 }}>
-            활성 <span style={{ color:ACCENT, fontWeight:700 }}>{activeCount}개</span> / 전체 {mcps.length}개
+            서버 <span style={{ color:ACCENT, fontWeight:700 }}>{servers.length}개</span>
+            {' · '}툴 <span style={{ color:ACCENT, fontWeight:700 }}>{totalTools}개</span>
           </div>
         </div>
-        <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'8px 16px', fontSize:13 }}>+ 툴 추가</button>
+        <button onClick={() => setShowAddServer(true)} style={{ ...S.btn(), padding:'8px 16px', fontSize:13 }}>+ 서버 추가</button>
       </div>
 
       {loading ? (
         <div style={{ color:'#888', textAlign:'center', padding:'40px 0' }}>불러오는 중...</div>
-      ) : mcps.length === 0 ? (
+      ) : servers.length === 0 ? (
         <div style={{ color:'#aaa', textAlign:'center', padding:'60px 0' }}>
           <div style={{ fontSize:32, marginBottom:12 }}>🔌</div>
-          <div style={{ marginBottom:16 }}>등록된 툴이 없어요</div>
-          <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), fontSize:13 }}>+ 툴 추가하기</button>
+          <div style={{ marginBottom:16 }}>등록된 MCP 서버가 없어요</div>
+          <button onClick={() => setShowAddServer(true)} style={{ ...S.btn(), fontSize:13 }}>+ 서버 추가하기</button>
         </div>
       ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-          {mcps.map(m => (
-            <div key={m.id} style={{
-              background:'#fff',
-              border:`1px solid ${m.is_active ? '#d1e8d1' : '#e5e7eb'}`,
-              borderLeft:`4px solid ${m.is_active ? ACCENT : '#d1d5db'}`,
-              borderRadius:10, overflow:'hidden',
-              opacity: m.is_active ? 1 : 0.55,
-            }}>
-              {/* 헤더 행 */}
-              <div style={{ padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                {/* 이름+URL — 클릭 시 펼치기 */}
-                <div style={{ flex:1, minWidth:0, cursor:'pointer' }}
-                  onClick={() => setExpandedId(expandedId === m.id ? null : m.id)}>
-                  <div style={{ fontWeight:700, fontSize:14, color:'#0f1f0f', fontFamily:'monospace' }}>{m.name}</div>
-                  <div style={{ fontSize:11, color:'#9ca3af', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.url}</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          {servers.map(s => {
+            // 그룹별로 묶기
+            const grouped = (s.tools || []).reduce((acc, t) => {
+              const g = t.group_name || '기타'
+              if (!acc[g]) acc[g] = []
+              acc[g].push(t)
+              return acc
+            }, {})
+            const groupNames = Object.keys(grouped)
+            const isOpen = expandedServer === s.id
+
+            return (
+              <div key={s.id} style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:12, overflow:'hidden' }}>
+
+                {/* 서버 헤더 */}
+                <div style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:10, background:'#f0fdf4', borderBottom: isOpen ? '1px solid #d1e8d1' : 'none', cursor:'pointer' }}
+                  onClick={() => setExpandedServer(isOpen ? null : s.id)}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                      <span style={{ fontSize:15, fontWeight:800, color:'#0f1f0f' }}>{s.name}</span>
+                      <span style={{ fontSize:11, color:'#6b7280', background:'#e5e7eb', borderRadius:6, padding:'1px 8px' }}>
+                        {groupNames.length}개 그룹 · {s.tools?.length || 0}개 툴
+                      </span>
+                    </div>
+                    <div style={{ fontSize:11, color:'#6b7280', marginTop:3, fontFamily:'monospace' }}>{s.url}</div>
+                  </div>
+                  <button onClick={e => { e.stopPropagation(); copyUrl(s.url) }}
+                    style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:6, padding:'4px 10px', fontSize:11, color:ACCENT, cursor:'pointer', fontWeight:700, flexShrink:0 }}>
+                    URL 복사
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); deleteServer(s.id) }}
+                    style={{ background:'none', border:'1px solid #fecaca', borderRadius:6, padding:'4px 10px', fontSize:11, color:'#ef4444', cursor:'pointer', fontWeight:700, flexShrink:0 }}>
+                    삭제
+                  </button>
+                  <span style={{ color:'#aaa', fontSize:12, flexShrink:0 }}>{isOpen ? '▲' : '▼'}</span>
                 </div>
 
-                {/* 활성 토글 */}
-                <Toggle value={m.is_active} onChange={() => toggleActive(m.id, m.is_active)} />
+                {/* 그룹 목록 */}
+                {isOpen && (
+                  <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+                    {groupNames.map(gName => {
+                      const gTools = grouped[gName]
+                      const gOpen = isGroupOpen(s.id, gName)
+                      const icon = GROUP_ICONS[gName] || '🔧'
+                      return (
+                        <div key={gName} style={{ border:'1px solid #e5e7eb', borderRadius:10, overflow:'hidden' }}>
+                          {/* 그룹 헤더 */}
+                          <div style={{ padding:'10px 14px', display:'flex', alignItems:'center', gap:8, background:'#f9fafb', cursor:'pointer' }}
+                            onClick={() => toggleGroup(s.id, gName)}>
+                            <span style={{ fontSize:15 }}>{icon}</span>
+                            <span style={{ fontWeight:700, fontSize:13, color:'#111827', flex:1 }}>{gName}</span>
+                            <span style={{ fontSize:11, color:'#9ca3af', background:'#f3f4f6', borderRadius:6, padding:'1px 7px' }}>{gTools.length}개</span>
+                            <span style={{ color:'#aaa', fontSize:11 }}>{gOpen ? '▲' : '▼'}</span>
+                          </div>
 
-                {/* 펼치기 화살표 */}
-                <span style={{ color:'#aaa', fontSize:12, cursor:'pointer', flexShrink:0 }}
-                  onClick={() => setExpandedId(expandedId === m.id ? null : m.id)}>
-                  {expandedId === m.id ? '▲' : '▼'}
-                </span>
-              </div>
+                          {/* 툴 목록 */}
+                          {gOpen && (
+                            <div style={{ padding:'8px 12px', display:'flex', flexDirection:'column', gap:4 }}>
+                              {gTools.map(t => (
+                                <div key={t.id} style={{ display:'flex', alignItems:'flex-start', gap:8, padding:'8px 10px', background:'#fff', border:'1px solid #f3f4f6', borderRadius:7 }}>
+                                  <div style={{ flex:1, minWidth:0 }}>
+                                    <span style={{ fontWeight:700, fontSize:12, color:'#0f1f0f', fontFamily:'monospace' }}>{t.name}</span>
+                                    {t.description && (
+                                      <div style={{ fontSize:11, color:'#6b7280', marginTop:2, lineHeight:1.5 }}>{t.description}</div>
+                                    )}
+                                  </div>
+                                  <button onClick={() => deleteTool(s.id, t.id)}
+                                    style={{ background:'none', border:'none', color:'#d1d5db', cursor:'pointer', fontSize:14, flexShrink:0, padding:'0 2px' }}
+                                    title="삭제">✕</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
 
-              {/* 펼쳐진 내용 */}
-              {expandedId === m.id && (
-                <div style={{ padding:'0 16px 16px', borderTop:'1px solid #f3f4f6' }}>
-                  {/* URL 복사 */}
-                  <div style={{ marginTop:12, background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:8, padding:'10px 14px', display:'flex', alignItems:'center', gap:8 }}>
-                    <span style={{ fontSize:12, color:'#6b7280', flex:1, fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.url}</span>
-                    <button onClick={() => copyUrl(m.url)}
-                      style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:6, padding:'4px 10px', fontSize:11, color:ACCENT, cursor:'pointer', fontWeight:700, flexShrink:0 }}>복사</button>
-                  </div>
-
-                  {/* 설명 */}
-                  {m.description && (
-                    <div style={{ marginTop:10, fontSize:13, color:'#374151', lineHeight:1.7 }}>{m.description}</div>
-                  )}
-
-                  {/* 삭제 */}
-                  <div style={{ marginTop:12 }}>
-                    <button onClick={() => deleteMcp(m.id)}
-                      style={{ background:'none', border:'1px solid #fecaca', borderRadius:8, padding:'6px 14px', fontSize:12, color:'#ef4444', cursor:'pointer', fontWeight:700 }}>
-                      🗑 삭제
+                    {/* 툴 추가 버튼 */}
+                    <button onClick={() => setAddToolFor(s.id)}
+                      style={{ ...S.btnGhost, padding:'7px 16px', fontSize:12, alignSelf:'flex-start', marginTop:4 }}>
+                      + 툴 추가
                     </button>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {showAdd && <AddMcpModal onClose={() => setShowAdd(false)} onSave={addMcp} />}
+      {showAddServer && <AddServerModal onClose={() => setShowAddServer(false)} onSave={addServer} />}
+      {addToolFor && (
+        <AddToolModal
+          serverId={addToolFor}
+          groups={Object.keys(GROUP_ICONS)}
+          onClose={() => setAddToolFor(null)}
+          onSave={addTool}
+        />
+      )}
       <Toast msg={toast} />
     </div>
   )
