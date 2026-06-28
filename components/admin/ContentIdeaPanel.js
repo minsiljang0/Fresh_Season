@@ -620,7 +620,7 @@ export default function ContentIdeaPanel({ adminToken }) {
             <span style={{ fontSize:11, color:'#9ca3af' }}>— 클릭해서 각도/키워드 입력 후 글감 저장</span>
             <span style={{ marginLeft:'auto', color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
           </div>
-          {!ingLoading && ingredients.length > 0 && (() => {
+          {!ingLoading && ingredients.length > 0 && !showIngredients && (() => {
             const monthToSeason = {1:'winter',2:'winter',3:'spring',4:'spring',5:'spring',6:'summer',7:'summer',8:'summer',9:'fall',10:'fall',11:'fall',12:'winter'}
             const currentSeason = monthToSeason[activeMonth]
             const jeolgiMonths  = {seollal:[1,2],ipchun:[2],daeboreum:[1,2],hansik:[4],dano:[5,6],chopbok:[7],jungbok:[7,8],sambok:[7,8],malbok:[8],chuseok:[9,10],gimjang:[11,12],dongji:[12]}
@@ -635,7 +635,6 @@ export default function ContentIdeaPanel({ adminToken }) {
             const specials = collect('special_badge')
             const habitats = collect('habitat_badge')
             const farmings = collect('farming_badge')
-            const months   = [...new Set(ingredients.flatMap(i=>i.months||[]))].sort((a,b)=>a-b)
             const boolBadges = [
               ingredients.some(i=>i.is_special)   && ['🏆 특산',        '#fef3c7','#f59e0b','#b45309'],
               ingredients.some(i=>i.is_limited)   && ['⏰ 기간한정',    '#d1fae5','#10b981','#059669'],
@@ -660,7 +659,6 @@ export default function ContentIdeaPanel({ adminToken }) {
                 <Row label="서식" show={habitats.length>0}>{habitats.map((v,i)=>habitatMap[v]?<Bdg key={i} d={habitatMap[v]}/>:null)}</Row>
                 <Row label="양식" show={farmings.length>0}>{farmings.map((v,i)=>farmingMap[v]?<Bdg key={i} d={farmingMap[v]}/>:null)}</Row>
                 <Row label="기타" show={boolBadges.length>0}>{boolBadges.map((d,i)=><Bdg key={i} d={d}/>)}</Row>
-                <Row label="월" show={months.length>0}>{months.map((m,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>{m}월</span>)}</Row>
                 <Row label="지역" show={regions.length>0}>{regions.map((r,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{r}</span>)}</Row>
                 <Row label="효능" show={benefits.length>0}>{benefits.map((b,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',fontWeight:700}}>💊 {b}</span>)}</Row>
               </div>
