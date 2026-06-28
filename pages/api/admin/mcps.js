@@ -6,7 +6,7 @@ const supabase = createClient(
 )
 
 function auth(req) {
-  return req.headers['x-admin-token'] === process.env.ADMIN_TOKEN
+  return req.headers['x-admin-token'] === process.env.ADMIN_SECRET_TOKEN
 }
 
 function nowKST() {
