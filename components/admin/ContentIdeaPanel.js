@@ -128,7 +128,8 @@ function IngredientCard({ ing, onSave, alreadySaved }) {
 
   return (
     <div onClick={() => setOpen(p => !p)}
-      style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${alreadySaved?'#86efac':'#d1e8d1'}`, background:alreadySaved?'#f0fdf4':'#fff' }}>
+      style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${alreadySaved?'#86efac':'#d1e8d1'}`, background:alreadySaved?'#f0fdf4':'#fff',
+        ...(open ? { gridColumn:'1/-1' } : {}) }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap', marginBottom:3 }}>
@@ -609,11 +610,11 @@ export default function ContentIdeaPanel({ adminToken }) {
         </div>
 
         {showIngredients && (
-          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8 }}>
             {ingLoading ? (
-              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0' }}>불러오는 중...</div>
+              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>불러오는 중...</div>
             ) : ingredients.length === 0 ? (
-              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0' }}>등록된 제철 식재료가 없어요</div>
+              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>등록된 제철 식재료가 없어요</div>
             ) : (
               ingredients.map(ing => (
                 <IngredientCard
