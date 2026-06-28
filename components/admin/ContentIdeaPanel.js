@@ -188,6 +188,7 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
           <div style={{ display:'flex', justifyContent:'flex-end' }}>
             <button onClick={() => setOpen(false)}
               style={{ padding:'3px 10px', borderRadius:5, border:'1px solid #e5e7eb', background:'#f9fafb', color:'#6b7280', fontSize:11, cursor:'pointer' }}>닫기</button>
+          </div>
         </div>
       )}
     </div>
