@@ -184,25 +184,28 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
         </div>
       </div>
       {open && (
-        <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid #e9d5ff' }} onClick={e=>e.stopPropagation()}>
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            <div>
-              <label style={S.label}>각도 (선택)</label>
-              <input value={angle} onChange={e => setAngle(e.target.value)} style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
-            </div>
-            <div>
-              <label style={S.label}>타겟 키워드 (선택)</label>
-              <input value={keyword} onChange={e => setKeyword(e.target.value)} style={S.input} placeholder="예: 민어 효능, 민어 제철" />
-            </div>
-            <div>
-              <label style={S.label}>메모 (선택)</label>
-              <input value={memo} onChange={e => setMemo(e.target.value)} style={S.input} placeholder="추가 메모" />
-            </div>
-            <button onClick={() => onSave({ ing, keyword, angle, memo })}
-              style={{ ...S.btn(), padding:'8px 16px', fontSize:13, alignSelf:'flex-end' }}>글감으로 저장</button>
-          </div>
+        <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid #e9d5ff' }} onClick={e=>e.stopPropagation()}>
+          <div style={{ display:'flex', justifyContent:'flex-end' }}>
+            <button onClick={() => setOpen(false)}
+              style={{ padding:'3px 10px', borderRadius:5, border:'1px solid #e5e7eb', background:'#f9fafb', color:'#6b7280', fontSize:11, cursor:'pointer' }}>닫기</button>
         </div>
       )}
+    </div>
+  )
+}
+
+
+// ── 확인 모달 ────────────────────────────────────────────────
+function ConfirmModal({ message, onConfirm, onCancel }) {
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#fff', borderRadius:14, padding:28, width:320, boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}>
+        <div style={{ fontSize:15, fontWeight:700, color:'#111', marginBottom:20 }}>{message}</div>
+        <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+          <button onClick={onCancel} style={{ padding:'8px 18px', borderRadius:8, border:'1px solid #e5e7eb', background:'#f9fafb', color:'#6b7280', fontSize:13, cursor:'pointer', fontWeight:600 }}>취소</button>
+          <button onClick={onConfirm} style={{ padding:'8px 18px', borderRadius:8, border:'none', background:'#dc2626', color:'#fff', fontSize:13, cursor:'pointer', fontWeight:700 }}>삭제</button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -412,6 +415,7 @@ export default function ContentIdeaPanel({ adminToken }) {
   const [filterStatus, setFilterStatus] = useState('pending')
   const [showIngredients, setShowIngredients] = useState(true)
   const [toast, setToast] = useState('')
+  const [confirmTarget, setConfirmTarget] = useState(null)
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }
 
@@ -451,14 +455,16 @@ export default function ContentIdeaPanel({ adminToken }) {
 
 
   // 식재료 삭제
-  const deleteIngredient = async (id, name) => {
-    if (!confirm(`"${name}"을(를) 삭제할까요?`)) return
-    const res = await fetch("/api/admin/ingredients", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json", "x-admin-token": adminToken },
-      body: JSON.stringify({ id }),
-    })
-    if (res.ok) { showToast(`🗑 ${name} 삭제됨`); loadIngredients(activeMonth) }
+  const deleteIngredient = (id, name) => {
+    setConfirmTarget({ message: `"${name}"을(를) 삭제할까요?`, onConfirm: async () => {
+      const res = await fetch("/api/admin/ingredients", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", "x-admin-token": adminToken },
+        body: JSON.stringify({ id }),
+      })
+      if (res.ok) { showToast(`🗑 ${name} 삭제됨`); loadIngredients(activeMonth) }
+      setConfirmTarget(null)
+    }})
   }
 
   // 식재료 카드에서 글감 저장
@@ -507,14 +513,16 @@ export default function ContentIdeaPanel({ adminToken }) {
   }
 
   const deleteIdea = async (id) => {
-    if (!confirm('삭제할까요?')) return
-    await fetch('/api/admin/content-ideas', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ id }),
-    })
-    setIdeas(prev => prev.filter(i => i.id !== id))
-    showToast('삭제됨')
+    setConfirmTarget({ message: '글감을 삭제할까요?', onConfirm: async () => {
+      await fetch('/api/admin/content-ideas', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ id }),
+      })
+      setIdeas(prev => prev.filter(i => i.id !== id))
+      showToast('삭제됨')
+      setConfirmTarget(null)
+    }})
   }
 
   const moveIdea = async (id, direction, sectionValue) => {
@@ -557,7 +565,7 @@ export default function ContentIdeaPanel({ adminToken }) {
   return (
     <div>
       {/* 헤더 */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+      <div style={{ marginBottom:20 }}>
         <div style={{ fontSize:17, fontWeight:700, color:'#0f1f0f' }}>💡 글감 관리</div>
       </div>
 
@@ -675,6 +683,33 @@ export default function ContentIdeaPanel({ adminToken }) {
           })()}
         </div>
 
+        {/* ── 저장된 글감 목록 ── */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', margin:'12px 0 8px' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📋 저장된 글감</div>
+          <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'6px 14px', fontSize:12 }}>+ 추가</button>
+        </div>
+        {loading ? (
+          <div style={{ color:'#888', fontSize:14, padding:'20px 0', textAlign:'center' }}>불러오는 중...</div>
+        ) : tabIdeas.length === 0 ? (
+          <div style={{ color:'#aaa', fontSize:13, padding:'16px 0', textAlign:'center' }}>저장된 글감이 없어요</div>
+        ) : (
+          SECTIONS.map(sec => {
+            const secIdeas = tabIdeas.filter(i => i.tool_id === sec.value)
+            return (
+              <SectionGroup
+                key={sec.value}
+                section={sec}
+                ideas={secIdeas}
+                allIdeas={tabIdeas}
+                onUse={setUseTarget}
+                onUndoUse={undoUse}
+                onDelete={deleteIdea}
+                onMove={moveIdea}
+              />
+            )
+          })
+        )}
+
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8 }}>
             {ingLoading ? (
               <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>불러오는 중...</div>
@@ -694,40 +729,9 @@ export default function ContentIdeaPanel({ adminToken }) {
         </div>
       </div>
 
-      {/* ── 글감 목록 + 추가 버튼 ── */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, marginTop:8 }}>
-        <div style={{ fontSize:14, fontWeight:700, color:'#0f1f0f' }}>📋 저장된 글감</div>
-        <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'7px 14px', fontSize:13 }}>+ 추가</button>
-      </div>
-      {loading ? (
-        <div style={{ color:'#888', fontSize:14, padding:'40px 0', textAlign:'center' }}>불러오는 중...</div>
-      ) : tabIdeas.length === 0 ? (
-        <div style={{ color:'#aaa', fontSize:14, padding:'40px 0', textAlign:'center' }}>
-          <div style={{ marginBottom:8 }}>
-            {filterStatus === 'used' ? `${activeMonth}월에 완료된 글감이 없어요` : `저장된 글감이 없어요`}
-          </div>
-          {filterStatus !== 'used' && (
-            <div style={{ fontSize:12, color:'#bbb' }}>위 식재료 카드에서 저장하거나 + 추가 버튼을 눌러주세요</div>
-          )}
-        </div>
-      ) : (
-        SECTIONS.map(sec => {
-          const secIdeas = tabIdeas.filter(i => i.tool_id === sec.value)
-          return (
-            <SectionGroup
-              key={sec.value}
-              section={sec}
-              ideas={secIdeas}
-              allIdeas={tabIdeas}
-              onUse={setUseTarget}
-              onUndoUse={undoUse}
-              onDelete={deleteIdea}
-              onMove={moveIdea}
-            />
-          )
-        })
-      )}
 
+
+      {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />
       {showAdd && <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />}
       {useTarget && <UseModal idea={useTarget} onClose={() => setUseTarget(null)} onSave={markUsed} />}
 
