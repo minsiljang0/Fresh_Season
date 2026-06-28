@@ -113,7 +113,7 @@ function FarmingBadge({ v }) {
   return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
 }
 
-function IngredientCard({ ing, onSave, alreadySaved }) {
+function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [angle, setAngle] = useState('')
@@ -128,8 +128,7 @@ function IngredientCard({ ing, onSave, alreadySaved }) {
 
   return (
     <div onClick={() => setOpen(p => !p)}
-      style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${alreadySaved?'#86efac':'#d1e8d1'}`, background:alreadySaved?'#f0fdf4':'#fff',
-        ...(open ? { gridColumn:'1/-1' } : {}) }}>
+      style={{ ...S.row, cursor:'pointer', border:`1.5px solid ${alreadySaved?'#86efac':'#d1e8d1'}`, background:alreadySaved?'#f0fdf4':'#fff' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap', marginBottom:3 }}>
@@ -175,8 +174,9 @@ function IngredientCard({ ing, onSave, alreadySaved }) {
             </span>
           </div>
         </div>
-        <div style={{ flexShrink:0, marginLeft:6 }}>
-          <span style={{ fontSize:11, color:'#aaa' }}>{open ? '▲' : '✏️'}</span>
+        <div style={{ display:'flex', flexDirection:'column', gap:3, flexShrink:0, marginLeft:6 }}>
+          <button onClick={e => { e.stopPropagation(); onDelete(ing.id, ing.name) }}
+            style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
         </div>
       </div>
       {open && (
@@ -445,6 +445,18 @@ export default function ContentIdeaPanel({ adminToken }) {
     if (res.ok) { showToast('✅ 추가됨'); load() }
   }
 
+
+  // 식재료 삭제
+  const deleteIngredient = async (id, name) => {
+    if (!confirm(`"${name}"을(를) 삭제할까요?`)) return
+    const res = await fetch("/api/admin/ingredients", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-admin-token": adminToken },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) { showToast(`🗑 ${name} 삭제됨`); loadIngredients(activeMonth) }
+  }
+
   // 식재료 카드에서 글감 저장
   const saveIngredientIdea = async ({ ing, keyword, angle, memo }) => {
     const regionStr = ing.regions_preview?.length ? ` | 산지: ${ing.regions_preview.join('·')}` : ''
@@ -621,6 +633,7 @@ export default function ContentIdeaPanel({ adminToken }) {
                   key={ing.id}
                   ing={ing}
                   onSave={saveIngredientIdea}
+                  onDelete={deleteIngredient}
                   alreadySaved={savedIngNames.has(ing.name)}
                 />
               ))
