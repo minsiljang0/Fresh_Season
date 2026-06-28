@@ -426,7 +426,7 @@ export default function ContentIdeaPanel({ adminToken }) {
     setLoading(false)
   }, [adminToken])
 
-  // 월별 제철 식재료 불러오기
+  // 월별 제철 식재료 불러오기 + monthly_ingredients 저장
   const loadIngredients = useCallback(async (month) => {
     setIngLoading(true)
     setIngLoaded(false)
@@ -435,6 +435,12 @@ export default function ContentIdeaPanel({ adminToken }) {
       const data = await res.json()
       if (Array.isArray(data.ingredients)) {
         setIngredients(data.ingredients)
+        // monthly_ingredients 테이블에 저장
+        await fetch('/api/admin/seasonal-foods', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+          body: JSON.stringify({ month, ingredient_ids: data.ingredients.map(i => i.id) }),
+        })
         showToast(`✅ ${data.ingredients.length}개 불러오기 완료`)
         setIngLoaded(true)
       }
