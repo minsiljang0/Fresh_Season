@@ -787,44 +787,46 @@ export default function MapPage() {
           {/* 카테고리 */}
           <div style={{ marginBottom:14 }}>
             <SectionHeader label="🏷 카테고리" skey="category" />
-            {openSections.category && <>
-            {/* 전체 버튼 */}
-            <div style={{ marginBottom:8 }}>
-              <button onClick={() => setSelCategory('all')}
-                style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                  borderColor: selCategory==='all' ? '#888' : 'var(--border)',
-                  background: selCategory==='all' ? 'var(--surface3)' : 'var(--surface2)',
-                  color: selCategory==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selCategory==='all'?700:400,
-                }}>전체</button>
-            </div>
-            {/* 그룹별 카테고리 */}
-            {CATEGORY_GROUPS.map(group => {
-              const groupCats = CATEGORIES.filter(c => group.ids.includes(c.id))
-              const isGroupActive = groupCats.some(c => c.id === selCategory)
-              return (
-                <div key={group.label} style={{ marginBottom:6 }}>
-                  <p style={{ fontSize:10, fontWeight:700, color: isGroupActive ? 'var(--accent)' : 'var(--text3)', marginBottom:4, letterSpacing:'0.04em' }}>
-                    {group.label}
-                  </p>
-                  <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-                    {groupCats.map(c => (
-                      <button key={c.id} onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
-                        style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
-                          borderColor: selCategory===c.id ? c.color : 'var(--border)',
-                          background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
-                          color: selCategory===c.id ? c.color : 'var(--text2)',
-                          fontWeight: selCategory===c.id ? 700 : 400,
-                          opacity: (categoryCounts[c.id]||0) === 0 ? 0.4 : 1,
-                        }}>
-                        {c.emoji} {c.label}
-                        {(categoryCounts[c.id]||0) > 0 && <span style={{ marginLeft:4, fontSize:10, fontWeight:700, background: selCategory===c.id ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.06)', borderRadius:999, padding:'1px 5px' }}>{categoryCounts[c.id]}</span>}
-                      </button>
-                    ))}
-                  </div>
+            {openSections.category && (
+              <div>
+                {/* 전체 버튼 */}
+                <div style={{ marginBottom:8 }}>
+                  <button onClick={() => setSelCategory('all')}
+                    style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                      borderColor: selCategory==='all' ? '#888' : 'var(--border)',
+                      background: selCategory==='all' ? 'var(--surface3)' : 'var(--surface2)',
+                      color: selCategory==='all' ? 'var(--text)' : 'var(--text2)', fontWeight: selCategory==='all'?700:400,
+                    }}>전체</button>
                 </div>
-              )
-            })}
-            </>
+                {/* 그룹별 카테고리 */}
+                {CATEGORY_GROUPS.map(group => {
+                  const groupCats = CATEGORIES.filter(c => group.ids.includes(c.id))
+                  const isGroupActive = groupCats.some(c => c.id === selCategory)
+                  return (
+                    <div key={group.label} style={{ marginBottom:6 }}>
+                      <p style={{ fontSize:10, fontWeight:700, color: isGroupActive ? 'var(--accent)' : 'var(--text3)', marginBottom:4, letterSpacing:'0.04em' }}>
+                        {group.label}
+                      </p>
+                      <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                        {groupCats.map(c => (
+                          <button key={c.id} onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
+                            style={{ padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12, cursor:'pointer', fontFamily:'inherit',
+                              borderColor: selCategory===c.id ? c.color : 'var(--border)',
+                              background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
+                              color: selCategory===c.id ? c.color : 'var(--text2)',
+                              fontWeight: selCategory===c.id ? 700 : 400,
+                              opacity: (categoryCounts[c.id]||0) === 0 ? 0.4 : 1,
+                            }}>
+                            {c.emoji} {c.label}
+                            {(categoryCounts[c.id]||0) > 0 && <span style={{ marginLeft:4, fontSize:10, fontWeight:700, background: selCategory===c.id ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.06)', borderRadius:999, padding:'1px 5px' }}>{categoryCounts[c.id]}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {/* 지역 */}
