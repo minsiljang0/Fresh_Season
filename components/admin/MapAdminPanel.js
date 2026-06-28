@@ -1010,11 +1010,10 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
         <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none' }}>
           <Toggle value={f.is_global||false} onChange={v=>setF(p=>({...p,is_global:v}))} color="#3b82f6" />
           <span style={{ fontSize:13, fontWeight:700, color:f.is_global?'#3b82f6':'#4b6e4b' }}>🌍 해외 식재료</span>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+        </label>
+        <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none' }}>
           <Toggle value={f.is_brand||false} onChange={v=>setF(p=>({...p,is_brand:v}))} color="#e63946" />
           <span style={{ fontSize:13, fontWeight:700, color:f.is_brand?'#e63946':'#4b6e4b' }}>🏷️ 지역브랜드</span>
-          <span style={{ fontSize:11, color:'#aaa' }}>글로벌 슈퍼푸드 등</span>
         </label>
       </div>
     </div>
