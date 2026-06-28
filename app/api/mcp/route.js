@@ -844,6 +844,33 @@ const baseHandler = createMcpHandler(
     )
 
     server.registerTool(
+      'update_system_prompt',
+      {
+        title: 'Claude 시스템 프롬프트(지침) 저장',
+        description:
+          'admin에 저장된 Claude 프로젝트 지침을 덮어쓴다. ' +
+          '지침 전문을 content에 담아 전달하면 기존 내용을 완전히 교체한다. ' +
+          '저장 후 get_system_prompt로 다시 불러와서 확인하는 것을 권장한다.',
+        inputSchema: {
+          content: z.string().describe('새로 저장할 지침 전문 (마크다운)'),
+        },
+        annotations: { destructiveHint: true, idempotentHint: false },
+      },
+      async ({ content }) => {
+        const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+        const { error } = await supabase
+          .from('system_prompts')
+          .upsert({ id: 'main', content, updated_at: nowKST }, { onConflict: 'id' })
+        if (error) {
+          return { content: [{ type: 'text', text: `❌ 저장 실패: ${error.message}` }], isError: true }
+        }
+        return {
+          content: [{ type: 'text', text: `✅ 시스템 프롬프트 저장 완료 (${nowKST})\n\n저장된 글자수: ${content.length.toLocaleString()}자` }],
+        }
+      }
+    )
+
+    server.registerTool(
       'get_content_ideas',
       {
         title: '글감 아이디어 조회',
