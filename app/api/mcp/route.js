@@ -851,28 +851,30 @@ const baseHandler = createMcpHandler(
           'admin 글감 관리에 저장된 아이디어·키워드·각도·메모를 가져온다. ' +
           'STEP 1에서 get_publish_log·get_tool_info와 함께 호출해서, ' +
           '사람이 미리 메모해둔 글감 후보 중 오늘 쓸 만한 것이 있는지 확인한다. ' +
-          'category를 주면 해당 카테고리 관련 아이디어만 반환하고, 비우면 전체를 반환한다. ' +
+          '탭은 월별로 구성되어 있다 (month_1~month_12). ' +
+          'month를 주면 해당 월(tab_id=month_N) 글감만 반환한다. ' +
+          'section을 주면 해당 섹션(ingredient/season/health/food/festival/special/angle)만 반환한다. ' +
           'status를 주면 그 상태만 필터링한다 (pending=미사용, used=사용됨). ' +
           '기본은 미사용(pending)만 반환한다.',
         inputSchema: {
-          category: z.string().optional().describe('카테고리로 필터링 (recipe/ingredient/season/health/tips/region). 비우면 전체'),
-          tab_id: z.string().optional().describe('특정 탭 ID로 필터링. 비우면 전체 탭'),
+          month: z.number().int().min(1).max(12).optional().describe('월 (1~12). 비우면 전체 월'),
+          section: z.enum(['ingredient','season','health','food','festival','special','angle']).optional().describe('섹션으로 필터링. 비우면 전체'),
           type: z.enum(['keyword', 'idea', 'angle', 'memo']).optional().describe('종류로 필터링'),
           status: z.enum(['pending', 'used']).optional().describe('기본 pending(미사용만)'),
           limit: z.number().int().min(1).max(200).optional().describe('최대 개수 (기본 50)'),
         },
       },
-      async ({ category, tab_id, type, status, limit }) => {
+      async ({ month, section, type, status, limit }) => {
         let q = supabase
           .from('content_ideas')
           .select('*')
           .eq('status', status || 'pending')
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: true })
           .limit(limit || 50)
 
-        if (category) q = q.eq('tool_id', category)
-        if (tab_id)   q = q.eq('tab_id', tab_id)
-        if (type)     q = q.eq('type', type)
+        if (month)   q = q.eq('tab_id', `month_${month}`)
+        if (section) q = q.eq('tool_id', section)
+        if (type)    q = q.eq('type', type)
 
         const { data, error } = await q
         if (error) return { content: [{ type: 'text', text: `오류: ${error.message}` }], isError: true }
@@ -881,14 +883,68 @@ const baseHandler = createMcpHandler(
         }
 
         const TYPE_KR = { keyword: '키워드', idea: '아이디어', angle: '각도', memo: '메모' }
-        const CAT_KR  = { recipe: '레시피', ingredient: '식재료', season: '제철/계절', health: '건강·효능', tips: '요리 팁', region: '지역 특산' }
-        const lines = [`📋 글감 아이디어 (${data.length}건, ${status || 'pending'}):`]
+        const SEC_KR  = { ingredient: '🥕식재료', season: '🌤️계절/날씨', health: '💊건강/효능', food: '🍽️음식/요리', festival: '🎉절기/행사', special: '⭐특집/테마', angle: '✏️각도/기획' }
+
+        const grouped = {}
         data.forEach(i => {
-          const catLabel = i.tool_id ? ` [${CAT_KR[i.tool_id] || i.tool_id}]` : ' [공통]'
-          const typeLabel = TYPE_KR[i.type] || i.type
-          lines.push(`- (${typeLabel})${catLabel} ${i.content}${i.keyword ? ' / 키워드: ' + i.keyword : ''}${i.memo ? ' / 메모: ' + i.memo : ''}`)
+          const m = i.tab_id?.replace('month_', '') || '?'
+          if (!grouped[m]) grouped[m] = []
+          grouped[m].push(i)
+        })
+
+        const lines = [`📋 글감 아이디어 (${data.length}건):`]
+        Object.keys(grouped).sort((a,b) => +a - +b).forEach(m => {
+          lines.push(`\n── ${m}월 ──`)
+          grouped[m].forEach(i => {
+            const secLabel = SEC_KR[i.tool_id] || i.tool_id || '공통'
+            const typeLabel = TYPE_KR[i.type] || i.type
+            lines.push(`  [${secLabel}] (${typeLabel}) ${i.content}${i.keyword ? ' 🔑' + i.keyword : ''}${i.memo ? ' 📝' + i.memo : ''}`)
+          })
         })
         return { content: [{ type: 'text', text: lines.join('\n') }] }
+      }
+    )
+
+    server.registerTool(
+      'add_content_idea',
+      {
+        title: '글감 아이디어 추가',
+        description:
+          'admin 글감 관리에 새 아이디어·키워드·각도를 추가한다. ' +
+          '글 작성 계획을 세울 때 월별로 글감을 미리 등록해두는 용도로 쓴다. ' +
+          'month(1~12)와 content는 필수. ' +
+          'section으로 섹션 분류(ingredient/season/health/food/festival/special/angle)를 지정한다. ' +
+          '각도가 확정됐으면 type을 angle로, 키워드가 확정됐으면 keyword도 함께 넣는다.',
+        inputSchema: {
+          month: z.number().int().min(1).max(12).describe('등록할 월 (1~12)'),
+          content: z.string().describe('글감 내용. 예: 무안 낙지 복날 보양식 역사와 연포탕 유래'),
+          section: z.enum(['ingredient','season','health','food','festival','special','angle']).optional().describe('섹션. 기본: ingredient'),
+          type: z.enum(['keyword','idea','angle','memo']).optional().describe('종류. 기본: idea'),
+          keyword: z.string().optional().describe('타겟 키워드. 예: 낙지 효능, 무안 낙지 제철'),
+          angle: z.string().optional().describe('글 각도. 예: 복날 보양식으로서의 낙지'),
+          memo: z.string().optional().describe('추가 메모'),
+        },
+        annotations: { idempotentHint: false },
+      },
+      async ({ month, content, section, type, keyword, angle, memo }) => {
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2)
+        const memoFinal = angle ? `[각도] ${angle}${memo ? ' | ' + memo : ''}` : (memo || null)
+        const row = {
+          id,
+          tab_id: `month_${month}`,
+          tool_id: section || 'ingredient',
+          type: type || 'idea',
+          content,
+          keyword: keyword || null,
+          memo: memoFinal,
+          status: 'pending',
+          created_at: nowKST(),
+        }
+        const { error } = await supabase.from('content_ideas').insert([row])
+        if (error) return { content: [{ type: 'text', text: `❌ 추가 실패: ${error.message}` }], isError: true }
+        return {
+          content: [{ type: 'text', text: `✅ 글감 추가 완료\n월: ${month}월\n섹션: ${section || 'ingredient'}\n내용: ${content}${keyword ? '\n키워드: ' + keyword : ''}${angle ? '\n각도: ' + angle : ''}` }]
+        }
       }
     )
 
