@@ -450,6 +450,26 @@ export default function ContentIdeaPanel({ adminToken }) {
 
   useEffect(() => { load() }, [load])
 
+  // 월 바뀔 때 monthly_ingredients에 저장된 식재료 자동 로드
+  useEffect(() => {
+    const checkSaved = async () => {
+      try {
+        const res = await fetch(`/api/admin/seasonal-foods?month=${activeMonth}&saved=1`, { headers: { 'x-admin-token': adminToken } })
+        const data = await res.json()
+        if (data.ids && data.ids.length > 0) {
+          // 저장된 게 있으면 자동으로 식재료 불러오기
+          const res2 = await fetch(`/api/admin/seasonal-foods?month=${activeMonth}`, { headers: { 'x-admin-token': adminToken } })
+          const data2 = await res2.json()
+          if (Array.isArray(data2.ingredients)) {
+            setIngredients(data2.ingredients)
+            setIngLoaded(true)
+          }
+        }
+      } catch {}
+    }
+    checkSaved()
+  }, [activeMonth, adminToken])
+
   const addIdea = async (form) => {
     setShowAdd(false)
     const res = await fetch('/api/admin/content-ideas', {
