@@ -157,6 +157,9 @@ export default function MapPage() {
   const [selGender, setSelGender]     = useState('all')
   const [selSuperfood, setSelSuperfood] = useState(false)
   const [selBrand, setSelBrand] = useState(false)
+  const [selSeason, setSelSeason] = useState('')
+  const [selJeolgi, setSelJeolgi] = useState('')
+  const [selSpecial, setSelSpecial] = useState('')
   const [query, setQuery]             = useState('')
   const [view, setView]               = useState('cards')
   const [dbSeasonalFoods, setDbSeasonalFoods] = useState([])
@@ -260,8 +263,11 @@ export default function MapPage() {
     }
     if (selSuperfood) data = data.filter(f => f.is_superfood)
     if (selBrand) data = data.filter(f => f.is_brand)
+    if (selSeason)  data = data.filter(f => f.season_badge === selSeason)
+    if (selJeolgi)  data = data.filter(f => f.jeolgi_badge === selJeolgi)
+    if (selSpecial) data = data.filter(f => f.special_badge === selSpecial)
     return data
-  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, selBrand, query, allFoods, dbHealthBenefits])
+  }, [selMonth, selCategory, selRegion, selTV, selHealth, selAge, selGender, selSuperfood, selBrand, selSeason, selJeolgi, selSpecial, query, allFoods, dbHealthBenefits])
 
   const byRegion = useMemo(() => {
     const map = {}
@@ -811,7 +817,7 @@ export default function MapPage() {
                   }}>{label}</button>
               ))}
             </div>
-            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setSelSuperfood(false); setSelBrand(false); setQuery('') }}
+            <button onClick={() => { setSelMonth(new Date().getMonth()+1); setSelCategory('all'); setSelRegion('all'); setSelTV('all'); setSelHealth('all'); setSelAge('all'); setSelGender('all'); setSelSuperfood(false); setSelBrand(false); setSelSeason(''); setSelJeolgi(''); setSelSpecial(''); setQuery('') }}
               style={{ padding:'5px 12px', borderRadius:8, border:'1.5px solid var(--border)', background:'var(--surface2)', color:'var(--text3)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
               🔄 초기화
             </button>
@@ -998,6 +1004,24 @@ export default function MapPage() {
                                 🏷️ 지역브랜드
                               </span>
                             )}
+                            {f.season_badge === 'spring' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🌸 봄</span>}
+                            {f.season_badge === 'summer' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fefce8', color:'#92400e', border:'1px solid #fde68a' }}>🌞 여름</span>}
+                            {f.season_badge === 'fall'   && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff7ed', color:'#c2410c', border:'1px solid #fdba74' }}>🍂 가을</span>}
+                            {f.season_badge === 'winter' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#eff6ff', color:'#1e40af', border:'1px solid #bae6fd' }}>❄️ 겨울</span>}
+                            {f.jeolgi_badge === 'sambok'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 삼복</span>}
+                            {f.jeolgi_badge === 'chopbok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 초복</span>}
+                            {f.jeolgi_badge === 'jungbok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 중복</span>}
+                            {f.jeolgi_badge === 'malbok'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 말복</span>}
+                            {f.jeolgi_badge === 'chuseok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fefce8', color:'#854d0e', border:'1px solid #fde68a' }}>🌕 추석</span>}
+                            {f.jeolgi_badge === 'gimjang' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🥬 김장철</span>}
+                            {f.jeolgi_badge === 'dongji'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#eff6ff', color:'#1e40af', border:'1px solid #bae6fd' }}>☯️ 동지</span>}
+                            {f.jeolgi_badge === 'seollal' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fdf4ff', color:'#7e22ce', border:'1px solid #e9d5ff' }}>🎍 설날</span>}
+                            {f.jeolgi_badge === 'ipchun'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🌱 입춘</span>}
+                            {f.jeolgi_badge === 'samjinal' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fdf4ff', color:'#7e22ce', border:'1px solid #e9d5ff' }}>🦋 삼짇날</span>}
+                            {f.special_badge === 'boyangshik' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff7ed', color:'#c2410c', border:'1px solid #fed7aa' }}>💪 보양식</span>}
+                            {f.special_badge === 'jeolgi_food' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fdf4ff', color:'#7e22ce', border:'1px solid #e9d5ff' }}>🎋 절기음식</span>}
+                            {f.special_badge === 'hangover' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fefce8', color:'#854d0e', border:'1px solid #fde68a' }}>🍶 해장</span>}
+                            {f.special_badge === 'diet'   && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🥗 다이어트</span>}
                             {f.is_global && (
                               <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#3b82f618', color:'#2563eb', border:'1px solid #3b82f644' }}>
                                 🌍 해외
