@@ -904,9 +904,9 @@ export default function MapPage() {
               })
               const maxVal = Math.max(...chartData.map(d => d.count), 1)
               return (
-                <div style={{ flex:1, background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:16, padding:'20px', position:'sticky', top:80, height:'calc(100vh - 120px)', maxHeight:520, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+                <div style={{ flex:1, background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:16, padding:'20px', position:'sticky', top:80, height:'calc(100vh - 120px)', maxHeight:520, display:'flex', flexDirection:'column' }}>
                   <p style={{ fontSize:12, color:'var(--text3)', fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>📊 지역별 식재료 수</p>
-                  <div style={{ display:'flex', alignItems:'flex-end', gap:5, flex:1, maxHeight:400 }}>
+                  <div style={{ display:'flex', alignItems:'flex-end', gap:5, flex:1 }}>
                     {chartData.map(d => (
                       <div key={d.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3, height:'100%', justifyContent:'flex-end' }}>
                         <span style={{ fontSize:9, color:'var(--text3)', fontWeight:700, lineHeight:1 }}>{d.count}</span>
@@ -915,6 +915,28 @@ export default function MapPage() {
                       </div>
                     ))}
                   </div>
+                  {/* 카테고리 아이콘 그리드 — 바 차트 아래 */}
+                  {totalCount > 0 && (
+                    <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid var(--border)', display:'flex', gap:6, flexWrap:'wrap' }}>
+                      {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
+                        <button key={c.id}
+                          onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
+                          style={{
+                            display:'flex', alignItems:'center', gap:5,
+                            background: selCategory===c.id ? c.color+'22' : 'var(--surface2)',
+                            border: `1.5px solid ${selCategory===c.id ? c.color : 'var(--border)'}`,
+                            borderRadius:10, padding:'5px 8px', cursor:'pointer', fontFamily:'inherit',
+                            transition:'all 0.15s',
+                          }}>
+                          <span style={{ fontSize:15 }}>{c.emoji}</span>
+                          <span style={{ display:'flex', flexDirection:'column', alignItems:'flex-start' }}>
+                            <span style={{ fontSize:13, fontWeight:900, color:c.color, lineHeight:1 }}>{categoryCounts[c.id]||0}</span>
+                            <span style={{ fontSize:9, color:'var(--text3)', marginTop:1 }}>{c.label}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             })()}
@@ -941,27 +963,21 @@ export default function MapPage() {
         <div style={{ width:'100%' }}>
           <div style={{ flex:1, minWidth:0 }}>
 
-            {/* 요약 스탯 — 최상단 */}
-            {totalCount > 0 && (
-              <div style={{ marginBottom:12, display:'flex', gap:8, flexWrap:'wrap' }}>
+            {/* 모바일: 요약 스탯 — 카드 결과 상단 (데스크탑은 바 차트 하단에 표시) */}
+            {isMobile && totalCount > 0 && (
+              <div style={{ marginBottom:12, display:'flex', gap:6, flexWrap:'wrap' }}>
                 {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
                   <button key={c.id}
                     onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
                     style={{
-                      display:'flex', alignItems:'center', gap: isMobile ? 3 : 6,
+                      display:'flex', alignItems:'center', gap:3,
                       background: selCategory===c.id ? c.color+'22' : 'var(--surface)',
                       border: `1.5px solid ${selCategory===c.id ? c.color : 'var(--border)'}`,
-                      borderRadius:12, padding: isMobile ? '6px 8px' : '8px 12px', cursor:'pointer', fontFamily:'inherit',
+                      borderRadius:10, padding:'6px 8px', cursor:'pointer', fontFamily:'inherit',
                       transition:'all 0.15s',
                     }}>
-                    <span style={{ fontSize: isMobile ? 16 : 18 }}>{c.emoji}</span>
-                    {isMobile
-                      ? <span style={{ fontSize:13, fontWeight:900, color:c.color }}>{categoryCounts[c.id]||0}</span>
-                      : <span style={{ display:'flex', flexDirection:'column', alignItems:'flex-start' }}>
-                          <span style={{ fontSize:16, fontWeight:900, color:c.color, lineHeight:1 }}>{categoryCounts[c.id]||0}</span>
-                          <span style={{ fontSize:10, color:'var(--text3)', marginTop:1 }}>{c.label}</span>
-                        </span>
-                    }
+                    <span style={{ fontSize:16 }}>{c.emoji}</span>
+                    <span style={{ fontSize:13, fontWeight:900, color:c.color }}>{categoryCounts[c.id]||0}</span>
                   </button>
                 ))}
               </div>
