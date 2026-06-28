@@ -184,23 +184,9 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
         </div>
       </div>
       {open && (
-        <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid #e9d5ff' }} onClick={e=>e.stopPropagation()}>
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            <div>
-              <label style={S.label}>각도 (선택)</label>
-              <input value={angle} onChange={e => setAngle(e.target.value)} style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
-            </div>
-            <div>
-              <label style={S.label}>타겟 키워드 (선택)</label>
-              <input value={keyword} onChange={e => setKeyword(e.target.value)} style={S.input} placeholder="예: 민어 효능, 민어 제철" />
-            </div>
-            <div>
-              <label style={S.label}>메모 (선택)</label>
-              <input value={memo} onChange={e => setMemo(e.target.value)} style={S.input} placeholder="추가 메모" />
-            </div>
-            <button onClick={() => onSave({ ing, keyword, angle, memo })}
-              style={{ ...S.btn(), padding:'8px 16px', fontSize:13, alignSelf:'flex-end' }}>글감으로 저장</button>
-          </div>
+        <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid #e9d5ff', display:'flex', justifyContent:'flex-end' }} onClick={e=>e.stopPropagation()}>
+          <button onClick={() => setOpen(false)}
+            style={{ padding:'3px 10px', borderRadius:5, border:'1px solid #e5e7eb', background:'#f9fafb', color:'#6b7280', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>닫기</button>
         </div>
       )}
     </div>
