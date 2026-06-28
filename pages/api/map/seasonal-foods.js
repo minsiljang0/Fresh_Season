@@ -72,7 +72,7 @@ export default async function handler(req, res) {
           is_superfood: row.ingredients.is_superfood || false,
           is_global:    row.ingredients.is_global || false,
           is_brand:        row.ingredients.is_brand || false,
-          season_badge:    row.ingredients.season_badge || null,
+          season_badge:    row.ingredients.season_badge || [],
           jeolgi_badge:    row.ingredients.jeolgi_badge || null,
           special_badge:   row.ingredients.special_badge || null,
           gender:       row.ingredients.gender || 'all',

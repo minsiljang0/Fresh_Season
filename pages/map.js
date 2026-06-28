@@ -263,7 +263,7 @@ export default function MapPage() {
     }
     if (selSuperfood) data = data.filter(f => f.is_superfood)
     if (selBrand) data = data.filter(f => f.is_brand)
-    if (selSeason)  data = data.filter(f => f.season_badge === selSeason)
+    if (selSeason)  data = data.filter(f => Array.isArray(f.season_badge) ? f.season_badge.includes(selSeason) : f.season_badge === selSeason)
     if (selJeolgi)  data = data.filter(f => f.jeolgi_badge === selJeolgi)
     if (selSpecial) data = data.filter(f => f.special_badge === selSpecial)
     return data
@@ -1004,10 +1004,12 @@ export default function MapPage() {
                                 🏷️ 지역브랜드
                               </span>
                             )}
-                            {f.season_badge === 'spring' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🌸 봄</span>}
-                            {f.season_badge === 'summer' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fefce8', color:'#92400e', border:'1px solid #fde68a' }}>🌞 여름</span>}
-                            {f.season_badge === 'fall'   && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff7ed', color:'#c2410c', border:'1px solid #fdba74' }}>🍂 가을</span>}
-                            {f.season_badge === 'winter' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#eff6ff', color:'#1e40af', border:'1px solid #bae6fd' }}>❄️ 겨울</span>}
+                            {(Array.isArray(f.season_badge)?f.season_badge:[f.season_badge]).filter(Boolean).map(s => (
+                              s === 'spring' ? <span key="spring" style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#f0fdf4', color:'#166534', border:'1px solid #86efac' }}>🌸 봄</span> :
+                              s === 'summer' ? <span key="summer" style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fefce8', color:'#92400e', border:'1px solid #fde68a' }}>🌞 여름</span> :
+                              s === 'fall'   ? <span key="fall"   style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff7ed', color:'#c2410c', border:'1px solid #fdba74' }}>🍂 가을</span> :
+                              s === 'winter' ? <span key="winter" style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#eff6ff', color:'#1e40af', border:'1px solid #bae6fd' }}>❄️ 겨울</span> : null
+                            ))}
                             {f.jeolgi_badge === 'sambok'  && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 삼복</span>}
                             {f.jeolgi_badge === 'chopbok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 초복</span>}
                             {f.jeolgi_badge === 'jungbok' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:999, fontWeight:700, background:'#fff1f2', color:'#be123c', border:'1px solid #fecdd3' }}>🔥 중복</span>}

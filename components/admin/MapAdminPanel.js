@@ -680,7 +680,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
   const EMPTY_FORM = {
     name:'', display_name:'', region_id:'', category:'fish', description:'',
     coupang_url:'', caution:'', is_special:false, is_limited:false, limited_days:'', is_global:false, is_brand:false,
-    season_badge:null, jeolgi_badge:null, special_badge:null,
+    season_badge:[], jeolgi_badge:null, special_badge:null,
     age_groups:[], gender:'all', months:[]
   }
   const EMPTY_REGION = { region:'gangwon', district:'', months:[] }
@@ -904,7 +904,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
     if (filterSpecial && !i.is_special) return false
     if (filterLimited && !i.is_limited) return false
     if (filterBrand && !i.is_brand) return false
-    if (filterSeason && i.season_badge !== filterSeason) return false
+    if (filterSeason && !(Array.isArray(i.season_badge) ? i.season_badge.includes(filterSeason) : i.season_badge === filterSeason)) return false
     if (filterJeolgi && i.jeolgi_badge !== filterJeolgi) return false
     if (filterSpecialBadge && i.special_badge !== filterSpecialBadge) return false
     return true
@@ -1024,14 +1024,26 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
         </label>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginTop:4 }}>
           <div>
-            <label style={S.label}>🌸 계절 뱃지</label>
-            <select value={f.season_badge||''} onChange={e=>setF(p=>({...p,season_badge:e.target.value||null}))} style={S.input}>
-              <option value="">없음</option>
-              <option value="spring">🌸 봄</option>
-              <option value="summer">🌞 여름</option>
-              <option value="fall">🍂 가을</option>
-              <option value="winter">❄️ 겨울</option>
-            </select>
+            <label style={S.label}>🌸 계절 뱃지 (복수 선택 가능)</label>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:4 }}>
+              {[['spring','🌸 봄','#166534','#f0fdf4'],['summer','🌞 여름','#92400e','#fefce8'],
+                ['fall','🍂 가을','#c2410c','#fff7ed'],['winter','❄️ 겨울','#1e40af','#eff6ff']
+              ].map(([v,label,color,bg]) => {
+                const arr = Array.isArray(f.season_badge) ? f.season_badge : (f.season_badge ? [f.season_badge] : [])
+                const on = arr.includes(v)
+                return (
+                  <button key={v} type="button" onClick={()=>{
+                    const cur = Array.isArray(f.season_badge)?f.season_badge:(f.season_badge?[f.season_badge]:[])
+                    setF(p=>({...p, season_badge: on ? cur.filter(x=>x!==v) : [...cur,v]}))
+                  }} style={{ padding:'4px 10px', borderRadius:20, fontSize:11, cursor:'pointer',
+                    border:`1.5px solid ${on?color:'#d1e8d1'}`,
+                    background:on?bg:'#fff', color:on?color:'#4b6e4b',
+                    fontWeight:on?700:400, fontFamily:"'Outfit',sans-serif" }}>
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <div>
             <label style={S.label}>🎋 절기 뱃지</label>
@@ -1239,7 +1251,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                   border:`1.5px solid ${filterSeason===v?border:'#d1e8d1'}`,
                   background:filterSeason===v?bg:'#fff', color:filterSeason===v?color:'#4b6e4b',
                   fontWeight:filterSeason===v?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
-                {label} <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>i.season_badge===v).length})</span>
+                {label} <span style={{ fontSize:10, opacity:.7 }}>({list.filter(i=>Array.isArray(i.season_badge)?i.season_badge.includes(v):i.season_badge===v).length})</span>
               </button>
             ))}
           </div>
@@ -1384,10 +1396,12 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                       {i.is_superfood && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', border:'1px solid #f59e0b', color:'#92400e', fontWeight:700 }}>🌟 슈퍼푸드</span>}
                       {i.is_global && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#dbeafe', border:'1px solid #3b82f6', color:'#1d4ed8', fontWeight:700 }}>🌍 해외</span>}
                       {i.is_brand && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#ffe4e6', border:'1px solid #e63946', color:'#e63946', fontWeight:700 }}>🏷️ 지역브랜드</span>}
-                      {i.season_badge === 'spring'  && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#f0fdf4', border:'1px solid #86efac', color:'#166534', fontWeight:700 }}>🌸 봄</span>}
-                      {i.season_badge === 'summer'  && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fefce8', border:'1px solid #fde68a', color:'#92400e', fontWeight:700 }}>🌞 여름</span>}
-                      {i.season_badge === 'fall'    && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fff7ed', border:'1px solid #fdba74', color:'#c2410c', fontWeight:700 }}>🍂 가을</span>}
-                      {i.season_badge === 'winter'  && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#eff6ff', border:'1px solid #bae6fd', color:'#1e40af', fontWeight:700 }}>❄️ 겨울</span>}
+                      {(Array.isArray(i.season_badge)?i.season_badge:[i.season_badge]).filter(Boolean).map(s=>(
+                        s==='spring'?<span key="sp" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>🌸 봄</span>:
+                        s==='summer'?<span key="su" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fefce8',border:'1px solid #fde68a',color:'#92400e',fontWeight:700}}>🌞 여름</span>:
+                        s==='fall'  ?<span key="fa" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fff7ed',border:'1px solid #fdba74',color:'#c2410c',fontWeight:700}}>🍂 가을</span>:
+                        s==='winter'?<span key="wi" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#eff6ff',border:'1px solid #bae6fd',color:'#1e40af',fontWeight:700}}>❄️ 겨울</span>:null
+                      ))}
                       {i.jeolgi_badge === 'seollal' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fdf4ff', border:'1px solid #e9d5ff', color:'#7e22ce', fontWeight:700 }}>🎍 설날</span>}
                       {i.jeolgi_badge === 'sambok'  && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fff1f2', border:'1px solid #fecdd3', color:'#be123c', fontWeight:700 }}>🔥 삼복</span>}
                       {i.jeolgi_badge === 'chopbok' && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fff1f2', border:'1px solid #fecdd3', color:'#be123c', fontWeight:700 }}>🔥 초복</span>}
@@ -1446,7 +1460,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                         description:i.description||'', coupang_url:i.coupang_url||'', caution:i.caution||'',
                         is_special:i.is_special||false, is_limited:i.is_limited||false, limited_days:i.limited_days||'',
                         is_global:i.is_global||false, is_brand:i.is_brand||false,
-                        season_badge:i.season_badge||null, jeolgi_badge:i.jeolgi_badge||null, special_badge:i.special_badge||null,
+                        season_badge:i.season_badge||[], jeolgi_badge:i.jeolgi_badge||null, special_badge:i.special_badge||null,
                         age_groups:i.age_groups||[], gender:i.gender||'all', months:i.months||[] })
                       setEditRegionForm(EMPTY_REGION); setEditLinkHealthId('')
                       loadEditLinks(i.id)
