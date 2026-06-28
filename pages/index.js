@@ -152,39 +152,39 @@ export default function Home() {
                         <div key={cardKey} className="card"
                           style={{ cursor:'pointer', padding:'10px 12px' }}
                           onClick={() => toggleCard(cardKey)}>
-                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
+                          {/* 타이틀 + 펼치기 */}
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
                             <span style={{ fontSize:15, fontWeight:900 }}>{food.ingredient}</span>
                             <span style={{ fontSize:11, color:'var(--text3)' }}>{expanded ? '▲' : '▼'}</span>
                           </div>
-                          <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:4 }}>
-                            {food.is_superfood && <span style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🌟</span>}
-                            {food.is_special && <span style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🏆</span>}
-                            {food.is_brand && <span style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fee2e2',color:'#dc2626',border:'1px solid #f87171'}}>🏷️</span>}
-                            {(food.season_badge||[]).map(s=>s==='spring'?<span key={s} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌸</span>:s==='summer'?<span key={s} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fefce8',color:'#92400e',border:'1px solid #fde68a'}}>🌞</span>:s==='fall'?<span key={s} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🍂</span>:s==='winter'?<span key={s} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>❄️</span>:null)}
-                            {(food.habitat_badge||[]).map(h=>h==='ocean'?<span key={h} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#f0f9ff',color:'#0c4a6e',border:'1px solid #38bdf8'}}>🌊</span>:h==='island'?<span key={h} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#f0f9ff',color:'#0369a1',border:'1px solid #7dd3fc'}}>🏝️</span>:h==='tidal'?<span key={h} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#f0fdfa',color:'#0f766e',border:'1px solid #5eead4'}}>🌊</span>:h==='mountain'?<span key={h} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#f7fee7',color:'#3f6212',border:'1px solid #a3e635'}}>🏔️</span>:h==='freshwater'?<span key={h} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #93c5fd'}}>🐟</span>:null)}
-                            {(food.farming_badge||[]).map(p=>p==='aquaculture'?<span key={p} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #d8b4fe'}}>🤿</span>:p==='wild'?<span key={p} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🎣</span>:p==='fermented'?<span key={p} style={{fontSize:9,padding:'1px 4px',borderRadius:999,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🥟</span>:null)}
+                          {/* 지역 뱃지 */}
+                          {region && <span className="badge" style={{ background:`${region.color}22`, color:region.color, border:`1px solid ${region.color}44`, fontSize:11, marginBottom:5, display:'inline-flex', alignItems:'center', gap:3 }}>{region.icon} {region.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').trim()}</span>}
+                          {/* 특산품/브랜드 뱃지 */}
+                          <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:5 }}>
+                            {food.is_special && <span style={{fontSize:11,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🏆 특산품</span>}
+                            {food.is_superfood && <span style={{fontSize:11,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🌟 슈퍼푸드</span>}
+                            {food.is_brand && <span style={{fontSize:11,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fee2e2',color:'#dc2626',border:'1px solid #f87171'}}>🏷️ 브랜드</span>}
                           </div>
-                          {region && <span className="badge" style={{ background:`${region.color}22`, color:region.color, border:`1px solid ${region.color}44`, fontSize:9, marginBottom:4, display:'inline-block' }}>{region.icon} {region.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').trim()}</span>}
-                          <p style={{ fontSize:10, color:'var(--text2)', lineHeight:1.4 }}>
+                          {/* 건강효능 뱃지 */}
+                          {(food.healthBenefits||[]).length > 0 && (
+                            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:5 }}>
+                              {(food.healthBenefits||[]).slice(0,3).map(b => {
+                                const {color,bg} = getBenefitStyle(b.category)
+                                return <span key={b.id} style={{fontSize:11,padding:'2px 7px',borderRadius:999,fontWeight:600,background:bg,border:`1px solid ${color}44`,color}}>{b.name}</span>
+                              })}
+                              {(food.healthBenefits||[]).length > 3 && <span style={{fontSize:11,color:'#9ca3af',padding:'2px 4px'}}>+{(food.healthBenefits||[]).length-3}</span>}
+                            </div>
+                          )}
+                          {/* 설명 */}
+                          <p style={{ fontSize:11, color:'var(--text2)', lineHeight:1.4 }}>
                             💚 {expanded ? food.health : shortDesc}
                           </p>
                           {expanded && (
-                            <div style={{ marginTop:8 }}>
-                              {(food.healthBenefits||[]).length > 0 && (
-                                <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginBottom:6 }}>
-                                  {(food.healthBenefits||[]).slice(0,4).map(b => {
-                                    const {color,bg} = getBenefitStyle(b.category)
-                                    return <span key={b.id} style={{fontSize:9,padding:'1px 5px',borderRadius:999,fontWeight:600,background:bg,border:`1px solid ${color}44`,color}}>{b.name}</span>
-                                  })}
-                                  {(food.healthBenefits||[]).length > 4 && <span style={{fontSize:9,color:'#9ca3af'}}>+{(food.healthBenefits||[]).length-4}</span>}
-                                </div>
-                              )}
-                              <Link href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
-                                onClick={e => e.stopPropagation()}
-                                style={{ fontSize:10, color:'var(--accent)', fontWeight:700, textDecoration:'none' }}>
-                                자세히 보기 →
-                              </Link>
-                            </div>
+                            <Link href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
+                              onClick={e => e.stopPropagation()}
+                              style={{ fontSize:11, color:'var(--accent)', fontWeight:700, textDecoration:'none', marginTop:6, display:'inline-block' }}>
+                              자세히 보기 →
+                            </Link>
                           )}
                         </div>
                       )
@@ -195,25 +195,39 @@ export default function Home() {
                   <div className="grid-auto">
                     {filteredFoods.map((food, i) => {
                       const region = REGIONS.find(r => r.id === food.region)
+                      const BENEFIT_COLOR = {'면역':['#16a34a','#dcfce7'],'두뇌':['#6366f1','#ede9fe'],'눈':['#6366f1','#ede9fe'],'혈관':['#ef4444','#fee2e2'],'심장':['#ef4444','#fee2e2'],'혈압':['#ef4444','#fee2e2'],'뼈':['#f59e0b','#fef3c7'],'관절':['#f59e0b','#fef3c7'],'소화':['#10b981','#d1fae5'],'장':['#10b981','#d1fae5'],'피부':['#ec4899','#fce7f3'],'미용':['#ec4899','#fce7f3'],'체중':['#8b5cf6','#ede9fe'],'다이어트':['#8b5cf6','#ede9fe'],'항암':['#dc2626','#fee2e2'],'항산화':['#16a34a','#dcfce7']}
+                      const getBenefitStyle = (cat) => { for (const [key,[color,bg]] of Object.entries(BENEFIT_COLOR)) { if(cat&&cat.includes(key)) return {color,bg} } return {color:'#6b7280',bg:'#f3f4f6'} }
                       return (
                         <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
                           onMouseEnter={e => e.currentTarget.style.borderColor = region?.color}
                           onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                            <span style={{ fontSize: 20, fontWeight: 900 }}>{food.ingredient}</span>
+                          {/* 타이틀 + 지역 */}
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                            <span style={{ fontSize:20, fontWeight:900 }}>{food.ingredient}</span>
                             {region && (
-                              <span className="badge" style={{ background: `${region.color}22`, color: region.color, border: `1px solid ${region.color}44` }}>
+                              <span className="badge" style={{ background:`${region.color}22`, color:region.color, border:`1px solid ${region.color}44` }}>
                                 {region.icon} {region.name}
                               </span>
                             )}
                           </div>
-                          <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 10 }}>
+                          {/* 설명 2줄 */}
+                          <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:8, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
                             💚 {food.health}
                           </p>
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            {(food.tvPrograms || []).map(tv => (
-                              <span key={tv} className="tag">📺 {tv}</span>
-                            ))}
+                          {/* 뱃지들 */}
+                          <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                            {food.is_special && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🏆 특산품</span>}
+                            {food.is_superfood && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🌟 슈퍼푸드</span>}
+                            {food.is_brand && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fee2e2',color:'#dc2626',border:'1px solid #f87171'}}>🏷️ 브랜드</span>}
+                            {(food.season_badge||[]).map(s=>s==='spring'?<span key={s} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌸 봄</span>:s==='summer'?<span key={s} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#92400e',border:'1px solid #fde68a'}}>🌞 여름</span>:s==='fall'?<span key={s} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🍂 가을</span>:s==='winter'?<span key={s} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>❄️ 겨울</span>:null)}
+                            {(food.habitat_badge||[]).map(h=>h==='ocean'?<span key={h} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0c4a6e',border:'1px solid #38bdf8'}}>🌊 바다</span>:h==='island'?<span key={h} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0369a1',border:'1px solid #7dd3fc'}}>🏝️ 섬</span>:h==='tidal'?<span key={h} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdfa',color:'#0f766e',border:'1px solid #5eead4'}}>🌊 갯벌</span>:h==='mountain'?<span key={h} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f7fee7',color:'#3f6212',border:'1px solid #a3e635'}}>🏔️ 산</span>:h==='freshwater'?<span key={h} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #93c5fd'}}>🐟 민물</span>:null)}
+                            {(food.farming_badge||[]).map(p=>p==='aquaculture'?<span key={p} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #d8b4fe'}}>🤿 양식</span>:p==='wild'?<span key={p} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🎣 자연산</span>:p==='fermented'?<span key={p} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🥟 발효</span>:null)}
+                            {(food.healthBenefits||[]).slice(0,3).map(b => {
+                              const {color,bg} = getBenefitStyle(b.category)
+                              return <span key={b.id} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:600,background:bg,border:`1px solid ${color}44`,color}}>{b.name}</span>
+                            })}
+                            {(food.healthBenefits||[]).length > 3 && <span style={{fontSize:10,color:'#9ca3af',padding:'2px 4px'}}>+{(food.healthBenefits||[]).length-3}</span>}
+                            {(food.tvPrograms||[]).map(tv => <span key={tv} className="tag">📺 {tv}</span>)}
                           </div>
                         </Link>
                       )
