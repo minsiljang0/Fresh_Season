@@ -7,7 +7,7 @@ const supabase = createClient(
 
 function auth(req) {
   const token = req.headers['x-admin-token']
-  return token && token === process.env.ADMIN_TOKEN
+  return token && token === process.env.ADMIN_SECRET_TOKEN
 }
 
 export default async function handler(req, res) {
