@@ -906,12 +906,12 @@ export default function MapPage() {
               return (
                 <div style={{ flex:1, background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:16, padding:'20px', position:'sticky', top:80, height:'calc(100vh - 120px)', maxHeight:520, display:'flex', flexDirection:'column' }}>
                   <p style={{ fontSize:12, color:'var(--text3)', fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>📊 지역별 식재료 수</p>
-                  <div style={{ display:'flex', alignItems:'flex-end', gap:5, flex:1 }}>
+                  <div style={{ display:'flex', alignItems:'flex-end', gap:2, flex:1 }}>
                     {chartData.map(d => (
                       <div key={d.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3, height:'100%', justifyContent:'flex-end' }}>
                         <span style={{ fontSize:9, color:'var(--text3)', fontWeight:700, lineHeight:1 }}>{d.count}</span>
                         <div style={{ width:'100%', height:`${Math.max((d.count/maxVal)*85,1)}%`, background:d.color, borderRadius:'4px 4px 0 0', opacity:0.8, transition:'height 0.4s' }} />
-                        <span style={{ fontSize:9, color:'var(--text3)', lineHeight:1, textAlign:'center', writingMode:'vertical-rl', transform:'rotate(180deg)', height:36 }}>{d.name}</span>
+                        <span style={{ fontSize:9, color:'var(--text3)', lineHeight:1.2, textAlign:'center', writingMode:'vertical-lr', height:36 }}>{d.name}</span>
                       </div>
                     ))}
                   </div>
