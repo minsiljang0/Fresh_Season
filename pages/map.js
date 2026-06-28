@@ -917,6 +917,25 @@ export default function MapPage() {
               setSelRegion={setSelRegion}
               selMonth={selMonth}
             />
+            {/* 지역별 식재료 수 바 차트 */}
+            {(() => {
+              const chartData = REGIONS.map(r => ({ id:r.id, name:r.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').replace('도','도').trim(), color:r.color, count:regionCounts[r.id]||0 }))
+              const maxVal = Math.max(...chartData.map(d=>d.count), 1)
+              return (
+                <div style={{ padding:'10px 12px 8px', borderTop:'1px solid var(--border)' }}>
+                  <p style={{ fontSize:9, color:'var(--text3)', fontWeight:700, marginBottom:6, letterSpacing:'0.05em' }}>📊 지역별 식재료 수</p>
+                  <div style={{ display:'flex', alignItems:'flex-end', gap:3, height:60 }}>
+                    {chartData.map(d => (
+                      <div key={d.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+                        <span style={{ fontSize:7, color:'var(--text3)', fontWeight:700, lineHeight:1 }}>{d.count}</span>
+                        <div style={{ width:'100%', height: `${Math.max((d.count/maxVal)*44, 2)}px`, background: d.color, borderRadius:'3px 3px 0 0', opacity:0.8, transition:'height 0.3s' }} />
+                        <span style={{ fontSize:6.5, color:'var(--text3)', lineHeight:1, textAlign:'center', writingMode:'initial' }}>{d.name.slice(0,2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
           {/* 오른쪽: 검색 결과 */}
