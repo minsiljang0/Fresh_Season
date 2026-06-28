@@ -958,6 +958,25 @@ export default function MapPage() {
                 <KoreaMap filtered={filtered} selRegion={selRegion} setSelRegion={setSelRegion} selMonth={selMonth} />
               </div>
             )}
+            {/* 카테고리 그리드 — 지도 아래 항상 표시 */}
+            {totalCount > 0 && (
+              <div style={{ marginTop:10, display:'flex', gap:5, flexWrap:'wrap' }}>
+                {CATEGORIES.filter(c => (categoryCounts[c.id]||0) > 0).map(c => (
+                  <button key={c.id}
+                    onClick={() => setSelCategory(c.id === selCategory ? 'all' : c.id)}
+                    style={{
+                      display:'flex', alignItems:'center', gap:4,
+                      background: selCategory===c.id ? c.color+'22' : 'var(--surface)',
+                      border: `1.5px solid ${selCategory===c.id ? c.color : 'var(--border)'}`,
+                      borderRadius:8, padding:'4px 7px', cursor:'pointer', fontFamily:'inherit',
+                      transition:'all 0.15s',
+                    }}>
+                    <span style={{ fontSize:14 }}>{c.emoji}</span>
+                    <span style={{ fontSize:11, fontWeight:900, color:c.color }}>{categoryCounts[c.id]||0}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1077,28 +1096,28 @@ export default function MapPage() {
 
             {/* ── 카드 뷰 ── */}
             {view === 'cards' && totalCount > 0 && (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
+              <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fill,minmax(240px,1fr))', gap: isMobile ? 8 : 12 }}>
                 {filtered.map((f, i) => {
                   const regionInfo = REGIONS.find(x => x.id === f.region)
                   const cat = CATEGORIES.find(c => c.id === f.category)
                   return (
                     <div key={i} style={{
                       background:'var(--surface)', border:'1.5px solid var(--border)',
-                      borderRadius:14, padding:16, transition:'border-color 0.15s',
+                      borderRadius: isMobile ? 10 : 14, padding: isMobile ? '10px 10px' : 16, transition:'border-color 0.15s',
                     }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-                        <div>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom: isMobile ? 6 : 10 }}>
+                        <div style={{ minWidth:0, flex:1 }}>
                           <Link href={`/ingredient/${encodeURIComponent(f.ingredient)}`}
                             style={{ textDecoration:'none', color:'inherit' }}>
-                            <h3 style={{ fontSize:17, fontWeight:900, marginBottom:2 }}>{f.ingredient}</h3>
+                            <h3 style={{ fontSize: isMobile ? 14 : 17, fontWeight:900, marginBottom:2 }}>{f.ingredient}</h3>
                           </Link>
                           <Link href={`/region/${f.region}`} style={{ textDecoration:'none' }}>
-                            <span style={{ fontSize:12, color:'var(--text2)' }}>{regionInfo?.icon} {regionInfo?.name?.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').replace('도','도').trim()}</span>
+                            <span style={{ fontSize: isMobile ? 11 : 12, color:'var(--text2)' }}>{regionInfo?.icon} {regionInfo?.name?.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').replace('도','도').trim()}</span>
                           </Link>
                         </div>
-                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, flexShrink:0, marginLeft:4 }}>
                           <span style={{
-                            fontSize:11, padding:'3px 8px', borderRadius:999, fontWeight:700,
+                            fontSize: isMobile ? 10 : 11, padding: isMobile ? '2px 6px' : '3px 8px', borderRadius:999, fontWeight:700,
                             background:categoryBg(f.category), color:categoryColor(f.category),
                             border:`1px solid ${categoryColor(f.category)}44`, flexShrink:0,
                           }}>{cat?.emoji} {cat?.label}</span>
@@ -1170,7 +1189,7 @@ export default function MapPage() {
                         </div>
                       </div>
 
-                      <p style={{ fontSize:11, color:'var(--text3)', marginBottom:8 }}>📍 {f.district}</p>
+                      <p style={{ fontSize: isMobile ? 10 : 11, color:'var(--text3)', marginBottom: isMobile ? 4 : 8 }}>📍 {f.district}</p>
 
                       <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:10 }}>
                         {selMonth !== 0
@@ -1193,14 +1212,14 @@ export default function MapPage() {
                           <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:8 }}>
                             {benefits.slice(0,5).map(b => {
                               const {color,bg} = getBenefitStyle(b.category)
-                              return <span key={b.id} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:600,background:bg,border:`1px solid ${color}44`,color}}>{b.name}</span>
+                              return <span key={b.id} style={{fontSize: isMobile ? 9 : 10, padding:'2px 5px',borderRadius:999,fontWeight:600,background:bg,border:`1px solid ${color}44`,color}}>{b.name}</span>
                             })}
                             {benefits.length > 5 && <span style={{fontSize:10,color:'#9ca3af',padding:'2px 4px'}}>+{benefits.length-5}</span>}
                           </div>
                         )
                       })()}
 
-                      <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.5, marginBottom:8 }}>
+                      <p style={{ fontSize: isMobile ? 11 : 12, color:'var(--text2)', lineHeight:1.5, marginBottom: isMobile ? 4 : 8 }}>
                         💊 {selHealth !== 'all'
                           ? f.health.split('·').map((part, pi) => {
                               const hb = dbHealthBenefits.find(h => h.id === selHealth)
