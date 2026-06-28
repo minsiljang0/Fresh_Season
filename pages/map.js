@@ -622,7 +622,7 @@ export default function MapPage() {
 
           {/* 건강 효능 */}
           <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
-            <SectionHeader label={<>💊 건강 효능 <span style={{fontSize:10,fontWeight:700,background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:999,padding:'1px 7px',marginLeft:4}}>{HEALTH_FILTERS.length}</span></>} skey="health" />
+            <SectionHeader label={`💊 건강 효능 (${HEALTH_FILTERS.length})`} skey="health" />
             {openSections.health && <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
               <select
                 value={selHealth}
@@ -1239,7 +1239,6 @@ export default function MapPage() {
                 })}
               </div>
             )}
-            </>
           </div>
         </div>
 
