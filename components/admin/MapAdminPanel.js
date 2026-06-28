@@ -1215,11 +1215,16 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                 fontSize:11, fontWeight:filterRegion===''?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>전체</button>
             {allRegionLabels.map(region => {
               const cnt = list.filter(i=>(i.regions_preview||[]).some(lbl=>lbl.includes(region.slice(0,2)))).length
+              const SITE_REGIONS = ['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주']
+              const isSite = SITE_REGIONS.some(r => region.startsWith(r))
+              const isActive = filterRegion === region
               return (
-                <button key={region} onClick={()=>setFilterRegion(filterRegion===region?'':region)}
-                  style={{ padding:'3px 8px', borderRadius:20, border:`1.5px solid ${filterRegion===region?'#16a34a':'#d1e8d1'}`,
-                    background:filterRegion===region?'#dcfce7':'#fff', color:filterRegion===region?'#15803d':'#4b6e4b',
-                    fontSize:11, fontWeight:filterRegion===region?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
+                <button key={region} onClick={()=>setFilterRegion(isActive?'':region)}
+                  style={{ padding:'3px 8px', borderRadius:20,
+                    border:`1.5px solid ${isActive?'#16a34a': isSite?'#0ea5e9':'#d1e8d1'}`,
+                    background: isActive?'#dcfce7': isSite?'#e0f2fe':'#fff',
+                    color: isActive?'#15803d': isSite?'#0369a1':'#4b6e4b',
+                    fontSize:11, fontWeight: isActive||isSite?700:400, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>
                   {region} <span style={{ fontSize:10, opacity:.7 }}>({cnt})</span>
                 </button>
               )
