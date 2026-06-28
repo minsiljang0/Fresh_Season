@@ -876,51 +876,69 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* ── 하단: 지도(1/3) + 결과(2/3) ── */}
-        {/* 모바일 토글 버튼 */}
-        {isMobile && (
-          <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-            <button onClick={() => setShowMap(v=>!v)} style={{
-              flex:1, padding:'10px', borderRadius:10, border:'1.5px solid var(--border)',
-              background: showMap ? 'var(--accent)' : 'var(--surface)', color: showMap ? '#fff' : 'var(--text2)',
-              fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit'
-            }}>🗺️ 지도 {showMap ? '닫기' : '보기'}</button>
-            <button onClick={() => setShowFilter(v=>!v)} style={{
-              flex:1, padding:'10px', borderRadius:10, border:'1.5px solid var(--border)',
-              background: showFilter ? 'var(--accent)' : 'var(--surface)', color: showFilter ? '#fff' : 'var(--text2)',
-              fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit'
-            }}>⚙️ 필터 {showFilter ? '닫기' : '열기'}</button>
+        {/* ── 하단: 지도 + 그래프 + 결과 ── */}
+
+        {/* 데스크탑: 지도 + 그래프 상단 가로 배치 */}
+        {!isMobile && (
+          <div style={{ display:'flex', gap:16, alignItems:'flex-start', marginBottom:16 }}>
+            {/* 지도 */}
+            <div style={{
+              flexShrink:0, width:320,
+              background:'var(--surface)', border:'1.5px solid var(--border)',
+              borderRadius:16, overflow:'hidden',
+              position:'sticky', top:80,
+              height:'calc(100vh - 120px)', maxHeight:520,
+            }}>
+              <KoreaMap
+                filtered={filtered}
+                selRegion={selRegion}
+                setSelRegion={setSelRegion}
+                selMonth={selMonth}
+              />
+            </div>
+            {/* 그래프 */}
+            {allFoods.length > 0 && (() => {
+              const chartData = REGION_ORDER.map(id => {
+                const r = REGIONS.find(x => x.id === id)
+                return { id, name: r ? r.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').trim() : id, color: r?.color || '#888', count: regionCounts[id] || 0 }
+              })
+              const maxVal = Math.max(...chartData.map(d => d.count), 1)
+              return (
+                <div style={{ flex:1, background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:16, padding:'20px', position:'sticky', top:80, height:'calc(100vh - 120px)', maxHeight:520, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+                  <p style={{ fontSize:12, color:'var(--text3)', fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>📊 지역별 식재료 수</p>
+                  <div style={{ display:'flex', alignItems:'flex-end', gap:5, flex:1, maxHeight:400 }}>
+                    {chartData.map(d => (
+                      <div key={d.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3, height:'100%', justifyContent:'flex-end' }}>
+                        <span style={{ fontSize:9, color:'var(--text3)', fontWeight:700, lineHeight:1 }}>{d.count}</span>
+                        <div style={{ width:'100%', height:`${Math.max((d.count/maxVal)*85,1)}%`, background:d.color, borderRadius:'4px 4px 0 0', opacity:0.8, transition:'height 0.4s' }} />
+                        <span style={{ fontSize:9, color:'var(--text3)', lineHeight:1, textAlign:'center', writingMode:'vertical-rl', transform:'rotate(180deg)', height:36 }}>{d.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
 
-        <div style={{ display:'flex', gap:16, alignItems:'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
-
-          {/* 왼쪽: 한국 지도 */}
-          <div style={{
-            flexShrink:0,
-            width: isMobile ? '100%' : '33%',
-            minWidth: isMobile ? 'unset' : 200,
-            maxWidth: isMobile ? '100%' : 320,
-            background:'var(--surface)',
-            border:'1.5px solid var(--border)',
-            borderRadius:16,
-            overflow:'hidden',
-            position: isMobile ? 'relative' : 'sticky',
-            top: isMobile ? 'unset' : 80,
-            height: isMobile ? 280 : 'calc(100vh - 120px)',
-            maxHeight: isMobile ? 280 : 520,
-            display: isMobile && !showMap ? 'none' : 'block',
-          }}>
-            <KoreaMap
-              filtered={filtered}
-              selRegion={selRegion}
-              setSelRegion={setSelRegion}
-              selMonth={selMonth}
-            />
+        {/* 모바일: 지도 토글 버튼 */}
+        {isMobile && (
+          <div style={{ marginBottom:12 }}>
+            <button onClick={() => setShowMap(v=>!v)} style={{
+              width:'100%', padding:'10px', borderRadius:10, border:'1.5px solid var(--border)',
+              background: showMap ? 'var(--accent)' : 'var(--surface)', color: showMap ? '#fff' : 'var(--text2)',
+              fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit'
+            }}>🗺️ 지도 {showMap ? '닫기 ▲' : '보기 ▼'}</button>
+            {showMap && (
+              <div style={{ marginTop:8, borderRadius:16, overflow:'hidden', border:'1.5px solid var(--border)', height:280 }}>
+                <KoreaMap filtered={filtered} selRegion={selRegion} setSelRegion={setSelRegion} selMonth={selMonth} />
+              </div>
+            )}
           </div>
+        )}
 
-
-          {/* 오른쪽: 검색 결과 */}
+        {/* 카드 결과 영역 */}
+        <div style={{ width:'100%' }}>
           <div style={{ flex:1, minWidth:0 }}>
 
             {/* 요약 스탯 — 최상단 */}
@@ -1242,41 +1260,7 @@ export default function MapPage() {
             )}
           </div>
         </div>
-
-        {/* 지역별 식재료 수 바 차트 */}
-        {!isMobile && (() => {
-          const chartData = REGIONS.map(r => ({
-            id: r.id,
-            name: r.name.replace('특별자치도','').replace('광역시','').replace('특별자치시','').replace('특별시','').trim(),
-            color: r.color,
-            count: regionCounts[r.id] || 0
-          }))
-          const maxVal = Math.max(...chartData.map(d => d.count), 1)
-          return (
-            <div style={{
-              background:'var(--surface)', border:'1.5px solid var(--border)',
-              borderRadius:14, padding:'16px 20px', marginTop:16,
-            }}>
-              <p style={{ fontSize:11, color:'var(--text3)', fontWeight:700, marginBottom:12, letterSpacing:'0.05em' }}>📊 지역별 식재료 수</p>
-              <div style={{ display:'flex', alignItems:'flex-end', gap:4, height:90 }}>
-                {chartData.map(d => (
-                  <div key={d.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
-                    <span style={{ fontSize:8, color:'var(--text3)', fontWeight:700, lineHeight:1 }}>{d.count}</span>
-                    <div style={{
-                      width:'100%',
-                      height: `${Math.max((d.count/maxVal)*64, 2)}px`,
-                      background: d.color,
-                      borderRadius:'3px 3px 0 0',
-                      opacity:0.75,
-                      transition:'height 0.4s ease',
-                    }} />
-                    <span style={{ fontSize:8, color:'var(--text3)', lineHeight:1, textAlign:'center' }}>{d.name.slice(0,2)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })()}
+        </div>
 
       </main>
       <Footer />
