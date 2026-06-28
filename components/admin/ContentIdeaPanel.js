@@ -631,13 +631,11 @@ export default function ContentIdeaPanel({ adminToken }) {
               <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>{ingredients.length}개</span>
             )}
             <span style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8 }}>
-              {!ingLoaded && (
-                <button onClick={e => { e.stopPropagation(); loadIngredients(activeMonth) }}
-                  disabled={ingLoading}
-                  style={{ padding:'4px 12px', borderRadius:6, border:'none', background:ACCENT, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', opacity: ingLoading ? 0.6 : 1 }}>
-                  {ingLoading ? '불러오는 중...' : '불러오기'}
-                </button>
-              )}
+              <button onClick={e => { e.stopPropagation(); loadIngredients(activeMonth) }}
+                disabled={ingLoading}
+                style={{ padding:'4px 12px', borderRadius:6, border:'none', background: ingLoaded ? '#6b7280' : ACCENT, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', opacity: ingLoading ? 0.6 : 1 }}>
+                {ingLoading ? '처리 중...' : ingLoaded ? '업데이트' : '불러오기'}
+              </button>
               <span style={{ color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
             </span>
           </div>
