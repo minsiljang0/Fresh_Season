@@ -168,6 +168,17 @@ export default function MapPage() {
   const [tvShows, setTvShows]                = useState([])
   const [dbHealthBenefits, setDbHealthBenefits] = useState([])
   const searchRef = useRef(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showFilter, setShowFilter] = useState(false)
+  const [showMap, setShowMap] = useState(false)
+
+  // 모바일 감지
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   // DB 데이터 로드
   useEffect(() => {
@@ -526,7 +537,7 @@ export default function MapPage() {
       <main className="wrap" style={{ paddingBottom: 80 }}>
 
         {/* 헤더 */}
-        <section style={{ padding: '40px 0 24px', textAlign: 'center' }}>
+        <section style={{ padding: isMobile ? '20px 0 14px' : '40px 0 24px', textAlign: 'center' }}>
           <div style={{ display:'inline-block', padding:'4px 14px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:999, fontSize:12, fontWeight:700, color:'var(--text3)', marginBottom:16 }}>
             🗺 전국 제철 식재료 지도
           </div>
@@ -540,7 +551,15 @@ export default function MapPage() {
         </section>
 
         {/* ── 컨트롤 바 ── */}
-        <div style={{ background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:16, padding:20, marginBottom:20 }}>
+        {isMobile && (
+          <button onClick={() => setShowFilter(v=>!v)} style={{
+            width:'100%', padding:'12px', borderRadius:12, marginBottom:10,
+            border:'1.5px solid var(--border)', background: showFilter ? '#dcfce7' : 'var(--surface)',
+            color: showFilter ? '#15803d' : 'var(--text2)', fontWeight:700, fontSize:14,
+            cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8
+          }}>⚙️ 필터 {showFilter ? '닫기 ▲' : '열기 ▼'}</button>
+        )}
+        <div style={{ background:'var(--surface)', border:'1.5px solid var(--border)', borderRadius:16, padding: isMobile ? 14 : 20, marginBottom:20, display: isMobile && !showFilter ? 'none' : 'block' }}>
 
           {/* 검색 */}
           <div style={{ position:'relative', marginBottom:16 }}>
@@ -857,22 +876,39 @@ export default function MapPage() {
         </div>
 
         {/* ── 하단: 지도(1/3) + 결과(2/3) ── */}
-        <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
+        {/* 모바일 토글 버튼 */}
+        {isMobile && (
+          <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+            <button onClick={() => setShowMap(v=>!v)} style={{
+              flex:1, padding:'10px', borderRadius:10, border:'1.5px solid var(--border)',
+              background: showMap ? 'var(--accent)' : 'var(--surface)', color: showMap ? '#fff' : 'var(--text2)',
+              fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit'
+            }}>🗺️ 지도 {showMap ? '닫기' : '보기'}</button>
+            <button onClick={() => setShowFilter(v=>!v)} style={{
+              flex:1, padding:'10px', borderRadius:10, border:'1.5px solid var(--border)',
+              background: showFilter ? 'var(--accent)' : 'var(--surface)', color: showFilter ? '#fff' : 'var(--text2)',
+              fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit'
+            }}>⚙️ 필터 {showFilter ? '닫기' : '열기'}</button>
+          </div>
+        )}
+
+        <div style={{ display:'flex', gap:16, alignItems:'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
 
           {/* 왼쪽: 한국 지도 */}
           <div style={{
             flexShrink:0,
-            width:'33%',
-            minWidth:200,
-            maxWidth:320,
+            width: isMobile ? '100%' : '33%',
+            minWidth: isMobile ? 'unset' : 200,
+            maxWidth: isMobile ? '100%' : 320,
             background:'var(--surface)',
             border:'1.5px solid var(--border)',
             borderRadius:16,
             overflow:'hidden',
-            position:'sticky',
-            top:80,
-            height:'calc(100vh - 120px)',
-            maxHeight:520,
+            position: isMobile ? 'relative' : 'sticky',
+            top: isMobile ? 'unset' : 80,
+            height: isMobile ? 280 : 'calc(100vh - 120px)',
+            maxHeight: isMobile ? 280 : 520,
+            display: isMobile && !showMap ? 'none' : 'block',
           }}>
             <KoreaMap
               filtered={filtered}
