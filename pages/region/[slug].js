@@ -22,6 +22,14 @@ export default function RegionPage({ regionId }) {
   const [showCities, setShowCities]     = useState(false)
   const [allFoods, setAllFoods]         = useState([])
   const [loading, setLoading]           = useState(true)
+  const [isMobile, setIsMobile]         = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   // DB에서만 데이터 로드 — 하드코딩 없음
   useEffect(() => {
@@ -38,14 +46,18 @@ export default function RegionPage({ regionId }) {
 
   if (!region) return null
 
-  // 계절 or 월 필터 (월 우선)
+  // 계절 or 월 필터 (월 우선) + 가나다 정렬
   const filtered = useMemo(() => {
-    if (activeMonth) return allFoods.filter(f => f.months.includes(activeMonth))
-    if (activeSeason) {
+    let data
+    if (activeMonth) data = allFoods.filter(f => f.months.includes(activeMonth))
+    else if (activeSeason) {
       const s = SEASONS.find(s => s.id === activeSeason)
-      return allFoods.filter(f => s && f.months.some(m => s.months.includes(m)))
-    }
-    return allFoods
+      data = allFoods.filter(f => s && f.months.some(m => s.months.includes(m)))
+    } else data = allFoods
+    // 중복 제거 후 가나다 정렬
+    const seen = new Set()
+    return data.filter(f => { if(seen.has(f.ingredient)) return false; seen.add(f.ingredient); return true })
+               .sort((a,b) => a.ingredient.localeCompare(b.ingredient, 'ko'))
   }, [allFoods, activeSeason, activeMonth])
 
   const handleSeason = (id) => { setActiveMonth(null); setActiveSeason(prev => prev === id ? null : id) }
@@ -181,10 +193,12 @@ export default function RegionPage({ regionId }) {
             <p style={{ color:'var(--text3)', fontSize:14, padding:'20px 0' }}>불러오는 중...</p>
           ) : filtered.length === 0 ? (
             <p style={{ color:'var(--text3)', fontSize:14, padding:'20px 0' }}>해당 조건의 식재료가 없어요.</p>
-          ) : (
-            <div className="grid-auto">
+          ) : isMobile ? (
+            /* 모바일: 2열 그리드 소형 카드 */
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
               {filtered.map((food, i) => (
                 <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
+                  style={{ padding:'10px 12px' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = region.color}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
@@ -261,6 +275,25 @@ export default function RegionPage({ regionId }) {
                   <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
                     {(food.tvPrograms||[]).map(tv => <span key={tv} className="tag">📺 {tv}</span>)}
                   </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            /* 데스크탑: 원래 grid-auto 그대로 */
+            <div className="grid-auto">
+              {filtered.map((food, i) => (
+                <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
+                  onMouseEnter={e => e.currentTarget.style.borderColor = region.color}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                    <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
+                    <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
+                      {food.months.slice(0,5).map(m => (
+                        <span key={m} style={{ fontSize:9, padding:'1px 5px', borderRadius:4, background:'var(--surface2)', color:'var(--text3)' }}>{m}월</span>
+                      ))}
+                    </div>
+                  </div>
+                  <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>💚 {food.health}</p>
                 </Link>
               ))}
             </div>

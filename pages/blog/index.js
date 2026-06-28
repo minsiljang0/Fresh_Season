@@ -50,7 +50,6 @@ export default function BlogIndex() {
           {!loading && posts.length === 0 && (
             <div className="empty-state">
               <p>아직 발행된 글이 없어요.</p>
-              <small>Claude MCP 자동화로 글이 발행되면 여기에 나타납니다.</small>
             </div>
           )}
           <div className="grid-auto">

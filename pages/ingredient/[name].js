@@ -178,7 +178,6 @@ export default function IngredientPage({ ingredientName }) {
           {posts.length === 0 && (
             <div className="empty-state">
               <p>아직 관련 레시피 글이 없어요.</p>
-              <small>Claude MCP 자동화로 곧 발행될 예정이에요 🤖</small>
             </div>
           )}
           {posts.length > 0 && (
