@@ -132,7 +132,7 @@ function IngredientCard({ ing, onSave, onDelete, alreadySaved }) {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap', marginBottom:3 }}>
-            <span style={{ fontWeight:800, color:'#111', fontSize:13 }}>{ct.split(' ')[0]} {ing.name}</span>
+            <span style={{ fontWeight:800, color:'#111', fontSize:13 }}>{[...ct][0]} {ing.name}</span>
             {alreadySaved && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>✓ 저장됨</span>}
             {ing.is_special   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#b45309',fontWeight:700}}>🏆 특산</span>}
             {ing.is_limited   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#d1fae5',border:'1px solid #10b981',color:'#059669',fontWeight:700}}>⏰ {ing.limited_days||'기간한정'}</span>}
