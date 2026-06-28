@@ -609,16 +609,69 @@ export default function ContentIdeaPanel({ adminToken }) {
       {/* ── 제철 식재료 자동 로드 섹션 ── */}
       <div style={{ marginBottom: 20 }}>
         <div onClick={() => setShowIngredients(p => !p)} style={{
-          display:'flex', alignItems:'center', gap:8, padding:'10px 16px',
           background:'#fff', border:'1px solid #d1e8d1', borderRadius:10,
-          cursor:'pointer', marginBottom: showIngredients ? 10 : 0,
+          cursor:'pointer', marginBottom: showIngredients ? 10 : 0, overflow:'hidden',
         }}>
-          <span style={{ fontSize:14, fontWeight:700, color:'#0f1f0f' }}>🥕 {activeMonth}월 제철 식재료</span>
-          <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>
-            {ingLoading ? '로딩...' : `${ingredients.length}개`}
-          </span>
-          <span style={{ fontSize:11, color:'#9ca3af' }}>— 클릭해서 각도/키워드 입력 후 글감 저장</span>
-          <span style={{ marginLeft:'auto', color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px' }}>
+            <span style={{ fontSize:14, fontWeight:700, color:'#0f1f0f' }}>🥕 {activeMonth}월 제철 식재료</span>
+            <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>
+              {ingLoading ? '로딩...' : `${ingredients.length}개`}
+            </span>
+            <span style={{ fontSize:11, color:'#9ca3af' }}>— 클릭해서 각도/키워드 입력 후 글감 저장</span>
+            <span style={{ marginLeft:'auto', color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
+          </div>
+          {!ingLoading && ingredients.length > 0 && (() => {
+            const seasonMap  = { spring:'🌸 봄', summer:'🌞 여름', fall:'🍂 가을', winter:'❄️ 겨울' }
+            const jeolgiMap  = { seollal:'🎍 설날', sambok:'🔥 삼복', chopbok:'🔥 초복', jungbok:'🔥 중복', malbok:'🔥 말복', chuseok:'🌕 추석', gimjang:'🥬 김장철', dongji:'☯️ 동지', dano:'🌿 단오' }
+            const specialMap = { boyangshik:'💪 보양식', jeolgi_food:'🎋 절기음식', hangover:'🍶 해장', diet:'🥗 다이어트' }
+            const habitatMap = { island:'🏝️ 섬', freshwater:'🐟 민물', tidal:'🌊 갯벌', mountain:'🏔️ 산', ocean:'🌊 바다' }
+            const farmingMap = { aquaculture:'🤿 양식', wild:'🎣 자연산', fermented:'🥟 발효' }
+
+            const seasons  = [...new Set(ingredients.flatMap(i => (Array.isArray(i.season_badge) ? i.season_badge : [i.season_badge]).filter(Boolean)))]
+            const jeolgis  = [...new Set(ingredients.flatMap(i => (Array.isArray(i.jeolgi_badge) ? i.jeolgi_badge : [i.jeolgi_badge]).filter(Boolean)))]
+            const specials = [...new Set(ingredients.flatMap(i => (Array.isArray(i.special_badge) ? i.special_badge : [i.special_badge]).filter(Boolean)))]
+            const habitats = [...new Set(ingredients.flatMap(i => (Array.isArray(i.habitat_badge) ? i.habitat_badge : [i.habitat_badge]).filter(Boolean)))]
+            const farmings = [...new Set(ingredients.flatMap(i => (Array.isArray(i.farming_badge) ? i.farming_badge : [i.farming_badge]).filter(Boolean)))]
+            const regions  = [...new Set(ingredients.flatMap(i => i.regions_preview || []))]
+            const benefits = [...new Set(ingredients.flatMap(i => (i.health_benefits || []).map(h => h.name).filter(Boolean)))]
+
+            const allBadges = [
+              ...seasons.map(v  => ({ label: seasonMap[v]  || v, bg:'#fefce8', border:'#fde68a', color:'#92400e' })),
+              ...jeolgis.map(v  => ({ label: jeolgiMap[v]  || v, bg:'#fdf4ff', border:'#e9d5ff', color:'#7e22ce' })),
+              ...specials.map(v => ({ label: specialMap[v] || v, bg:'#fff7ed', border:'#fed7aa', color:'#c2410c' })),
+              ...habitats.map(v => ({ label: habitatMap[v] || v, bg:'#f0f9ff', border:'#7dd3fc', color:'#0369a1' })),
+              ...farmings.map(v => ({ label: farmingMap[v] || v, bg:'#fdf4ff', border:'#d8b4fe', color:'#7e22ce' })),
+            ]
+
+            return (
+              <div style={{ padding:'0 16px 10px', borderTop:'1px solid #f0fdf4', display:'flex', flexDirection:'column', gap:6 }}>
+                {allBadges.length > 0 && (
+                  <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
+                    <span style={{ fontSize:11, color:'#9ca3af', fontWeight:600, minWidth:40 }}>뱃지</span>
+                    {allBadges.map((b, i) => (
+                      <span key={i} style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:b.bg, border:`1px solid ${b.border}`, color:b.color, fontWeight:700 }}>{b.label}</span>
+                    ))}
+                  </div>
+                )}
+                {regions.length > 0 && (
+                  <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
+                    <span style={{ fontSize:11, color:'#9ca3af', fontWeight:600, minWidth:40 }}>지역</span>
+                    {regions.map((r, i) => (
+                      <span key={i} style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#dbeafe', border:'1px solid #93c5fd', color:'#1d4ed8', fontWeight:700 }}>{r}</span>
+                    ))}
+                  </div>
+                )}
+                {benefits.length > 0 && (
+                  <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
+                    <span style={{ fontSize:11, color:'#9ca3af', fontWeight:600, minWidth:40 }}>효능</span>
+                    {benefits.map((b, i) => (
+                      <span key={i} style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#f0fdf4', border:'1px solid #86efac', color:'#16a34a', fontWeight:700 }}>💊 {b}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
 
         {showIngredients && (
