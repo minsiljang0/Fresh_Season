@@ -132,7 +132,7 @@ export default function Home() {
             : filteredFoods.length === 0
               ? <p style={{ color: 'var(--text2)', fontSize: 14 }}>해당 조건의 제철 재료가 없어요.</p>
               : (
-                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8 }}>
                   {filteredFoods.map((food, i) => {
                     const region = REGIONS.find(r => r.id === food.region)
                     const cardKey = food.ingredient + '_' + i
