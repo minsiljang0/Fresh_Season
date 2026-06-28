@@ -240,6 +240,23 @@ export default function RegionPage({ regionId }) {
                       p==='fermented'  ?<span key="fer" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🥟 발효</span>:null
                     ))}
                   </div>
+                  {/* 건강효능 태그 */}
+                  {(food.healthBenefits||[]).length > 0 && (() => {
+                    const BENEFIT_COLOR = {'면역':['#16a34a','#dcfce7'],'두뇌':['#6366f1','#ede9fe'],'눈':['#6366f1','#ede9fe'],'혈관':['#ef4444','#fee2e2'],'심장':['#ef4444','#fee2e2'],'혈압':['#ef4444','#fee2e2'],'뼈':['#f59e0b','#fef3c7'],'관절':['#f59e0b','#fef3c7'],'소화':['#10b981','#d1fae5'],'장':['#10b981','#d1fae5'],'피부':['#ec4899','#fce7f3'],'미용':['#ec4899','#fce7f3'],'체중':['#8b5cf6','#ede9fe'],'다이어트':['#8b5cf6','#ede9fe'],'항암':['#dc2626','#fee2e2'],'항산화':['#16a34a','#dcfce7']}
+                    const getBenefitStyle = (cat) => {
+                      for (const [key,[color,bg]] of Object.entries(BENEFIT_COLOR)) { if(cat&&cat.includes(key)) return {color,bg} }
+                      return {color:'#6b7280',bg:'#f3f4f6'}
+                    }
+                    return (
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:8 }}>
+                        {(food.healthBenefits||[]).slice(0,5).map(b => {
+                          const {color,bg} = getBenefitStyle(b.category)
+                          return <span key={b.id} style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:600,background:bg,border:`1px solid ${color}44`,color}}>{b.name}</span>
+                        })}
+                        {(food.healthBenefits||[]).length > 5 && <span style={{fontSize:10,color:'#9ca3af',padding:'2px 4px'}}>+{(food.healthBenefits||[]).length-5}</span>}
+                      </div>
+                    )
+                  })()}
                   <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>💚 {food.health}</p>
                   <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
                     {(food.tvPrograms||[]).map(tv => <span key={tv} className="tag">📺 {tv}</span>)}

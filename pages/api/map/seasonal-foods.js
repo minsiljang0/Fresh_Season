@@ -59,6 +59,10 @@ export default async function handler(req, res) {
           .map(ih => ih.health_benefits?.id)
           .filter(Boolean)
 
+        const healthBenefitsList = (row.ingredients.ingredient_health || [])
+          .map(ih => ih.health_benefits)
+          .filter(Boolean)
+
         return {
           ingredient:   row.ingredients.name,
           category:     row.ingredients.category || 'veg',
@@ -67,6 +71,7 @@ export default async function handler(req, res) {
           months:       Array.isArray(row.months) ? row.months : [],
           health:       row.ingredients.description || '',
           healthIds,
+          healthBenefits: healthBenefitsList,
           tvPrograms:   [],
           caution:      row.ingredients.caution || '',
           is_special:   row.ingredients.is_special || false,
