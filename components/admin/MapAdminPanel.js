@@ -1316,7 +1316,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
           {/* 서식지 필터 */}
           <div style={{ width:'100%', display:'flex', gap:4, flexWrap:'wrap', marginTop:4 }}>
             <span style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', alignSelf:'center', marginRight:2 }}>🏝️ 서식지:</span>
-            {[['island','🏝️ 섬','#0369a1','#f0f9ff','#7dd3fc'],
+            {[['ocean','🌊 바다','#0c4a6e','#f0f9ff','#38bdf8'],
+              ['island','🏝️ 섬','#0369a1','#f0f9ff','#7dd3fc'],
               ['freshwater','🐟 민물','#1d4ed8','#eff6ff','#93c5fd'],
               ['tidal','🌊 갯벌','#0f766e','#f0fdfa','#5eead4'],
               ['mountain','🏔️ 산','#3f6212','#f7fee7','#a3e635']
@@ -1484,7 +1485,8 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                         h==='island'     ?<span key="isl" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0f9ff',border:'1px solid #7dd3fc',color:'#0369a1',fontWeight:700}}>🏝️ 섬</span>:
                         h==='freshwater' ?<span key="frw" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#eff6ff',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>🐟 민물</span>:
                         h==='tidal'      ?<span key="tid" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0fdfa',border:'1px solid #5eead4',color:'#0f766e',fontWeight:700}}>🌊 갯벌</span>:
-                        h==='mountain'   ?<span key="mtn" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f7fee7',border:'1px solid #a3e635',color:'#3f6212',fontWeight:700}}>🏔️ 산</span>:null
+                        h==='mountain'   ?<span key="mtn" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f7fee7',border:'1px solid #a3e635',color:'#3f6212',fontWeight:700}}>🏔️ 산</span>:
+                        h==='ocean'      ?<span key="ocn" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#f0f9ff',border:'1px solid #38bdf8',color:'#0c4a6e',fontWeight:700}}>🌊 바다</span>:null
                       ))}
                       {(Array.isArray(i.farming_badge)?i.farming_badge:[i.farming_badge]).filter(Boolean).map(p=>(
                         p==='aquaculture'?<span key="aqu" style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fdf4ff',border:'1px solid #d8b4fe',color:'#7e22ce',fontWeight:700}}>🤿 양식</span>:

@@ -740,6 +740,34 @@ export default function MapPage() {
             </div>
           </div>
 
+          {/* 서식지 뱃지 필터 */}
+          <div style={{ marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🗺️ 서식지</p>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+              {[
+                { key:'ocean',      label:'🌊 바다',  bg:'#f0f9ff', color:'#0c4a6e', border:'#38bdf8' },
+                { key:'island',     label:'🏝️ 섬',    bg:'#f0f9ff', color:'#0369a1', border:'#7dd3fc' },
+                { key:'tidal',      label:'🌊 갯벌',  bg:'#f0fdfa', color:'#0f766e', border:'#5eead4' },
+                { key:'freshwater', label:'🐟 민물',  bg:'#eff6ff', color:'#1d4ed8', border:'#93c5fd' },
+                { key:'mountain',   label:'🏔️ 산',    bg:'#f7fee7', color:'#3f6212', border:'#a3e635' },
+              ].map(h => (
+                <button key={h.key} onClick={() => setSelHabitat(v => v === h.key ? '' : h.key)}
+                  style={{
+                    padding:'4px 10px', borderRadius:20, border:'1.5px solid', fontSize:12,
+                    cursor:'pointer', fontFamily:'inherit', fontWeight: selHabitat===h.key ? 700 : 400,
+                    borderColor: selHabitat===h.key ? h.border : 'var(--border)',
+                    background: selHabitat===h.key ? h.bg : 'var(--surface2)',
+                    color: selHabitat===h.key ? h.color : 'var(--text2)',
+                  }}>
+                  {h.label}
+                  <span style={{ marginLeft:4, fontSize:10, fontWeight:700, background:'rgba(0,0,0,0.06)', borderRadius:999, padding:'1px 5px' }}>
+                    {allFoods.filter(f => Array.isArray(f.habitat_badge) ? f.habitat_badge.includes(h.key) : f.habitat_badge === h.key).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 카테고리 */}
           <div style={{ marginBottom:14 }}>
             <p style={{ fontSize:11, fontWeight:700, color:'var(--text3)', marginBottom:8, letterSpacing:'0.05em' }}>🏷 카테고리</p>
@@ -1038,7 +1066,8 @@ export default function MapPage() {
                               h==='island'     ?<span key="isl" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0369a1',border:'1px solid #7dd3fc'}}>🏝️ 섬</span>:
                               h==='freshwater' ?<span key="frw" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #93c5fd'}}>🐟 민물</span>:
                               h==='tidal'      ?<span key="tid" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdfa',color:'#0f766e',border:'1px solid #5eead4'}}>🌊 갯벌</span>:
-                              h==='mountain'   ?<span key="mtn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f7fee7',color:'#3f6212',border:'1px solid #a3e635'}}>🏔️ 산</span>:null
+                              h==='mountain'   ?<span key="mtn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f7fee7',color:'#3f6212',border:'1px solid #a3e635'}}>🏔️ 산</span>:
+                              h==='ocean'      ?<span key="ocn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0c4a6e',border:'1px solid #38bdf8'}}>🌊 바다</span>:null
                             ))}
                             {(Array.isArray(f.farming_badge)?f.farming_badge:[f.farming_badge]).filter(Boolean).map(p=>(
                               p==='aquaculture'?<span key="aqu" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #d8b4fe'}}>🤿 양식</span>:
