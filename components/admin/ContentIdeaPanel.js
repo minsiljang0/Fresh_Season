@@ -621,37 +621,31 @@ export default function ContentIdeaPanel({ adminToken }) {
             <span style={{ marginLeft:'auto', color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
           </div>
           {!ingLoading && ingredients.length > 0 && (() => {
-            // 월→계절, 절기 해당월 필터
-            const monthToSeason = { 3:'spring',4:'spring',5:'spring',6:'summer',7:'summer',8:'summer',9:'fall',10:'fall',11:'fall',12:'winter',1:'winter',2:'winter' }
+            const monthToSeason = {1:'winter',2:'winter',3:'spring',4:'spring',5:'spring',6:'summer',7:'summer',8:'summer',9:'fall',10:'fall',11:'fall',12:'winter'}
             const currentSeason = monthToSeason[activeMonth]
-            const jeolgiMonths  = { seollal:[1,2],chopbok:[7],jungbok:[7,8],malbok:[8],sambok:[7,8],chuseok:[9,10],gimjang:[11,12],dongji:[12],dano:[5,6],ipchun:[2],daeboreum:[1,2],hansik:[4] }
-            // 카드와 완전히 동일한 맵 (배열: [label, bg, border, color])
-            const seasonMap  = { spring:['🌸 봄','#f0fdf4','#86efac','#166534'],summer:['🌞 여름','#fefce8','#fde68a','#92400e'],fall:['🍂 가을','#fff7ed','#fdba74','#c2410c'],winter:['❄️ 겨울','#eff6ff','#bae6fd','#1e40af'] }
-            const jeolgiMap  = { seollal:['🎍 설날','#fdf4ff','#e9d5ff','#7e22ce'],sambok:['🔥 삼복','#fff1f2','#fecdd3','#be123c'],chopbok:['🔥 초복','#fff1f2','#fecdd3','#be123c'],jungbok:['🔥 중복','#fff1f2','#fecdd3','#be123c'],malbok:['🔥 말복','#fff1f2','#fecdd3','#be123c'],chuseok:['🌕 추석','#fefce8','#fde68a','#854d0e'],gimjang:['🥬 김장철','#f0fdf4','#86efac','#166534'],dongji:['☯️ 동지','#eff6ff','#bae6fd','#1e40af'],dano:['🌿 단오','#f0fdf4','#86efac','#166534'],ipchun:['🌱 입춘','#f0fdf4','#86efac','#166534'],daeboreum:['🌕 정월대보름','#fef9c3','#fde68a','#713f12'],hansik:['🌸 한식','#fdf4ff','#e9d5ff','#7e22ce'] }
-            const specialMap = { boyangshik:['💪 보양식','#fff7ed','#fed7aa','#c2410c'],jeolgi_food:['🎋 절기음식','#fdf4ff','#e9d5ff','#7e22ce'],hangover:['🍶 해장','#fefce8','#fde68a','#854d0e'],diet:['🥗 다이어트','#f0fdf4','#86efac','#166534'] }
-            const habitatMap = { island:['🏝️ 섬','#f0f9ff','#7dd3fc','#0369a1'],freshwater:['🐟 민물','#eff6ff','#93c5fd','#1d4ed8'],tidal:['🌊 갯벌','#f0fdfa','#5eead4','#0f766e'],mountain:['🏔️ 산','#f7fee7','#a3e635','#3f6212'],ocean:['🌊 바다','#f0f9ff','#38bdf8','#0c4a6e'] }
-            const farmingMap = { aquaculture:['🤿 양식','#fdf4ff','#d8b4fe','#7e22ce'],wild:['🎣 자연산','#fff7ed','#fdba74','#c2410c'],fermented:['🥟 발효','#fef9c3','#fde68a','#713f12'] }
-            // badge 배열 필드 중복제거 수집
+            const jeolgiMonths  = {seollal:[1,2],ipchun:[2],daeboreum:[1,2],hansik:[4],dano:[5,6],chopbok:[7],jungbok:[7,8],sambok:[7,8],malbok:[8],chuseok:[9,10],gimjang:[11,12],dongji:[12]}
+            const seasonMap  = {spring:['🌸 봄','#f0fdf4','#86efac','#166534'],summer:['🌞 여름','#fefce8','#fde68a','#92400e'],fall:['🍂 가을','#fff7ed','#fdba74','#c2410c'],winter:['❄️ 겨울','#eff6ff','#bae6fd','#1e40af']}
+            const jeolgiMap  = {seollal:['🎍 설날','#fdf4ff','#e9d5ff','#7e22ce'],sambok:['🔥 삼복','#fff1f2','#fecdd3','#be123c'],chopbok:['🔥 초복','#fff1f2','#fecdd3','#be123c'],jungbok:['🔥 중복','#fff1f2','#fecdd3','#be123c'],malbok:['🔥 말복','#fff1f2','#fecdd3','#be123c'],chuseok:['🌕 추석','#fefce8','#fde68a','#854d0e'],gimjang:['🥬 김장철','#f0fdf4','#86efac','#166534'],dongji:['☯️ 동지','#eff6ff','#bae6fd','#1e40af'],dano:['🌿 단오','#f0fdf4','#86efac','#166534'],ipchun:['🌱 입춘','#f0fdf4','#86efac','#166534'],daeboreum:['🌕 정월대보름','#fef9c3','#fde68a','#713f12'],hansik:['🌸 한식','#fdf4ff','#e9d5ff','#7e22ce']}
+            const specialMap = {boyangshik:['💪 보양식','#fff7ed','#fed7aa','#c2410c'],jeolgi_food:['🎋 절기음식','#fdf4ff','#e9d5ff','#7e22ce'],hangover:['🍶 해장','#fefce8','#fde68a','#854d0e'],diet:['🥗 다이어트','#f0fdf4','#86efac','#166534']}
+            const habitatMap = {island:['🏝️ 섬','#f0f9ff','#7dd3fc','#0369a1'],freshwater:['🐟 민물','#eff6ff','#93c5fd','#1d4ed8'],tidal:['🌊 갯벌','#f0fdfa','#5eead4','#0f766e'],mountain:['🏔️ 산','#f7fee7','#a3e635','#3f6212'],ocean:['🌊 바다','#f0f9ff','#38bdf8','#0c4a6e']}
+            const farmingMap = {aquaculture:['🤿 양식','#fdf4ff','#d8b4fe','#7e22ce'],wild:['🎣 자연산','#fff7ed','#fdba74','#c2410c'],fermented:['🥟 발효','#fef9c3','#fde68a','#713f12']}
             const collect = (field) => [...new Set(ingredients.flatMap(i=>(Array.isArray(i[field])?i[field]:[i[field]]).filter(Boolean)))]
             const seasons  = collect('season_badge').filter(v=>v===currentSeason)
             const jeolgis  = collect('jeolgi_badge').filter(v=>(jeolgiMonths[v]||[]).includes(activeMonth))
             const specials = collect('special_badge')
             const habitats = collect('habitat_badge')
             const farmings = collect('farming_badge')
-            // boolean 속성 — 있는 것만
+            const months   = [...new Set(ingredients.flatMap(i=>i.months||[]))].sort((a,b)=>a-b)
             const boolBadges = [
-              ingredients.some(i=>i.is_special)   && ['🏆 특산',      '#fef3c7','#f59e0b','#b45309'],
-              ingredients.some(i=>i.is_limited)   && ['⏰ 기간한정',  '#d1fae5','#10b981','#059669'],
-              ingredients.some(i=>i.is_superfood) && ['🌟 슈퍼푸드',  '#fef3c7','#f59e0b','#92400e'],
-              ingredients.some(i=>i.is_global)    && ['🌍 해외',       '#dbeafe','#3b82f6','#1d4ed8'],
-              ingredients.some(i=>i.is_brand)     && ['🏷️ 지역브랜드','#ffe4e6','#e63946','#e63946'],
+              ingredients.some(i=>i.is_special)   && ['🏆 특산',        '#fef3c7','#f59e0b','#b45309'],
+              ingredients.some(i=>i.is_limited)   && ['⏰ 기간한정',    '#d1fae5','#10b981','#059669'],
+              ingredients.some(i=>i.is_superfood) && ['🌟 슈퍼푸드',    '#fef3c7','#f59e0b','#92400e'],
+              ingredients.some(i=>i.is_global)    && ['🌍 해외',         '#dbeafe','#3b82f6','#1d4ed8'],
+              ingredients.some(i=>i.is_brand)     && ['🏷️ 지역브랜드', '#ffe4e6','#e63946','#e63946'],
             ].filter(Boolean)
             const regions  = [...new Set(ingredients.flatMap(i=>i.regions_preview||[]))]
             const benefits = [...new Set(ingredients.flatMap(i=>(i.health_benefits||[]).map(h=>h.name).filter(Boolean)))]
-            // 뱃지 렌더
-            const B = ({d,label}) => { const [lbl,bg,border,color] = d ? d : ['',label,'','#000']; return (
-              <span style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:bg,border:`1px solid ${border}`,color,fontWeight:700}}>{lbl||label}</span>
-            )}
+            const Bdg = ({d}) => <span style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
             const Row = ({label,show,children}) => !show ? null : (
               <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
                 <span style={{fontSize:11,color:'#9ca3af',fontWeight:600,width:30,flexShrink:0}}>{label}</span>
@@ -660,30 +654,15 @@ export default function ContentIdeaPanel({ adminToken }) {
             )
             return (
               <div style={{padding:'6px 16px 12px',borderTop:'1px solid #f0fdf4',display:'flex',flexDirection:'column',gap:5}}>
-                <Row label="계절" show={seasons.length>0}>
-                  {seasons.map((v,i)=><B key={i} d={seasonMap[v]}/>)}
-                </Row>
-                <Row label="절기" show={jeolgis.length>0}>
-                  {jeolgis.map((v,i)=><B key={i} d={jeolgiMap[v]}/>)}
-                </Row>
-                <Row label="특수" show={specials.length>0}>
-                  {specials.map((v,i)=><B key={i} d={specialMap[v]}/>)}
-                </Row>
-                <Row label="서식" show={habitats.length>0}>
-                  {habitats.map((v,i)=><B key={i} d={habitatMap[v]}/>)}
-                </Row>
-                <Row label="양식" show={farmings.length>0}>
-                  {farmings.map((v,i)=><B key={i} d={farmingMap[v]}/>)}
-                </Row>
-                <Row label="기타" show={boolBadges.length>0}>
-                  {boolBadges.map((d,i)=><B key={i} d={d}/>)}
-                </Row>
-                <Row label="지역" show={regions.length>0}>
-                  {regions.map((r,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{r}</span>)}
-                </Row>
-                <Row label="효능" show={benefits.length>0}>
-                  {benefits.map((b,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',fontWeight:700}}>💊 {b}</span>)}
-                </Row>
+                <Row label="계절" show={seasons.length>0}>{seasons.map((v,i)=>seasonMap[v]?<Bdg key={i} d={seasonMap[v]}/>:null)}</Row>
+                <Row label="절기" show={jeolgis.length>0}>{jeolgis.map((v,i)=>jeolgiMap[v]?<Bdg key={i} d={jeolgiMap[v]}/>:null)}</Row>
+                <Row label="특수" show={specials.length>0}>{specials.map((v,i)=>specialMap[v]?<Bdg key={i} d={specialMap[v]}/>:null)}</Row>
+                <Row label="서식" show={habitats.length>0}>{habitats.map((v,i)=>habitatMap[v]?<Bdg key={i} d={habitatMap[v]}/>:null)}</Row>
+                <Row label="양식" show={farmings.length>0}>{farmings.map((v,i)=>farmingMap[v]?<Bdg key={i} d={farmingMap[v]}/>:null)}</Row>
+                <Row label="기타" show={boolBadges.length>0}>{boolBadges.map((d,i)=><Bdg key={i} d={d}/>)}</Row>
+                <Row label="월" show={months.length>0}>{months.map((m,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>{m}월</span>)}</Row>
+                <Row label="지역" show={regions.length>0}>{regions.map((r,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{r}</span>)}</Row>
+                <Row label="효능" show={benefits.length>0}>{benefits.map((b,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',fontWeight:700}}>💊 {b}</span>)}</Row>
               </div>
             )
           })()}
