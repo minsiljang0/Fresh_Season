@@ -1000,47 +1000,63 @@ export default function ContentIdeaPanel({ adminToken }) {
                 </div>
               </div>
             )
+            // ㄱㄴㄷ 정렬을 위한 이모지 제거 함수
+            const stripEmoji = str => str.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{FE00}-\u{FEFF}]/gu,'').replace(/[^\uAC00-\uD7A3a-zA-Z0-9\s]/g,'').trim()
+            const koSort = (a,b) => stripEmoji(a.label).localeCompare(stripEmoji(b.label),'ko-KR')
+
+            // 모든 행 데이터를 하나의 배열로 수집
+            const allRows = [
+              ...(seasons.length > 0 ? [{
+                key:'계절', label:'계절', labelColor:'#166534',
+                badges: seasons.map(v=>seasonMap[v]).filter(Boolean)
+              }] : []),
+              ...jeolgis.filter(jk=>jeolgiMap[jk]).map(jk=>({
+                key:`jeolgi-${jk}`, label:jeolgiMap[jk][0], labelColor:jeolgiMap[jk][3],
+                ingNames:jeolgiIngMap[jk]||[], bg:jeolgiMap[jk][1], border:jeolgiMap[jk][2]+'66', color:jeolgiMap[jk][3]
+              })),
+              ...specials.filter(sk=>specialMap[sk]).map(sk=>({
+                key:`special-${sk}`, label:specialMap[sk][0], labelColor:specialMap[sk][3],
+                ingNames:specialIngMap[sk]||[], bg:specialMap[sk][1], border:specialMap[sk][2], color:specialMap[sk][3]
+              })),
+              ...habitats.filter(hk=>habitatMap[hk]).map(hk=>({
+                key:`habitat-${hk}`, label:habitatMap[hk][0], labelColor:habitatMap[hk][3],
+                ingNames:habitatIngMap[hk]||[], bg:habitatMap[hk][1], border:habitatMap[hk][2]+'66', color:habitatMap[hk][3]
+              })),
+              ...farmings.filter(fk=>farmingMap[fk]).map(fk=>({
+                key:`farming-${fk}`, label:farmingMap[fk][0], labelColor:farmingMap[fk][3],
+                ingNames:farmingIngMap[fk]||[], bg:farmingMap[fk][1], border:farmingMap[fk][2]+'66', color:farmingMap[fk][3]
+              })),
+              ...ageGroups.filter(a=>a!=='all'&&ageMap[a]).map(a=>({
+                key:`age-${a}`, label:ageMap[a][0], labelColor:ageMap[a][3],
+                ingNames:ageIngMap[a]||[], bg:ageMap[a][1], border:ageMap[a][2]+'66', color:ageMap[a][3]
+              })),
+              ...genders.filter(g=>genderMap[g]).map(g=>({
+                key:`gender-${g}`, label:genderMap[g][0], labelColor:genderMap[g][3],
+                ingNames:g==='male'?maleIngs.map(i=>i.name):femaleIngs.map(i=>i.name),
+                bg:genderMap[g][1], border:genderMap[g][2]+'66', color:genderMap[g][3]
+              })),
+              ...regionSorted.map(([region,names])=>({
+                key:`region-${region}`, label:`📍 ${region}`, labelColor:'#1d4ed8',
+                ingNames:names, bg:'#dbeafe', border:'#93c5fd', color:'#1e40af'
+              })),
+            ].sort(koSort)
+
             return (
               <div style={{borderTop:'1px solid #d1e8d1',overflow:'hidden'}}>
                 <div style={{ padding:'6px 16px', background:'#e8f5e9', borderBottom:'1px solid #c8e6c9' }}>
                   <span style={{ fontSize:12, fontWeight:800, color:'#1b5e20' }}>🔍 이달의 소스 분석</span>
                 </div>
                 <div style={{padding:'6px 16px 12px',display:'flex',flexDirection:'column',gap:0}}>
-                <Row label="계절" labelColor='#166534' show={seasons.length>0} badges={seasons.map(v=>seasonMap[v]).filter(Boolean)}/>
-                {jeolgis.map(jk => jeolgiMap[jk] ? (
-                  <Row key={jk} label={jeolgiMap[jk][0]} labelColor={jeolgiMap[jk][3]} show={true}
-                    ingNames={jeolgiIngMap[jk]||[]} bg={jeolgiMap[jk][1]} border={jeolgiMap[jk][2]+'66'} color={jeolgiMap[jk][3]}/>
-                ) : null)}
-                {specials.map(sk => specialMap[sk] ? (
-                  <Row key={sk} label={specialMap[sk][0]} labelColor={specialMap[sk][3]} show={true}
-                    ingNames={specialIngMap[sk]||[]} bg={specialMap[sk][1]} border={specialMap[sk][2]} color={specialMap[sk][3]}/>
-                ) : null)}
-                {habitats.map(hk => habitatMap[hk] ? (
-                  <Row key={hk} label={habitatMap[hk][0]} labelColor={habitatMap[hk][3]} show={true}
-                    ingNames={habitatIngMap[hk]||[]} bg={habitatMap[hk][1]} border={habitatMap[hk][2]+'66'} color={habitatMap[hk][3]}/>
-                ) : null)}
-                {farmings.map(fk => farmingMap[fk] ? (
-                  <Row key={fk} label={farmingMap[fk][0]} labelColor={farmingMap[fk][3]} show={true}
-                    ingNames={farmingIngMap[fk]||[]} bg={farmingMap[fk][1]} border={farmingMap[fk][2]+'66'} color={farmingMap[fk][3]}/>
-                ) : null)}
+                {allRows.map(row => (
+                  <Row key={row.key} label={row.label} labelColor={row.labelColor} show={true}
+                    badges={row.badges} ingNames={row.ingNames}
+                    bg={row.bg} border={row.border} color={row.color}/>
+                ))}
                 {ingredients.some(i=>i.caution) && (
                   <Row label='⚠️ 주의사항' labelColor='#dc2626' show={true}
                     ingNames={ingredients.filter(i=>i.caution).sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(i=>i.name)}
                     bg='#fef2f2' border='#fca5a5' color='#dc2626'/>
                 )}
-                {ageGroups.filter(a=>a!=='all').map(a => ageMap[a] ? (
-                  <Row key={a} label={ageMap[a][0]} labelColor={ageMap[a][3]} show={true}
-                    ingNames={ageIngMap[a]||[]} bg={ageMap[a][1]} border={ageMap[a][2]+'66'} color={ageMap[a][3]}/>
-                ) : null)}
-                {genders.map(g => genderMap[g] ? (
-                  <Row key={g} label={genderMap[g][0]} labelColor={genderMap[g][3]} show={true}
-                    ingNames={g==='male'?maleIngs.map(i=>i.name):femaleIngs.map(i=>i.name)}
-                    bg={genderMap[g][1]} border={genderMap[g][2]+'66'} color={genderMap[g][3]}/>
-                ) : null)}
-                {regionSorted.map(([region, names]) => (
-                  <Row key={region} label={`📍 ${region}`} labelColor='#1d4ed8' show={true}
-                    ingNames={names} bg='#dbeafe' border='#93c5fd' color='#1e40af'/>
-                ))}
                 {benefitCats.map(([cat, benefitObj]) => (
                   <div key={cat} style={{padding:'5px 0',borderBottom:'1px solid #f3f4f6'}}>
                     <div style={{fontSize:11,fontWeight:700,color:'#16a34a',marginBottom:4}}>💊 {cat}</div>
