@@ -1380,7 +1380,7 @@ const baseHandler = createMcpHandler(
       'list_ingredients',
       {
         title: '식재료 목록 조회',
-        description: 'DB에 등록된 식재료 목록을 가져온다. 카테고리·이름·연령대·성별·특산품·기간한정·월로 필터 가능. 연결된 건강효능 목록도 함께 반환.',
+        description: 'DB에 등록된 식재료 목록을 가져온다. 카테고리·이름·연령대·성별·특산품·기간한정·월로 필터 가능. 연결된 건강효능 목록도 함께 반환. summary=true로 호출하면 월별 기획(STEP 1) 전수 파악용 압축 포맷으로 반환 — 전체 식재료를 토큰 초과 없이 받을 수 있다.',
         inputSchema: {
           category:   z.string().optional().describe('카테고리 id (예: fish, veg, fruit 등)'),
           q:          z.string().optional().describe('이름 검색어'),
@@ -1391,9 +1391,10 @@ const baseHandler = createMcpHandler(
           is_global:  z.boolean().optional().describe('true면 해외 식재료만'),
           month:      z.number().int().min(1).max(12).optional().describe('특정 월이 제철인 식재료만 (months 배열 기준)'),
           limit:      z.number().optional().describe('최대 반환 개수 (기본 500)'),
+          summary:    z.boolean().optional().describe('true면 기획용 압축 포맷 반환 (이름·카테고리·주요필드만, 토큰 절약). STEP 1 전수 파악 시 반드시 사용.'),
         },
       },
-      async ({ category, q, age_group, gender, is_special, is_limited, is_global, month, limit = 500 }) => {
+      async ({ category, q, age_group, gender, is_special, is_limited, is_global, month, limit = 500, summary = false }) => {
         let query = supabase
           .from('ingredients')
           .select(`
@@ -1436,6 +1437,31 @@ const baseHandler = createMcpHandler(
         }))
         // age_group 필터
         if (age_group) result = result.filter(ing => (ing.age_groups || []).includes(age_group) || ing.age_groups?.includes('all'))
+        // summary 모드: 기획 STEP 1 전수 파악용 압축 포맷
+        if (summary) {
+          const summaryResult = result.map(ing => ({
+            name: ing.name,
+            category: ing.category,
+            is_limited: ing.is_limited || false,
+            is_special: ing.is_special || false,
+            is_global: ing.is_global || false,
+            gender: ing.gender !== 'all' ? ing.gender : undefined,
+            age_groups: ing.age_groups?.filter(a => a !== 'all') || [],
+            caution: ing.caution || '',
+            health_benefits: ing.health_benefits?.map(h => h?.name).filter(Boolean) || [],
+          }))
+          const text = `총 ${summaryResult.length}개\n\n` + summaryResult.map(i =>
+            `[${i.name}] cat:${i.category}` +
+            (i.is_limited ? ' ⏰기간한정' : '') +
+            (i.is_special ? ' 🏆특산' : '') +
+            (i.is_global ? ' 🌍해외' : '') +
+            (i.gender ? ` 성별:${i.gender}` : '') +
+            (i.age_groups?.length ? ` 연령:${i.age_groups.join(',')}` : '') +
+            (i.caution ? ` ⚠️${i.caution}` : '') +
+            (i.health_benefits?.length ? ` 효능:${i.health_benefits.join('·')}` : '')
+          ).join('\n')
+          return { content: [{ type: 'text', text }] }
+        }
         return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
       }
     )
