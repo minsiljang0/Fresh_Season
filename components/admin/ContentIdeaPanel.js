@@ -48,59 +48,30 @@ function fmtDate(iso) {
   return `${d.getMonth()+1}/${d.getDate()}`
 }
 
+
+
 // ── 카테고리별 소스 현황 ──────────────────────────────────────
 function SourceSummary({ ingredients }) {
   if (!ingredients || ingredients.length === 0) return null
-  const ko = (a, b) => a.localeCompare(b, 'ko-KR')
   const catCount = {}
   ingredients.forEach(i => {
     const label = CAT_LABELS[i.category] || i.category
     catCount[label] = (catCount[label] || 0) + 1
   })
   const sorted    = Object.entries(catCount).sort((a, b) => b[1] - a[1])
-  const limited   = ingredients.filter(i => i.is_limited).sort((a,b)=>ko(a.name,b.name))
-  const special   = ingredients.filter(i => i.is_special).sort((a,b)=>ko(a.name,b.name))
-  const caution   = ingredients.filter(i => i.caution).sort((a,b)=>ko(a.name,b.name))
-  const superfood = ingredients.filter(i => i.is_superfood).sort((a,b)=>ko(a.name,b.name))
-  const global_   = ingredients.filter(i => i.is_global).sort((a,b)=>ko(a.name,b.name))
-  const brand     = ingredients.filter(i => i.is_brand).sort((a,b)=>ko(a.name,b.name))
-  const Tag = ({label,bg,border,color}) => (
-    <span style={{fontSize:11,padding:'2px 8px',borderRadius:20,background:bg,border:`1px solid ${border}`,color,fontWeight:700,whiteSpace:'nowrap'}}>{label}</span>
-  )
-  const NameRow = ({title, names, bg, borderColor, color}) => (
-    <div style={{ padding:'6px 16px', borderTop:`1px solid ${borderColor}`, background:bg, fontSize:11, color }}>
-      <span style={{ fontWeight:700 }}>{title}: </span>
-      {names.join(' · ')}
-    </div>
-  )
   return (
     <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:10, marginBottom:8, overflow:'hidden' }}>
-      {/* 타이틀 */}
       <div style={{ padding:'6px 16px', background:'#e8f5e9', borderBottom:'1px solid #c8e6c9' }}>
         <span style={{ fontSize:12, fontWeight:800, color:'#1b5e20' }}>📋 소스 현황 요약</span>
       </div>
-      {/* 헤더 요약 뱃지 */}
       <div style={{ padding:'8px 16px', background:'#f0fdf4', borderBottom:'1px solid #d1e8d1', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
         <span style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📊 {ingredients.length}개 소스 현황</span>
-        {limited.length > 0   && <Tag label={`⏰ 기간한정 ${limited.length}개`}   bg='#d1fae5' border='#10b981' color='#059669'/>}
-        {special.length > 0   && <Tag label={`🏆 특산품 ${special.length}개`}     bg='#fef3c7' border='#f59e0b' color='#b45309'/>}
-        {superfood.length > 0 && <Tag label={`🌟 슈퍼푸드 ${superfood.length}개`} bg='#fef3c7' border='#f59e0b' color='#92400e'/>}
-        {global_.length > 0   && <Tag label={`🌍 해외 ${global_.length}개`}       bg='#dbeafe' border='#93c5fd' color='#1d4ed8'/>}
-        {brand.length > 0     && <Tag label={`🏷️ 지역브랜드 ${brand.length}개`}  bg='#ffe4e6' border='#fca5a5' color='#be123c'/>}
-        {caution.length > 0   && <Tag label={`⚠️ 주의사항 ${caution.length}개`}  bg='#fef2f2' border='#fca5a5' color='#dc2626'/>}
       </div>
-      {/* 카테고리 현황 */}
       <div style={{ padding:'8px 16px', display:'flex', gap:5, flexWrap:'wrap' }}>
         {sorted.map(([label, cnt]) => (
           <span key={label} style={{ fontSize:11, padding:'2px 8px', borderRadius:8, background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#166534', fontWeight:600 }}>{label} {cnt}</span>
         ))}
       </div>
-      {limited.length > 0   && <NameRow title='⏰ 기간한정 — 시즌 끝나기 전 먼저 발행' names={limited.map(i=>i.name)}   bg='#f0fdf4' borderColor='#d1fae5' color='#059669'/>}
-      {special.length > 0   && <NameRow title='🏆 특산품'    names={special.map(i=>i.name)}   bg='#fffbeb' borderColor='#fde68a' color='#b45309'/>}
-      {superfood.length > 0 && <NameRow title='🌟 슈퍼푸드'  names={superfood.map(i=>i.name)} bg='#fffbeb' borderColor='#f59e0b' color='#92400e'/>}
-      {global_.length > 0   && <NameRow title='🌍 해외'      names={global_.map(i=>i.name)}   bg='#eff6ff' borderColor='#93c5fd' color='#1d4ed8'/>}
-      {brand.length > 0     && <NameRow title='🏷️ 지역브랜드' names={brand.map(i=>i.name)}   bg='#ffe4e6' borderColor='#fca5a5' color='#be123c'/>}
-      {caution.length > 0   && <NameRow title='⚠️ 주의사항'  names={caution.map(i=>`${i.name}(${(i.caution||'').slice(0,15)})`)} bg='#fef2f2' borderColor='#fca5a5' color='#dc2626'/>}
     </div>
   )
 }
@@ -1004,11 +975,38 @@ export default function ContentIdeaPanel({ adminToken }) {
             const stripEmoji = str => str.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{FE00}-\u{FEFF}]/gu,'').replace(/[^\uAC00-\uD7A3a-zA-Z0-9\s]/g,'').trim()
             const koSort = (a,b) => stripEmoji(a.label).localeCompare(stripEmoji(b.label),'ko-KR')
 
+            // bool 카테고리별 재료 목록
+            const limitedIngs   = ingredients.filter(i=>i.is_limited).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
+            const specialIngs   = ingredients.filter(i=>i.is_special).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
+            const superfoodIngs = ingredients.filter(i=>i.is_superfood).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
+            const globalIngs    = ingredients.filter(i=>i.is_global).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
+            const brandIngs     = ingredients.filter(i=>i.is_brand).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
+
             // 모든 행 데이터를 하나의 배열로 수집
             const allRows = [
               ...(seasons.length > 0 ? [{
                 key:'계절', label:'계절', labelColor:'#166534',
                 badges: seasons.map(v=>seasonMap[v]).filter(Boolean)
+              }] : []),
+              ...(limitedIngs.length > 0 ? [{
+                key:'기간한정', label:'⏰ 기간한정', labelColor:'#059669',
+                ingNames:limitedIngs, bg:'#f0fdf4', border:'#10b981', color:'#059669'
+              }] : []),
+              ...(specialIngs.length > 0 ? [{
+                key:'특산', label:'🏆 특산품', labelColor:'#b45309',
+                ingNames:specialIngs, bg:'#fffbeb', border:'#f59e0b', color:'#b45309'
+              }] : []),
+              ...(superfoodIngs.length > 0 ? [{
+                key:'슈퍼푸드', label:'🌟 슈퍼푸드', labelColor:'#92400e',
+                ingNames:superfoodIngs, bg:'#fffbeb', border:'#f59e0b', color:'#92400e'
+              }] : []),
+              ...(globalIngs.length > 0 ? [{
+                key:'해외', label:'🌍 해외', labelColor:'#1d4ed8',
+                ingNames:globalIngs, bg:'#eff6ff', border:'#93c5fd', color:'#1d4ed8'
+              }] : []),
+              ...(brandIngs.length > 0 ? [{
+                key:'지역브랜드', label:'🏷️ 지역브랜드', labelColor:'#be123c',
+                ingNames:brandIngs, bg:'#ffe4e6', border:'#fca5a5', color:'#be123c'
               }] : []),
               ...jeolgis.filter(jk=>jeolgiMap[jk]).map(jk=>({
                 key:`jeolgi-${jk}`, label:jeolgiMap[jk][0], labelColor:jeolgiMap[jk][3],
@@ -1039,6 +1037,11 @@ export default function ContentIdeaPanel({ adminToken }) {
                 key:`region-${region}`, label:`📍 ${region}`, labelColor:'#1d4ed8',
                 ingNames:names, bg:'#dbeafe', border:'#93c5fd', color:'#1e40af'
               })),
+              ...(ingredients.some(i=>i.caution) ? [{
+                key:'주의사항', label:'⚠️ 주의사항', labelColor:'#dc2626',
+                ingNames:ingredients.filter(i=>i.caution).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name),
+                bg:'#fef2f2', border:'#fca5a5', color:'#dc2626'
+              }] : []),
             ].sort(koSort)
 
             return (
@@ -1052,11 +1055,6 @@ export default function ContentIdeaPanel({ adminToken }) {
                     badges={row.badges} ingNames={row.ingNames}
                     bg={row.bg} border={row.border} color={row.color}/>
                 ))}
-                {ingredients.some(i=>i.caution) && (
-                  <Row label='⚠️ 주의사항' labelColor='#dc2626' show={true}
-                    ingNames={ingredients.filter(i=>i.caution).sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(i=>i.name)}
-                    bg='#fef2f2' border='#fca5a5' color='#dc2626'/>
-                )}
                 {benefitCats.map(([cat, benefitObj]) => (
                   <div key={cat} style={{padding:'5px 0',borderBottom:'1px solid #f3f4f6'}}>
                     <div style={{fontSize:11,fontWeight:700,color:'#16a34a',marginBottom:4}}>💊 {cat}</div>
