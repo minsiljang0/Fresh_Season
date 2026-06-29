@@ -51,7 +51,7 @@ function fmtDate(iso) {
 // ── 카테고리별 소스 현황 ──────────────────────────────────────
 function SourceSummary({ ingredients }) {
   if (!ingredients || ingredients.length === 0) return null
-  const ko = (a, b) => a.localeCompare(b, 'ko')
+  const ko = (a, b) => a.localeCompare(b, 'ko-KR')
   const catCount = {}
   ingredients.forEach(i => {
     const label = CAT_LABELS[i.category] || i.category
@@ -955,7 +955,7 @@ export default function ContentIdeaPanel({ adminToken }) {
               benefitCatMap[cat][hb.name].push(i.name)
             }))
             const benefitCats = Object.entries(benefitCatMap).sort((a,b)=>Object.keys(b[1]).length-Object.keys(a[1]).length)
-            const ko = (a,b) => a.localeCompare(b,'ko')
+            const ko = (a,b) => a.localeCompare(b,'ko-KR')
             // 지역별 재료
             const regionMap = {}
             ingredients.forEach(i=>(i.regions_preview||[]).forEach(r=>{ if(!regionMap[r]) regionMap[r]=[]; regionMap[r].push(i.name) }))
@@ -1001,7 +1001,11 @@ export default function ContentIdeaPanel({ adminToken }) {
               </div>
             )
             return (
-              <div style={{padding:'6px 16px 12px',borderTop:'1px solid #f0fdf4',display:'flex',flexDirection:'column',gap:0}}>
+              <div style={{borderTop:'1px solid #d1e8d1',overflow:'hidden'}}>
+                <div style={{ padding:'6px 16px', background:'#e8f5e9', borderBottom:'1px solid #c8e6c9' }}>
+                  <span style={{ fontSize:12, fontWeight:800, color:'#1b5e20' }}>🔍 이달의 소스 분석</span>
+                </div>
+                <div style={{padding:'6px 16px 12px',display:'flex',flexDirection:'column',gap:0}}>
                 <Row label="계절" labelColor='#166534' show={seasons.length>0} badges={seasons.map(v=>seasonMap[v]).filter(Boolean)}/>
                 {jeolgis.map(jk => jeolgiMap[jk] ? (
                   <Row key={jk} label={jeolgiMap[jk][0]} labelColor={jeolgiMap[jk][3]} show={true}
@@ -1050,6 +1054,7 @@ export default function ContentIdeaPanel({ adminToken }) {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             )
           })()}
