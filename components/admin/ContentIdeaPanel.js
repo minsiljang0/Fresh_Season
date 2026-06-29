@@ -985,6 +985,9 @@ export default function ContentIdeaPanel({ adminToken }) {
             const globalIngs    = ingredients.filter(i=>i.is_global).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
             const brandIngs     = ingredients.filter(i=>i.is_brand).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
 
+            // 개수 표시 헬퍼
+            const wc = (label, n) => `${label} (${n})`
+
             // 모든 행 데이터를 하나의 배열로 수집
             const allRows = [
               ...(seasons.length > 0 ? [{
@@ -992,60 +995,60 @@ export default function ContentIdeaPanel({ adminToken }) {
                 badges: seasons.map(v=>seasonMap[v]).filter(Boolean)
               }] : []),
               ...(limitedIngs.length > 0 ? [{
-                key:'기간한정', label:'⏰ 기간한정', labelColor:'#059669',
+                key:'기간한정', label:wc('⏰ 기간한정', limitedIngs.length), labelColor:'#059669',
                 ingNames:limitedIngs, bg:'#f0fdf4', border:'#10b981', color:'#059669'
               }] : []),
               ...(specialIngs.length > 0 ? [{
-                key:'특산', label:'🏆 특산품', labelColor:'#b45309',
+                key:'특산', label:wc('🏆 특산품', specialIngs.length), labelColor:'#b45309',
                 ingNames:specialIngs, bg:'#fffbeb', border:'#f59e0b', color:'#b45309'
               }] : []),
               ...(superfoodIngs.length > 0 ? [{
-                key:'슈퍼푸드', label:'🌟 슈퍼푸드', labelColor:'#92400e',
+                key:'슈퍼푸드', label:wc('🌟 슈퍼푸드', superfoodIngs.length), labelColor:'#92400e',
                 ingNames:superfoodIngs, bg:'#fffbeb', border:'#f59e0b', color:'#92400e'
               }] : []),
               ...(globalIngs.length > 0 ? [{
-                key:'해외', label:'🌍 해외', labelColor:'#1d4ed8',
+                key:'해외', label:wc('🌍 해외', globalIngs.length), labelColor:'#1d4ed8',
                 ingNames:globalIngs, bg:'#eff6ff', border:'#93c5fd', color:'#1d4ed8'
               }] : []),
               ...(brandIngs.length > 0 ? [{
-                key:'지역브랜드', label:'🏷️ 지역브랜드', labelColor:'#be123c',
+                key:'지역브랜드', label:wc('🏷️ 지역브랜드', brandIngs.length), labelColor:'#be123c',
                 ingNames:brandIngs, bg:'#ffe4e6', border:'#fca5a5', color:'#be123c'
               }] : []),
               ...jeolgis.filter(jk=>jeolgiMap[jk]).map(jk=>({
-                key:`jeolgi-${jk}`, label:jeolgiMap[jk][0], labelColor:jeolgiMap[jk][3],
+                key:`jeolgi-${jk}`, label:wc(jeolgiMap[jk][0], (jeolgiIngMap[jk]||[]).length), labelColor:jeolgiMap[jk][3],
                 ingNames:jeolgiIngMap[jk]||[], bg:jeolgiMap[jk][1], border:jeolgiMap[jk][2]+'66', color:jeolgiMap[jk][3]
               })),
               ...specials.filter(sk=>specialMap[sk]).map(sk=>({
-                key:`special-${sk}`, label:specialMap[sk][0], labelColor:specialMap[sk][3],
+                key:`special-${sk}`, label:wc(specialMap[sk][0], (specialIngMap[sk]||[]).length), labelColor:specialMap[sk][3],
                 ingNames:specialIngMap[sk]||[], bg:specialMap[sk][1], border:specialMap[sk][2], color:specialMap[sk][3]
               })),
               ...habitats.filter(hk=>habitatMap[hk]).map(hk=>({
-                key:`habitat-${hk}`, label:habitatMap[hk][0], labelColor:habitatMap[hk][3],
+                key:`habitat-${hk}`, label:wc(habitatMap[hk][0], (habitatIngMap[hk]||[]).length), labelColor:habitatMap[hk][3],
                 ingNames:habitatIngMap[hk]||[], bg:habitatMap[hk][1], border:habitatMap[hk][2]+'66', color:habitatMap[hk][3]
               })),
               ...farmings.filter(fk=>farmingMap[fk]).map(fk=>({
-                key:`farming-${fk}`, label:farmingMap[fk][0], labelColor:farmingMap[fk][3],
+                key:`farming-${fk}`, label:wc(farmingMap[fk][0], (farmingIngMap[fk]||[]).length), labelColor:farmingMap[fk][3],
                 ingNames:farmingIngMap[fk]||[], bg:farmingMap[fk][1], border:farmingMap[fk][2]+'66', color:farmingMap[fk][3]
               })),
               ...ageGroups.filter(a=>a!=='all'&&ageMap[a]).map(a=>({
-                key:`age-${a}`, label:ageMap[a][0], labelColor:ageMap[a][3],
+                key:`age-${a}`, label:wc(ageMap[a][0], (ageIngMap[a]||[]).length), labelColor:ageMap[a][3],
                 ingNames:ageIngMap[a]||[], bg:ageMap[a][1], border:ageMap[a][2]+'66', color:ageMap[a][3]
               })),
               ...genders.filter(g=>genderMap[g]).map(g=>({
-                key:`gender-${g}`, label:genderMap[g][0], labelColor:genderMap[g][3],
+                key:`gender-${g}`, label:wc(genderMap[g][0], g==='male'?maleIngs.length:femaleIngs.length), labelColor:genderMap[g][3],
                 ingNames:g==='male'?maleIngs.map(i=>i.name):femaleIngs.map(i=>i.name),
                 bg:genderMap[g][1], border:genderMap[g][2]+'66', color:genderMap[g][3]
               })),
               ...regionSorted.map(([region,names])=>({
-                key:`region-${region}`, label:`📍 ${region}`, labelColor:'#1d4ed8',
+                key:`region-${region}`, label:wc(`📍 ${region}`, names.length), labelColor:'#1d4ed8',
                 ingNames:names, bg:'#dbeafe', border:'#93c5fd', color:'#1e40af'
               })),
               ...Object.entries(catIngMap).map(([label, names])=>({
-                key:`cat-${label}`, label, labelColor:'#166534',
+                key:`cat-${label}`, label:wc(label, names.length), labelColor:'#166634',
                 ingNames:names, bg:'#f0fdf4', border:'#bbf7d0', color:'#166534'
               })),
               ...(ingredients.some(i=>i.caution) ? [{
-                key:'주의사항', label:'⚠️ 주의사항', labelColor:'#dc2626',
+                key:'주의사항', label:wc('⚠️ 주의사항', ingredients.filter(i=>i.caution).length), labelColor:'#dc2626',
                 ingNames:ingredients.filter(i=>i.caution).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name),
                 bg:'#fef2f2', border:'#fca5a5', color:'#dc2626'
               }] : []),
