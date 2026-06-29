@@ -51,24 +51,35 @@ function fmtDate(iso) {
 // ── 카테고리별 소스 현황 ──────────────────────────────────────
 function SourceSummary({ ingredients }) {
   if (!ingredients || ingredients.length === 0) return null
+  const ko = (a, b) => a.localeCompare(b, 'ko')
   const catCount = {}
   ingredients.forEach(i => {
     const label = CAT_LABELS[i.category] || i.category
     catCount[label] = (catCount[label] || 0) + 1
   })
-  const sorted = Object.entries(catCount).sort((a, b) => b[1] - a[1])
-  const limited   = ingredients.filter(i => i.is_limited)
-  const special   = ingredients.filter(i => i.is_special)
-  const caution   = ingredients.filter(i => i.caution)
-  const superfood = ingredients.filter(i => i.is_superfood)
-  const global_   = ingredients.filter(i => i.is_global)
-  const brand     = ingredients.filter(i => i.is_brand)
+  const sorted    = Object.entries(catCount).sort((a, b) => b[1] - a[1])
+  const limited   = ingredients.filter(i => i.is_limited).sort((a,b)=>ko(a.name,b.name))
+  const special   = ingredients.filter(i => i.is_special).sort((a,b)=>ko(a.name,b.name))
+  const caution   = ingredients.filter(i => i.caution).sort((a,b)=>ko(a.name,b.name))
+  const superfood = ingredients.filter(i => i.is_superfood).sort((a,b)=>ko(a.name,b.name))
+  const global_   = ingredients.filter(i => i.is_global).sort((a,b)=>ko(a.name,b.name))
+  const brand     = ingredients.filter(i => i.is_brand).sort((a,b)=>ko(a.name,b.name))
   const Tag = ({label,bg,border,color}) => (
     <span style={{fontSize:11,padding:'2px 8px',borderRadius:20,background:bg,border:`1px solid ${border}`,color,fontWeight:700,whiteSpace:'nowrap'}}>{label}</span>
   )
+  const NameRow = ({title, names, bg, borderColor, color}) => (
+    <div style={{ padding:'6px 16px', borderTop:`1px solid ${borderColor}`, background:bg, fontSize:11, color }}>
+      <span style={{ fontWeight:700 }}>{title}: </span>
+      {names.join(' · ')}
+    </div>
+  )
   return (
     <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:10, marginBottom:8, overflow:'hidden' }}>
-      {/* 헤더 요약 */}
+      {/* 타이틀 */}
+      <div style={{ padding:'6px 16px', background:'#e8f5e9', borderBottom:'1px solid #c8e6c9' }}>
+        <span style={{ fontSize:12, fontWeight:800, color:'#1b5e20' }}>📋 소스 현황 요약</span>
+      </div>
+      {/* 헤더 요약 뱃지 */}
       <div style={{ padding:'8px 16px', background:'#f0fdf4', borderBottom:'1px solid #d1e8d1', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
         <span style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📊 {ingredients.length}개 소스 현황</span>
         {limited.length > 0   && <Tag label={`⏰ 기간한정 ${limited.length}개`}   bg='#d1fae5' border='#10b981' color='#059669'/>}
@@ -84,48 +95,12 @@ function SourceSummary({ ingredients }) {
           <span key={label} style={{ fontSize:11, padding:'2px 8px', borderRadius:8, background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#166534', fontWeight:600 }}>{label} {cnt}</span>
         ))}
       </div>
-      {/* 기간한정 재료명 */}
-      {limited.length > 0 && (
-        <div style={{ padding:'6px 16px', borderTop:'1px solid #d1fae5', background:'#f0fdf4', fontSize:11, color:'#059669' }}>
-          <span style={{ fontWeight:700 }}>⏰ 기간한정 — 시즌 끝나기 전 먼저 발행: </span>
-          {limited.map(i => i.name).join(' · ')}
-        </div>
-      )}
-      {/* 특산품 재료명 */}
-      {special.length > 0 && (
-        <div style={{ padding:'6px 16px', borderTop:'1px solid #fde68a', background:'#fffbeb', fontSize:11, color:'#b45309' }}>
-          <span style={{ fontWeight:700 }}>🏆 특산품: </span>
-          {special.map(i => i.name).join(' · ')}
-        </div>
-      )}
-      {/* 슈퍼푸드 재료명 */}
-      {superfood.length > 0 && (
-        <div style={{ padding:'6px 16px', borderTop:'1px solid #f59e0b', background:'#fffbeb', fontSize:11, color:'#92400e' }}>
-          <span style={{ fontWeight:700 }}>🌟 슈퍼푸드: </span>
-          {superfood.map(i => i.name).join(' · ')}
-        </div>
-      )}
-      {/* 해외 재료명 */}
-      {global_.length > 0 && (
-        <div style={{ padding:'6px 16px', borderTop:'1px solid #93c5fd', background:'#eff6ff', fontSize:11, color:'#1d4ed8' }}>
-          <span style={{ fontWeight:700 }}>🌍 해외: </span>
-          {global_.map(i => i.name).join(' · ')}
-        </div>
-      )}
-      {/* 지역브랜드 재료명 */}
-      {brand.length > 0 && (
-        <div style={{ padding:'6px 16px', borderTop:'1px solid #fca5a5', background:'#ffe4e6', fontSize:11, color:'#be123c' }}>
-          <span style={{ fontWeight:700 }}>🏷️ 지역브랜드: </span>
-          {brand.map(i => i.name).join(' · ')}
-        </div>
-      )}
-      {/* 주의사항 재료명 */}
-      {caution.length > 0 && (
-        <div style={{ padding:'6px 16px', borderTop:'1px solid #fca5a5', background:'#fef2f2', fontSize:11, color:'#dc2626' }}>
-          <span style={{ fontWeight:700 }}>⚠️ 주의사항: </span>
-          {caution.map(i => `${i.name}(${(i.caution||'').slice(0,15)})`).join(' · ')}
-        </div>
-      )}
+      {limited.length > 0   && <NameRow title='⏰ 기간한정 — 시즌 끝나기 전 먼저 발행' names={limited.map(i=>i.name)}   bg='#f0fdf4' borderColor='#d1fae5' color='#059669'/>}
+      {special.length > 0   && <NameRow title='🏆 특산품'    names={special.map(i=>i.name)}   bg='#fffbeb' borderColor='#fde68a' color='#b45309'/>}
+      {superfood.length > 0 && <NameRow title='🌟 슈퍼푸드'  names={superfood.map(i=>i.name)} bg='#fffbeb' borderColor='#f59e0b' color='#92400e'/>}
+      {global_.length > 0   && <NameRow title='🌍 해외'      names={global_.map(i=>i.name)}   bg='#eff6ff' borderColor='#93c5fd' color='#1d4ed8'/>}
+      {brand.length > 0     && <NameRow title='🏷️ 지역브랜드' names={brand.map(i=>i.name)}   bg='#ffe4e6' borderColor='#fca5a5' color='#be123c'/>}
+      {caution.length > 0   && <NameRow title='⚠️ 주의사항'  names={caution.map(i=>`${i.name}(${(i.caution||'').slice(0,15)})`)} bg='#fef2f2' borderColor='#fca5a5' color='#dc2626'/>}
     </div>
   )
 }
@@ -980,37 +955,38 @@ export default function ContentIdeaPanel({ adminToken }) {
               benefitCatMap[cat][hb.name].push(i.name)
             }))
             const benefitCats = Object.entries(benefitCatMap).sort((a,b)=>Object.keys(b[1]).length-Object.keys(a[1]).length)
+            const ko = (a,b) => a.localeCompare(b,'ko')
             // 지역별 재료
             const regionMap = {}
             ingredients.forEach(i=>(i.regions_preview||[]).forEach(r=>{ if(!regionMap[r]) regionMap[r]=[]; regionMap[r].push(i.name) }))
-            const regionSorted = Object.entries(regionMap).sort((a,b)=>b[1].length-a[1].length)
+            const regionSorted = Object.entries(regionMap).sort((a,b)=>b[1].length-a[1].length).map(([r,names])=>[r,names.sort(ko)])
             // 절기별 재료
             const jeolgiIngMap = {}
             jeolgis.forEach(jk => {
-              jeolgiIngMap[jk] = ingredients.filter(i=>(Array.isArray(i.jeolgi_badge)?i.jeolgi_badge:[i.jeolgi_badge]).includes(jk)).map(i=>i.name)
+              jeolgiIngMap[jk] = ingredients.filter(i=>(Array.isArray(i.jeolgi_badge)?i.jeolgi_badge:[i.jeolgi_badge]).includes(jk)).map(i=>i.name).sort(ko)
             })
             // 테마별 재료
             const specialIngMap = {}
             specials.forEach(sk => {
-              specialIngMap[sk] = ingredients.filter(i=>(Array.isArray(i.special_badge)?i.special_badge:[i.special_badge]).includes(sk)).map(i=>i.name)
+              specialIngMap[sk] = ingredients.filter(i=>(Array.isArray(i.special_badge)?i.special_badge:[i.special_badge]).includes(sk)).map(i=>i.name).sort(ko)
             })
             // 서식별 재료
             const habitatIngMap = {}
             habitats.forEach(hk => {
-              habitatIngMap[hk] = ingredients.filter(i=>(Array.isArray(i.habitat_badge)?i.habitat_badge:[i.habitat_badge]).includes(hk)).map(i=>i.name)
+              habitatIngMap[hk] = ingredients.filter(i=>(Array.isArray(i.habitat_badge)?i.habitat_badge:[i.habitat_badge]).includes(hk)).map(i=>i.name).sort(ko)
             })
             // 양식별 재료
             const farmingIngMap = {}
             farmings.forEach(fk => {
-              farmingIngMap[fk] = ingredients.filter(i=>(Array.isArray(i.farming_badge)?i.farming_badge:[i.farming_badge]).includes(fk)).map(i=>i.name)
+              farmingIngMap[fk] = ingredients.filter(i=>(Array.isArray(i.farming_badge)?i.farming_badge:[i.farming_badge]).includes(fk)).map(i=>i.name).sort(ko)
             })
             // 연령별 재료
             const ageIngMap = {}
             ageGroups.filter(a=>a!=='all').forEach(a => {
-              ageIngMap[a] = ingredients.filter(i=>(i.age_groups||[]).includes(a)).map(i=>i.name)
+              ageIngMap[a] = ingredients.filter(i=>(i.age_groups||[]).includes(a)).map(i=>i.name).sort(ko)
             })
-            const maleIngs   = ingredients.filter(i=>i.gender==='male')
-            const femaleIngs = ingredients.filter(i=>i.gender==='female')
+            const maleIngs   = ingredients.filter(i=>i.gender==='male').sort((a,b)=>ko(a.name,b.name))
+            const femaleIngs = ingredients.filter(i=>i.gender==='female').sort((a,b)=>ko(a.name,b.name))
 
             const Bdg = ({d}) => <span style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
             const IngTag = ({name,bg,border,color}) => <span style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:bg,border:`1px solid ${border}`,color,fontWeight:600}}>{name}</span>
@@ -1043,11 +1019,11 @@ export default function ContentIdeaPanel({ adminToken }) {
                   <Row key={fk} label={farmingMap[fk][0]} labelColor={farmingMap[fk][3]} show={true}
                     ingNames={farmingIngMap[fk]||[]} bg={farmingMap[fk][1]} border={farmingMap[fk][2]+'66'} color={farmingMap[fk][3]}/>
                 ) : null)}
-                {ingredients.some(i=>i.is_special)   && <Row label='🏆 특산품'    labelColor='#b45309' show={true} ingNames={ingredients.filter(i=>i.is_special).map(i=>i.name)}   bg='#fef3c7' border='#f59e0b' color='#92400e'/>}
-                {ingredients.some(i=>i.is_limited)   && <Row label='⏰ 기간한정'  labelColor='#059669' show={true} ingNames={ingredients.filter(i=>i.is_limited).map(i=>i.name)}   bg='#d1fae5' border='#10b981' color='#065f46'/>}
-                {ingredients.some(i=>i.is_superfood) && <Row label='🌟 슈퍼푸드'  labelColor='#92400e' show={true} ingNames={ingredients.filter(i=>i.is_superfood).map(i=>i.name)} bg='#fef3c7' border='#f59e0b' color='#78350f'/>}
-                {ingredients.some(i=>i.is_global)    && <Row label='🌍 해외'      labelColor='#1d4ed8' show={true} ingNames={ingredients.filter(i=>i.is_global).map(i=>i.name)}    bg='#dbeafe' border='#93c5fd' color='#1e40af'/>}
-                {ingredients.some(i=>i.is_brand)     && <Row label='🏷️ 지역브랜드' labelColor='#e63946' show={true} ingNames={ingredients.filter(i=>i.is_brand).map(i=>i.name)}   bg='#ffe4e6' border='#fca5a5' color='#be123c'/>}
+                {ingredients.some(i=>i.caution) && (
+                  <Row label='⚠️ 주의사항' labelColor='#dc2626' show={true}
+                    ingNames={ingredients.filter(i=>i.caution).sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(i=>i.name)}
+                    bg='#fef2f2' border='#fca5a5' color='#dc2626'/>
+                )}
                 {ageGroups.filter(a=>a!=='all').map(a => ageMap[a] ? (
                   <Row key={a} label={ageMap[a][0]} labelColor={ageMap[a][3]} show={true}
                     ingNames={ageIngMap[a]||[]} bg={ageMap[a][1]} border={ageMap[a][2]+'66'} color={ageMap[a][3]}/>
