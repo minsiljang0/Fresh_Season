@@ -4,6 +4,7 @@ import { S } from './AdminUI'
 const ACCENT = '#16a34a'
 
 const SECTIONS = [
+  { value: 'strategy',   label: '🗺️ 월간전략',  color: '#7c3aed', bg: '#f5f3ff' },
   { value: 'angle',      label: '✏️ 각도/기획', color: '#f59e0b', bg: '#fffbeb' },
   { value: 'special',    label: '⭐ 특집/테마', color: '#ec4899', bg: '#fdf4ff' },
   { value: 'ingredient', label: '🥕 식재료',    color: '#16a34a', bg: '#f0fdf4' },
@@ -24,11 +25,13 @@ const TYPE_LABELS = {
 const MONTH_ICONS   = ['❄️','🌸','🌸','🌿','🌿','☀️','☀️','☀️','🍂','🍂','🍁','❄️']
 const MONTH_SEASONS = ['겨울','봄','봄','봄','초여름','여름','여름','여름','가을','가을','가을','겨울']
 
-const REGION_LABELS = {
-  seoul:'서울', busan:'부산', daegu:'대구', incheon:'인천', gwangju:'광주',
-  daejeon:'대전', ulsan:'울산', sejong:'세종', gyeonggi:'경기', gangwon:'강원',
-  chungbuk:'충북', chungnam:'충남', jeonbuk:'전북', jeonnam:'전남',
-  gyeongbuk:'경북', gyeongnam:'경남', jeju:'제주', '해외':'해외',
+const CAT_LABELS = {
+  fish:'🐟 생선류', crustacean:'🦞 갑각류', shellfish:'🦪 조개·패류', seaweed:'🌿 해조류',
+  other_seafood:'🐙 기타수산', veg:'🥬 채소·나물', root_veg:'🥕 뿌리채소', fruit_veg:'🍆 열매채소',
+  herb_veg:'🌱 나물·산채', fruit:'🍑 국내과일', tropical_fruit:'🍌 열대과일', berry:'🍓 베리류',
+  grain:'🌾 곡물', processed:'🏭 가공식품', beef:'🥩 소고기', pork:'🐷 돼지고기',
+  chicken:'🐔 닭고기', egg:'🥚 달걀', processed_meat:'🌭 가공육', meat:'🍖 기타육류',
+  mushroom:'🍄 버섯', wild_herb:'🌿 산채·약초', dairy:'🥛 유제품',
 }
 
 function fmtDate(iso) {
@@ -42,154 +45,95 @@ function fmtUsedAt(iso) {
   return `${d.getMonth()+1}월 ${d.getDate()}일 사용`
 }
 
-// ── 식재료 카드 (자동 로드) ──────────────────────────────────
-// ── 식재료 카드 (맵 관리와 동일한 구조) ────────────────────
-const ING_CAT = {
-  fish:'🐟생선', crustacean:'🦞갑각류', shellfish:'🦪조개·패류', seaweed:'🌿해조류',
-  other_seafood:'🐙기타수산', veg:'🥬잎채소', root_veg:'🥕뿌리채소', fruit_veg:'🍆열매채소',
-  herb_veg:'🌱나물·산채', fruit:'🍎국내과일', tropical_fruit:'🍌열대과일', berry:'🍓베리류',
-  grain:'🌾곡물·잡곡', processed:'🏭가공식품', beef:'🥩소고기', pork:'🐷돼지고기',
-  chicken:'🐔닭고기', egg:'🥚달걀', processed_meat:'🌭가공육', meat:'🍖기타육류',
-  mushroom:'🍄버섯', wild_herb:'🌿산채·약초',
-}
+// ── 카테고리별 소스 현황 ──────────────────────────────────────
+function SourceSummary({ ingredients }) {
+  if (!ingredients || ingredients.length === 0) return null
 
-function SeasonBadge({ v }) {
-  const map = {
-    spring: ['🌸 봄', '#f0fdf4','#86efac','#166534'],
-    summer: ['🌞 여름', '#fefce8','#fde68a','#92400e'],
-    fall:   ['🍂 가을', '#fff7ed','#fdba74','#c2410c'],
-    winter: ['❄️ 겨울', '#eff6ff','#bae6fd','#1e40af'],
-  }
-  const d = map[v]; if (!d) return null
-  return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
-}
+  const catCount = {}
+  ingredients.forEach(i => {
+    const label = CAT_LABELS[i.category] || i.category
+    catCount[label] = (catCount[label] || 0) + 1
+  })
+  const sorted = Object.entries(catCount).sort((a, b) => b[1] - a[1])
 
-function JeolgiBadge({ v }) {
-  const map = {
-    seollal:['🎍 설날','#fdf4ff','#e9d5ff','#7e22ce'],
-    sambok:['🔥 삼복','#fff1f2','#fecdd3','#be123c'],
-    chopbok:['🔥 초복','#fff1f2','#fecdd3','#be123c'],
-    jungbok:['🔥 중복','#fff1f2','#fecdd3','#be123c'],
-    malbok:['🔥 말복','#fff1f2','#fecdd3','#be123c'],
-    chuseok:['🌕 추석','#fefce8','#fde68a','#854d0e'],
-    gimjang:['🥬 김장철','#f0fdf4','#86efac','#166534'],
-    dongji:['☯️ 동지','#eff6ff','#bae6fd','#1e40af'],
-    dano:['🌿 단오','#f0fdf4','#86efac','#166534'],
-  }
-  const d = map[v]; if (!d) return null
-  return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
-}
-
-function SpecialBadge({ v }) {
-  const map = {
-    boyangshik:['💪 보양식','#fff7ed','#fed7aa','#c2410c'],
-    jeolgi_food:['🎋 절기음식','#fdf4ff','#e9d5ff','#7e22ce'],
-    hangover:['🍶 해장','#fefce8','#fde68a','#854d0e'],
-    diet:['🥗 다이어트','#f0fdf4','#86efac','#166534'],
-  }
-  const d = map[v]; if (!d) return null
-  return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
-}
-
-function HabitatBadge({ v }) {
-  const map = {
-    island:['🏝️ 섬','#f0f9ff','#7dd3fc','#0369a1'],
-    freshwater:['🐟 민물','#eff6ff','#93c5fd','#1d4ed8'],
-    tidal:['🌊 갯벌','#f0fdfa','#5eead4','#0f766e'],
-    mountain:['🏔️ 산','#f7fee7','#a3e635','#3f6212'],
-    ocean:['🌊 바다','#f0f9ff','#38bdf8','#0c4a6e'],
-  }
-  const d = map[v]; if (!d) return null
-  return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
-}
-
-function FarmingBadge({ v }) {
-  const map = {
-    aquaculture:['🤿 양식','#fdf4ff','#d8b4fe','#7e22ce'],
-    wild:['🎣 자연산','#fff7ed','#fdba74','#c2410c'],
-    fermented:['🥟 발효','#fef9c3','#fde68a','#713f12'],
-  }
-  const d = map[v]; if (!d) return null
-  return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
-}
-
-function IngredientCard({ ing, onDelete }) {
-  const [open, setOpen] = useState(false)
-  const [keyword, setKeyword] = useState('')
-  const [angle, setAngle] = useState('')
-  const [memo, setMemo] = useState('')
-  const ct = ING_CAT[ing.category] || ''
-  const seasonMap  = { spring:['🌸 봄','#f0fdf4','#86efac','#166534'], summer:['🌞 여름','#fefce8','#fde68a','#92400e'], fall:['🍂 가을','#fff7ed','#fdba74','#c2410c'], winter:['❄️ 겨울','#eff6ff','#bae6fd','#1e40af'] }
-  const jeolgiMap  = { seollal:['🎍 설날','#fdf4ff','#e9d5ff','#7e22ce'], sambok:['🔥 삼복','#fff1f2','#fecdd3','#be123c'], chopbok:['🔥 초복','#fff1f2','#fecdd3','#be123c'], jungbok:['🔥 중복','#fff1f2','#fecdd3','#be123c'], malbok:['🔥 말복','#fff1f2','#fecdd3','#be123c'], chuseok:['🌕 추석','#fefce8','#fde68a','#854d0e'], gimjang:['🥬 김장철','#f0fdf4','#86efac','#166534'], dongji:['☯️ 동지','#eff6ff','#bae6fd','#1e40af'], dano:['🌿 단오','#f0fdf4','#86efac','#166534'], ipchun:['🌱 입춘','#f0fdf4','#86efac','#166534'], daeboreum:['🌕 정월대보름','#fef9c3','#fde68a','#713f12'], hansik:['🌸 한식','#fdf4ff','#e9d5ff','#7e22ce'] }
-  const specialMap = { boyangshik:['💪 보양식','#fff7ed','#fed7aa','#c2410c'], jeolgi_food:['🎋 절기음식','#fdf4ff','#e9d5ff','#7e22ce'], hangover:['🍶 해장','#fefce8','#fde68a','#854d0e'], diet:['🥗 다이어트','#f0fdf4','#86efac','#166534'] }
-  const habitatMap = { island:['🏝️ 섬','#f0f9ff','#7dd3fc','#0369a1'], freshwater:['🐟 민물','#eff6ff','#93c5fd','#1d4ed8'], tidal:['🌊 갯벌','#f0fdfa','#5eead4','#0f766e'], mountain:['🏔️ 산','#f7fee7','#a3e635','#3f6212'], ocean:['🌊 바다','#f0f9ff','#38bdf8','#0c4a6e'] }
-  const farmingMap = { aquaculture:['🤿 양식','#fdf4ff','#d8b4fe','#7e22ce'], wild:['🎣 자연산','#fff7ed','#fdba74','#c2410c'], fermented:['🥟 발효','#fef9c3','#fde68a','#713f12'] }
-  const SB = ({v, map}) => { const d=map[v]; if(!d) return null; return <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span> }
+  const limited  = ingredients.filter(i => i.is_limited)
+  const special  = ingredients.filter(i => i.is_special)
+  const caution  = ingredients.filter(i => i.caution)
 
   return (
-    <div onClick={() => setOpen(p => !p)}
-      style={{ ...S.row, cursor:'pointer', border:'1.5px solid #d1e8d1', background:'#fff' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap', marginBottom:3 }}>
-            <span style={{ fontWeight:800, color:'#111', fontSize:13 }}>{[...ct][0]} {ing.name}</span>
-            {ing.is_special   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#b45309',fontWeight:700}}>🏆 특산</span>}
-            {ing.is_limited   && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#d1fae5',border:'1px solid #10b981',color:'#059669',fontWeight:700}}>⏰ {ing.limited_days||'기간한정'}</span>}
-            {ing.is_superfood && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#fef3c7',border:'1px solid #f59e0b',color:'#92400e',fontWeight:700}}>🌟 슈퍼푸드</span>}
-            {ing.is_global    && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#dbeafe',border:'1px solid #3b82f6',color:'#1d4ed8',fontWeight:700}}>🌍 해외</span>}
-            {ing.is_brand     && <span style={{fontSize:10,padding:'1px 6px',borderRadius:20,background:'#ffe4e6',border:'1px solid #e63946',color:'#e63946',fontWeight:700}}>🏷️ 지역브랜드</span>}
-            {(Array.isArray(ing.season_badge)?ing.season_badge:[ing.season_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={seasonMap}/>)}
-            {(Array.isArray(ing.jeolgi_badge)?ing.jeolgi_badge:[ing.jeolgi_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={jeolgiMap}/>)}
-            {(Array.isArray(ing.special_badge)?ing.special_badge:[ing.special_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={specialMap}/>)}
-            {(Array.isArray(ing.habitat_badge)?ing.habitat_badge:[ing.habitat_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={habitatMap}/>)}
-            {(Array.isArray(ing.farming_badge)?ing.farming_badge:[ing.farming_badge]).filter(Boolean).map((v,i)=><SB key={i} v={v} map={farmingMap}/>)}
-          </div>
-          {ing.regions_preview?.length > 0 && (
-            <div style={{ display:'flex', gap:3, flexWrap:'wrap', marginBottom:3 }}>
-              {ing.regions_preview.map((lbl,idx) => (
-                <span key={idx} style={{fontSize:10,padding:'1px 6px',borderRadius:10,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{lbl}</span>
-              ))}
-            </div>
-          )}
-          {(ing.months||[]).length > 0 && (
-            <div style={{ display:'flex', gap:2, flexWrap:'wrap', marginBottom:3 }}>
-              {ing.months.map(m => (
-                <span key={m} style={{fontSize:10,padding:'1px 5px',borderRadius:10,background:'#dcfce7',border:'1px solid #86efac',color:'#166534',fontWeight:700}}>{m}월</span>
-              ))}
-            </div>
-          )}
-          <div style={{ fontSize:11, color:'#6b7280' }}>{ct}</div>
-          {ing.description && <div style={{ fontSize:11, color:'#8aaa8a', marginTop:2 }}>{ing.description.slice(0,35)}{ing.description.length>35?'…':''}</div>}
-          {ing.caution && (
-            <div style={{ fontSize:10, marginTop:3, padding:'2px 6px', background:'#fef2f2', borderRadius:4, border:'1px solid #fca5a5' }}>
-              <span style={{ color:'#dc2626', fontWeight:700 }}>⚠️ </span>
-              <span style={{ color:'#dc2626' }}>{ing.caution.slice(0,35)}{ing.caution.length>35?'…':''}</span>
-            </div>
-          )}
-          {ing.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:2 }}>🛒 쿠팡</div>}
-          <div style={{ display:'flex', gap:4, marginTop:4 }}>
-            <span style={{fontSize:10,padding:'2px 8px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',fontWeight:700}}>
-              💊 건강효능 {(ing.health_benefits||[]).length}개
+    <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:10, marginBottom:12, overflow:'hidden' }}>
+      <div style={{ padding:'10px 16px', background:'#f0fdf4', borderBottom:'1px solid #d1e8d1', display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📊 {ingredients.length}개 소스 현황</span>
+        <div style={{ display:'flex', gap:6, marginLeft:'auto', flexWrap:'wrap' }}>
+          {limited.length > 0 && (
+            <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:'#d1fae5', border:'1px solid #10b981', color:'#059669' }}>
+              ⏰ 기간한정 {limited.length}개
             </span>
-          </div>
-        </div>
-        <div style={{ display:'flex', flexDirection:'column', gap:3, flexShrink:0, marginLeft:6 }}>
-          <button onClick={e => { e.stopPropagation(); onDelete(ing.id, ing.name) }}
-            style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+          )}
+          {special.length > 0 && (
+            <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309' }}>
+              🏆 특산품 {special.length}개
+            </span>
+          )}
+          {caution.length > 0 && (
+            <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:'#fef2f2', border:'1px solid #fca5a5', color:'#dc2626' }}>
+              ⚠️ 주의사항 {caution.length}개
+            </span>
+          )}
         </div>
       </div>
-      {open && (
-        <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid #e9d5ff' }} onClick={e=>e.stopPropagation()}>
-          <div style={{ display:'flex', justifyContent:'flex-end' }}>
-            <button onClick={() => setOpen(false)}
-              style={{ padding:'3px 10px', borderRadius:5, border:'1px solid #e5e7eb', background:'#f9fafb', color:'#6b7280', fontSize:11, cursor:'pointer' }}>닫기</button>
-          </div>
+      <div style={{ padding:'10px 16px', display:'flex', gap:6, flexWrap:'wrap' }}>
+        {sorted.map(([label, cnt]) => (
+          <span key={label} style={{ fontSize:11, padding:'3px 8px', borderRadius:8, background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#166534', fontWeight:600 }}>
+            {label} {cnt}
+          </span>
+        ))}
+      </div>
+      {limited.length > 0 && (
+        <div style={{ padding:'8px 16px', borderTop:'1px solid #d1fae5', background:'#f0fdf4' }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#059669' }}>⏰ 기간한정 — 시즌 끝나기 전 먼저 발행: </span>
+          <span style={{ fontSize:11, color:'#059669' }}>{limited.map(i => i.name).join(' · ')}</span>
         </div>
       )}
     </div>
   )
 }
 
+// ── 월간전략 카드 ─────────────────────────────────────────────
+function StrategyCard({ idea, onDelete }) {
+  const [open, setOpen] = useState(false)
+  const lines = (idea.content || '').split('\n')
+  const preview = lines.slice(0, 4).join('\n')
+  const hasMore = lines.length > 4
+
+  return (
+    <div style={{
+      background:'#f5f3ff', border:'2px solid #7c3aed',
+      borderRadius:12, padding:'16px 18px', marginBottom:16,
+    }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+        <span style={{ fontSize:13, fontWeight:700, padding:'2px 10px', borderRadius:20, background:'#ede9fe', border:'1px solid #7c3aed', color:'#4c1d95' }}>🗺️ 월간전략</span>
+        <span style={{ fontSize:11, color:'#9ca3af', marginLeft:'auto' }}>등록 {fmtDate(idea.created_at)}</span>
+        <button onClick={() => onDelete(idea.id)}
+          style={{ background:'none', border:'1px solid #c4b5fd', borderRadius:7, color:'#7c3aed', cursor:'pointer', padding:'3px 8px', fontSize:12 }}>×</button>
+      </div>
+      <pre style={{
+        fontSize:12, color:'#374151', lineHeight:1.8, margin:0,
+        whiteSpace:'pre-wrap', wordBreak:'break-word',
+        fontFamily:"'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif",
+      }}>
+        {open ? idea.content : preview}
+        {hasMore && !open && '\n...'}
+      </pre>
+      {hasMore && (
+        <button onClick={() => setOpen(p => !p)} style={{
+          marginTop:8, background:'none', border:'none', color:'#7c3aed',
+          fontSize:12, fontWeight:700, cursor:'pointer', padding:0,
+        }}>{open ? '접기 ▲' : '전체 보기 ▼'}</button>
+      )}
+    </div>
+  )
+}
 
 // ── 확인 모달 ────────────────────────────────────────────────
 function ConfirmModal({ message, onConfirm, onCancel }) {
@@ -208,70 +152,149 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
 
 // ── 추가 모달 ────────────────────────────────────────────────
 function AddIdeaModal({ activeMonth, onClose, onSave }) {
-  const [form, setForm] = useState({ section: 'angle', type: 'idea', content: '', keyword: '', angle: '', memo: '' })
+  const [section, setSection] = useState('angle')
+  const [form, setForm] = useState({ type: 'idea', content: '', keyword: '', angle: '', memo: '' })
+  const [strategy, setStrategy] = useState({ issues: '', bigPicture: '', week1: '', week2: '', week3: '', week4: '', principle: '' })
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const setSt = (k, v) => setStrategy(p => ({ ...p, [k]: v }))
+
+  const isStrategy = section === 'strategy'
+
+  const buildStrategyContent = () => {
+    return [
+      `[이달의 핵심 이슈]
+${strategy.issues}`,
+      `[이달의 큰 틀]
+${strategy.bigPicture}`,
+      `[주차별 방향]
+1주차: ${strategy.week1}
+2주차: ${strategy.week2}
+3주차: ${strategy.week3}
+4주차: ${strategy.week4}`,
+      `[각도 운영 원칙]
+${strategy.principle}`,
+    ].join('
+
+')
+  }
+
+  const handleSave = () => {
+    if (isStrategy) {
+      const content = buildStrategyContent()
+      if (!strategy.issues.trim()) return
+      onSave({ section: 'strategy', type: 'memo', content, keyword: '', angle: '', memo: '', tab_id: `month_${activeMonth}` })
+    } else {
+      if (!form.content.trim()) return
+      onSave({ ...form, section, tab_id: `month_${activeMonth}` })
+    }
+  }
+
+  const canSave = isStrategy ? strategy.issues.trim() : form.content.trim()
+
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:480, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:520, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
         <div style={{ fontSize:16, fontWeight:700, marginBottom:4, color:'#0f1f0f' }}>
           {MONTH_ICONS[activeMonth-1]} {activeMonth}월 글감 추가
         </div>
         <div style={{ fontSize:12, color:'#888', marginBottom:20 }}>{MONTH_SEASONS[activeMonth-1]} 시즌</div>
-        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-          <div>
-            <label style={S.label}>섹션</label>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-              {SECTIONS.map(s => (
-                <button key={s.value} onClick={() => set('section', s.value)} style={{
-                  padding:'6px 12px', borderRadius:20, border:'none', cursor:'pointer',
-                  fontSize:12, fontWeight:700,
-                  background: form.section === s.value ? s.bg : '#f5f5f5',
-                  color: form.section === s.value ? s.color : '#999',
-                  outline: form.section === s.value ? `1.5px solid ${s.color}` : 'none',
-                }}>{s.label}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label style={S.label}>종류</label>
-            <div style={{ display:'flex', gap:6 }}>
-              {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                <button key={k} onClick={() => set('type', k)} style={{
-                  padding:'6px 14px', borderRadius:8, border:'none', cursor:'pointer',
-                  fontSize:13, fontWeight:700,
-                  background: form.type === k ? '#f0fdf4' : '#f5f5f5',
-                  color: form.type === k ? v.color : '#999',
-                  outline: form.type === k ? `1.5px solid ${v.color}` : 'none',
-                }}>{v.label}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label style={S.label}>내용 *</label>
-            <textarea value={form.content} onChange={e => set('content', e.target.value)}
-              placeholder="글감 아이디어를 입력하세요" rows={3} style={S.textarea} />
-          </div>
-          <div>
-            <label style={S.label}>각도 (선택)</label>
-            <input value={form.angle} onChange={e => set('angle', e.target.value)}
-              style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
-          </div>
-          <div>
-            <label style={S.label}>타겟 키워드 (선택)</label>
-            <input value={form.keyword} onChange={e => set('keyword', e.target.value)}
-              style={S.input} placeholder="예: 민어 효능, 민어 제철" />
-          </div>
-          <div>
-            <label style={S.label}>메모 (선택)</label>
-            <input value={form.memo} onChange={e => set('memo', e.target.value)}
-              style={S.input} placeholder="추가 메모" />
+
+        {/* 섹션 선택 */}
+        <div style={{ marginBottom:16 }}>
+          <label style={S.label}>섹션</label>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+            {SECTIONS.map(s => (
+              <button key={s.value} onClick={() => setSection(s.value)} style={{
+                padding:'6px 12px', borderRadius:20, border:'none', cursor:'pointer',
+                fontSize:12, fontWeight:700,
+                background: section === s.value ? s.bg : '#f5f5f5',
+                color: section === s.value ? s.color : '#999',
+                outline: section === s.value ? `1.5px solid ${s.color}` : 'none',
+              }}>{s.label}</button>
+            ))}
           </div>
         </div>
+
+        {/* 월간전략 폼 */}
+        {isStrategy ? (
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <div style={{ background:'#f5f3ff', border:'1px solid #c4b5fd', borderRadius:8, padding:'10px 14px', fontSize:12, color:'#4c1d95' }}>
+              글 쓰는 Claude가 이 달을 보고 방향을 잡을 수 있도록 작성합니다
+            </div>
+            <div>
+              <label style={S.label}>이달의 핵심 이슈 * <span style={{color:'#9ca3af',fontWeight:400}}>(날짜 포함)</span></label>
+              <textarea value={strategy.issues} onChange={e => setSt('issues', e.target.value)}
+                placeholder="예: 초복 7/15 · 중복 7/25 · 북중미 월드컵 · 여름방학 · 장마 · 식중독 주의보"
+                rows={2} style={S.textarea} />
+            </div>
+            <div>
+              <label style={S.label}>이달의 큰 틀</label>
+              <textarea value={strategy.bigPicture} onChange={e => setSt('bigPicture', e.target.value)}
+                placeholder="예: 삼복 보양식 + 여름 과일 풍성 시즌 — 보양·urgency·이슈 연결 각도 중심"
+                rows={2} style={S.textarea} />
+            </div>
+            <div>
+              <label style={S.label}>주차별 방향</label>
+              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                {[['week1','1주차'],['week2','2주차'],['week3','3주차'],['week4','4주차']].map(([k, label]) => (
+                  <div key={k} style={{ display:'flex', gap:8, alignItems:'center' }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:'#7c3aed', background:'#ede9fe', border:'1px solid #c4b5fd', padding:'2px 8px', borderRadius:10, whiteSpace:'nowrap', flexShrink:0 }}>{label}</span>
+                    <input value={strategy[k]} onChange={e => setSt(k, e.target.value)}
+                      style={{ ...S.input, margin:0 }} placeholder={`${label} 주력 방향`} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={S.label}>각도 운영 원칙</label>
+              <input value={strategy.principle} onChange={e => setSt('principle', e.target.value)}
+                style={S.input} placeholder="예: 과일·해산물 번갈아 / 같은 각도 2편 연속 금지 / 이슈 글은 해당일 1주 전" />
+            </div>
+          </div>
+        ) : (
+          /* 일반 글감 폼 */
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div>
+              <label style={S.label}>종류</label>
+              <div style={{ display:'flex', gap:6 }}>
+                {Object.entries(TYPE_LABELS).map(([k, v]) => (
+                  <button key={k} onClick={() => set('type', k)} style={{
+                    padding:'6px 14px', borderRadius:8, border:'none', cursor:'pointer',
+                    fontSize:13, fontWeight:700,
+                    background: form.type === k ? '#f0fdf4' : '#f5f5f5',
+                    color: form.type === k ? v.color : '#999',
+                    outline: form.type === k ? `1.5px solid ${v.color}` : 'none',
+                  }}>{v.label}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={S.label}>내용 *</label>
+              <textarea value={form.content} onChange={e => set('content', e.target.value)}
+                placeholder="글감 아이디어를 입력하세요" rows={3} style={S.textarea} />
+            </div>
+            <div>
+              <label style={S.label}>각도 (선택)</label>
+              <input value={form.angle} onChange={e => set('angle', e.target.value)}
+                style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
+            </div>
+            <div>
+              <label style={S.label}>타겟 키워드 (선택)</label>
+              <input value={form.keyword} onChange={e => set('keyword', e.target.value)}
+                style={S.input} placeholder="예: 민어 효능, 민어 제철" />
+            </div>
+            <div>
+              <label style={S.label}>메모 (선택)</label>
+              <input value={form.memo} onChange={e => set('memo', e.target.value)}
+                style={S.input} placeholder="추가 메모" />
+            </div>
+          </div>
+        )}
+
         <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
           <button onClick={onClose} style={S.btnGhost}>취소</button>
-          <button onClick={() => { if (form.content.trim()) onSave({ ...form, tab_id: `month_${activeMonth}` }) }}
-            disabled={!form.content.trim()}
-            style={{ ...S.btn(), opacity: form.content.trim() ? 1 : 0.4 }}>저장</button>
+          <button onClick={handleSave} disabled={!canSave}
+            style={{ ...S.btn(), opacity: canSave ? 1 : 0.4 }}>저장</button>
         </div>
       </div>
     </div>
@@ -303,7 +326,7 @@ function UseModal({ idea, onClose, onSave }) {
 
 // ── 아이디어 카드 ────────────────────────────────────────────
 function IdeaCard({ idea, onUse, onUndoUse, onDelete, index, onMoveUp, onMoveDown, isFirst, isLast }) {
-  const sec = SECTIONS.find(s => s.value === idea.tool_id) || SECTIONS[7]
+  const sec = SECTIONS.find(s => s.value === idea.tool_id) || SECTIONS[8]
   const typ = TYPE_LABELS[idea.type] || TYPE_LABELS.idea
   const isUsed = idea.status === 'used'
   return (
@@ -326,6 +349,11 @@ function IdeaCard({ idea, onUse, onUndoUse, onDelete, index, onMoveUp, onMoveDow
         <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:6, flexWrap:'wrap' }}>
           <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:sec.bg, color:sec.color }}>{sec.label}</span>
           <span style={{ fontSize:11, fontWeight:700, color:typ.color }}>#{typ.label}</span>
+          {idea.angle && (
+            <span style={{ fontSize:11, padding:'2px 7px', borderRadius:8, background:'#fffbeb', border:'1px solid #fde68a', color:'#92400e', fontWeight:600 }}>
+              {idea.angle}
+            </span>
+          )}
           {isUsed && (
             <span style={{ fontSize:11, color:'#16a34a', fontWeight:700, background:'#dcfce7', padding:'2px 7px', borderRadius:6 }}>
               ✓ {fmtUsedAt(idea.used_at)}
@@ -403,14 +431,14 @@ export default function ContentIdeaPanel({ adminToken }) {
   const thisMonth = new Date().getMonth() + 1
   const [activeMonth, setActiveMonth] = useState(thisMonth)
   const [ideas, setIdeas] = useState([])
-  const [ingredients, setIngredients] = useState([])  // 해당 월 제철 식재료
+  const [ingredients, setIngredients] = useState([])
   const [ingLoading, setIngLoading] = useState(false)
   const [ingLoaded, setIngLoaded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [useTarget, setUseTarget] = useState(null)
   const [filterStatus, setFilterStatus] = useState('pending')
-  const [showIngredients, setShowIngredients] = useState(true)
+  const [showIngredients, setShowIngredients] = useState(false)
   const [toast, setToast] = useState('')
   const [confirmTarget, setConfirmTarget] = useState(null)
 
@@ -426,7 +454,6 @@ export default function ContentIdeaPanel({ adminToken }) {
     setLoading(false)
   }, [adminToken])
 
-  // 월별 제철 식재료 불러오기 + monthly_ingredients 저장
   const loadIngredients = useCallback(async (month) => {
     setIngLoading(true)
     setIngLoaded(false)
@@ -435,7 +462,6 @@ export default function ContentIdeaPanel({ adminToken }) {
       const data = await res.json()
       if (Array.isArray(data.ingredients)) {
         setIngredients(data.ingredients)
-        // monthly_ingredients 테이블에 저장
         await fetch('/api/admin/seasonal-foods', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
@@ -450,14 +476,12 @@ export default function ContentIdeaPanel({ adminToken }) {
 
   useEffect(() => { load() }, [load])
 
-  // 월 바뀔 때 monthly_ingredients에 저장된 식재료 자동 로드
   useEffect(() => {
     const checkSaved = async () => {
       try {
         const res = await fetch(`/api/admin/seasonal-foods?month=${activeMonth}&saved=1`, { headers: { 'x-admin-token': adminToken } })
         const data = await res.json()
         if (data.ids && data.ids.length > 0) {
-          // 저장된 게 있으면 자동으로 식재료 불러오기
           const res2 = await fetch(`/api/admin/seasonal-foods?month=${activeMonth}`, { headers: { 'x-admin-token': adminToken } })
           const data2 = await res2.json()
           if (Array.isArray(data2.ingredients)) {
@@ -479,22 +503,6 @@ export default function ContentIdeaPanel({ adminToken }) {
     })
     if (res.ok) { showToast('✅ 추가됨'); load() }
   }
-
-
-  // 식재료 삭제
-  const deleteIngredient = (id, name) => {
-    setConfirmTarget({ message: `"${name}"을(를) 삭제할까요?`, onConfirm: async () => {
-      const res = await fetch("/api/admin/ingredients", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json", "x-admin-token": adminToken },
-        body: JSON.stringify({ id }),
-      })
-      if (res.ok) { showToast(`🗑 ${name} 삭제됨`); loadIngredients(activeMonth) }
-      setConfirmTarget(null)
-    }})
-  }
-
-
 
   const markUsed = async (slug) => {
     const idea = useTarget
@@ -554,7 +562,6 @@ export default function ContentIdeaPanel({ adminToken }) {
   }
 
   const tabId = `month_${activeMonth}`
-  // 이미 content_ideas에 저장된 식재료 이름 목록
   const tabIdeas = ideas.filter(i => {
     if (i.tab_id !== tabId) return false
     if (filterStatus === 'pending' && i.status === 'used') return false
@@ -563,6 +570,10 @@ export default function ContentIdeaPanel({ adminToken }) {
   })
   const totalPending = ideas.filter(i => i.tab_id === tabId && i.status === 'pending').length
   const totalUsed    = ideas.filter(i => i.tab_id === tabId && i.status === 'used').length
+
+  // 기간한정 글감 별도 분리
+  const limitedIdeas = tabIdeas.filter(i => i.tool_id !== 'strategy' && (i.memo || '').includes('기간한정') || (i.angle || '').includes('urgency') || (i.angle || '').includes('기간한정'))
+  const strategyIdeas = tabIdeas.filter(i => i.tool_id === 'strategy')
 
   return (
     <div>
@@ -609,99 +620,71 @@ export default function ContentIdeaPanel({ adminToken }) {
             {totalUsed > 0 && <span style={{ marginLeft:10, color:'#9ca3af' }}>완료 {totalUsed}개</span>}
           </div>
         </div>
-        <div style={{ marginLeft:'auto' }}>
+        <div style={{ marginLeft:'auto', display:'flex', gap:8, alignItems:'center' }}>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
             style={{ ...S.input, width:'auto', padding:'6px 10px', fontSize:12 }}>
             <option value="pending">미사용만</option>
             <option value="used">사용됨만</option>
             <option value="">전체</option>
           </select>
+          <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'6px 14px', fontSize:12 }}>+ 추가</button>
         </div>
       </div>
 
-      {/* ── 제철 식재료 자동 로드 섹션 ── */}
-      <div style={{ marginBottom: 20 }}>
-        <div onClick={() => setShowIngredients(p => !p)} style={{
-          background:'#fff', border:'1px solid #d1e8d1', borderRadius:10,
-          cursor:'pointer', marginBottom: showIngredients ? 10 : 0, overflow:'hidden',
-        }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px' }}>
-            <span style={{ fontSize:14, fontWeight:700, color:'#0f1f0f' }}>🥕 {activeMonth}월 제철 식재료</span>
-            {ingredients.length > 0 && (
-              <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>{ingredients.length}개</span>
-            )}
-            <span style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8 }}>
-              <button onClick={e => { e.stopPropagation(); loadIngredients(activeMonth) }}
-                disabled={ingLoading}
-                style={{ padding:'4px 12px', borderRadius:6, border:'none', background: ingLoaded ? '#6b7280' : ACCENT, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', opacity: ingLoading ? 0.6 : 1 }}>
-                {ingLoading ? '처리 중...' : ingLoaded ? '업데이트' : '불러오기'}
-              </button>
-              <span style={{ color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
-            </span>
-          </div>
-          {!ingLoading && ingredients.length > 0 && showIngredients && (() => {
-            const monthToSeason = {1:'winter',2:'winter',3:'spring',4:'spring',5:'spring',6:'summer',7:'summer',8:'summer',9:'fall',10:'fall',11:'fall',12:'winter'}
-            const currentSeason = monthToSeason[activeMonth]
-            const jeolgiMonths  = {seollal:[1,2],ipchun:[2],daeboreum:[1,2],hansik:[4],dano:[5,6],chopbok:[7],jungbok:[7,8],sambok:[7,8],malbok:[8],chuseok:[9,10],gimjang:[11,12],dongji:[12]}
-            const seasonMap  = {spring:['🌸 봄','#f0fdf4','#86efac','#166534'],summer:['🌞 여름','#fefce8','#fde68a','#92400e'],fall:['🍂 가을','#fff7ed','#fdba74','#c2410c'],winter:['❄️ 겨울','#eff6ff','#bae6fd','#1e40af']}
-            const jeolgiMap  = {seollal:['🎍 설날','#fdf4ff','#e9d5ff','#7e22ce'],sambok:['🔥 삼복','#fff1f2','#fecdd3','#be123c'],chopbok:['🔥 초복','#fff1f2','#fecdd3','#be123c'],jungbok:['🔥 중복','#fff1f2','#fecdd3','#be123c'],malbok:['🔥 말복','#fff1f2','#fecdd3','#be123c'],chuseok:['🌕 추석','#fefce8','#fde68a','#854d0e'],gimjang:['🥬 김장철','#f0fdf4','#86efac','#166534'],dongji:['☯️ 동지','#eff6ff','#bae6fd','#1e40af'],dano:['🌿 단오','#f0fdf4','#86efac','#166534'],ipchun:['🌱 입춘','#f0fdf4','#86efac','#166534'],daeboreum:['🌕 정월대보름','#fef9c3','#fde68a','#713f12'],hansik:['🌸 한식','#fdf4ff','#e9d5ff','#7e22ce']}
-            const specialMap = {boyangshik:['💪 보양식','#fff7ed','#fed7aa','#c2410c'],jeolgi_food:['🎋 절기음식','#fdf4ff','#e9d5ff','#7e22ce'],hangover:['🍶 해장','#fefce8','#fde68a','#854d0e'],diet:['🥗 다이어트','#f0fdf4','#86efac','#166534']}
-            const habitatMap = {island:['🏝️ 섬','#f0f9ff','#7dd3fc','#0369a1'],freshwater:['🐟 민물','#eff6ff','#93c5fd','#1d4ed8'],tidal:['🌊 갯벌','#f0fdfa','#5eead4','#0f766e'],mountain:['🏔️ 산','#f7fee7','#a3e635','#3f6212'],ocean:['🌊 바다','#f0f9ff','#38bdf8','#0c4a6e']}
-            const farmingMap = {aquaculture:['🤿 양식','#fdf4ff','#d8b4fe','#7e22ce'],wild:['🎣 자연산','#fff7ed','#fdba74','#c2410c'],fermented:['🥟 발효','#fef9c3','#fde68a','#713f12']}
-            const collect = (field) => [...new Set(ingredients.flatMap(i=>(Array.isArray(i[field])?i[field]:[i[field]]).filter(Boolean)))]
-            const seasons  = collect('season_badge').filter(v=>v===currentSeason)
-            const jeolgis  = collect('jeolgi_badge').filter(v=>(jeolgiMonths[v]||[]).includes(activeMonth))
-            const specials = collect('special_badge')
-            const habitats = collect('habitat_badge')
-            const farmings = collect('farming_badge')
-            const boolBadges = [
-              ingredients.some(i=>i.is_special)   && ['🏆 특산',        '#fef3c7','#f59e0b','#b45309'],
-              ingredients.some(i=>i.is_limited)   && ['⏰ 기간한정',    '#d1fae5','#10b981','#059669'],
-              ingredients.some(i=>i.is_superfood) && ['🌟 슈퍼푸드',    '#fef3c7','#f59e0b','#92400e'],
-              ingredients.some(i=>i.is_global)    && ['🌍 해외',         '#dbeafe','#3b82f6','#1d4ed8'],
-              ingredients.some(i=>i.is_brand)     && ['🏷️ 지역브랜드', '#ffe4e6','#e63946','#e63946'],
-            ].filter(Boolean)
-            const ageMap = {infant:['👶 영유아','#fef9c3','#fde68a','#713f12'],child:['🧒 어린이','#fef3c7','#f59e0b','#92400e'],adult:['🧑 성인','#eff6ff','#bae6fd','#1e40af'],senior:['👴 노인','#f0fdf4','#86efac','#166534'],all:['👨‍👩‍👧‍👦 전연령','#f3f4f6','#d1d5db','#374151']}
-            const genderMap = {male:['👨 남성','#eff6ff','#93c5fd','#1d4ed8'],female:['👩 여성','#fdf4ff','#e9d5ff','#7e22ce'],all:null}
-            const ageGroups = [...new Set(ingredients.flatMap(i=>i.age_groups||[]).filter(Boolean))]
-            const genders   = [...new Set(ingredients.map(i=>i.gender).filter(v=>v&&v!=='all'))]
-            const regions  = [...new Set(ingredients.flatMap(i=>i.regions_preview||[]))]
-            const benefits = [...new Set(ingredients.flatMap(i=>(i.health_benefits||[]).map(h=>h.name).filter(Boolean)))]
-            const Bdg = ({d}) => <span style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
-            const Row = ({label,show,children}) => !show ? null : (
-              <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
-                <span style={{fontSize:11,color:'#9ca3af',fontWeight:600,width:30,flexShrink:0}}>{label}</span>
-                {children}
-              </div>
-            )
-            return (
-              <div style={{padding:'6px 16px 12px',borderTop:'1px solid #f0fdf4',display:'flex',flexDirection:'column',gap:5}}>
-                <Row label="계절" show={seasons.length>0}>{seasons.map((v,i)=>seasonMap[v]?<Bdg key={i} d={seasonMap[v]}/>:null)}</Row>
-                <Row label="절기" show={jeolgis.length>0}>{jeolgis.map((v,i)=>jeolgiMap[v]?<Bdg key={i} d={jeolgiMap[v]}/>:null)}</Row>
-                <Row label="특수" show={specials.length>0}>{specials.map((v,i)=>specialMap[v]?<Bdg key={i} d={specialMap[v]}/>:null)}</Row>
-                <Row label="서식" show={habitats.length>0}>{habitats.map((v,i)=>habitatMap[v]?<Bdg key={i} d={habitatMap[v]}/>:null)}</Row>
-                <Row label="양식" show={farmings.length>0}>{farmings.map((v,i)=>farmingMap[v]?<Bdg key={i} d={farmingMap[v]}/>:null)}</Row>
-                <Row label="기타" show={boolBadges.length>0}>{boolBadges.map((d,i)=><Bdg key={i} d={d}/>)}</Row>
-                <Row label="연령" show={ageGroups.length>0}>{ageGroups.map((v,i)=>ageMap[v]?<Bdg key={i} d={ageMap[v]}/>:null)}</Row>
-                <Row label="성별" show={genders.length>0}>{genders.map((v,i)=>genderMap[v]?<Bdg key={i} d={genderMap[v]}/>:null)}</Row>
-                <Row label="지역" show={regions.length>0}>{regions.map((r,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{r}</span>)}</Row>
-                <Row label="효능" show={benefits.length>0}>{benefits.map((b,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',fontWeight:700}}>💊 {b}</span>)}</Row>
-              </div>
-            )
-          })()}
+      {/* 제철 식재료 소스 현황 */}
+      <div style={{ marginBottom:16 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+          <span style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>🥕 {activeMonth}월 제철 식재료</span>
+          {ingredients.length > 0 && <span style={{ fontSize:12, color:ACCENT, fontWeight:700 }}>{ingredients.length}개</span>}
+          <button onClick={() => loadIngredients(activeMonth)} disabled={ingLoading}
+            style={{ marginLeft:'auto', padding:'4px 12px', borderRadius:6, border:'none', background: ingLoaded ? '#6b7280' : ACCENT, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', opacity: ingLoading ? 0.6 : 1 }}>
+            {ingLoading ? '처리 중...' : ingLoaded ? '업데이트' : '불러오기'}
+          </button>
+          {ingredients.length > 0 && (
+            <button onClick={() => setShowIngredients(p => !p)}
+              style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #d1e8d1', background:'#fff', fontSize:12, color:'#6b7280', cursor:'pointer' }}>
+              {showIngredients ? '접기 ▲' : '상세 ▼'}
+            </button>
+          )}
         </div>
 
-        {/* ── 저장된 글감 목록 ── */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', margin:'12px 0 8px' }}>
-          <div style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📋 저장된 글감</div>
-          <button onClick={() => setShowAdd(true)} style={{ ...S.btn(), padding:'6px 14px', fontSize:12 }}>+ 추가</button>
-        </div>
-        {loading ? (
-          <div style={{ color:'#888', fontSize:14, padding:'20px 0', textAlign:'center' }}>불러오는 중...</div>
-        ) : tabIdeas.length === 0 ? (
-          <div style={{ color:'#aaa', fontSize:13, padding:'16px 0', textAlign:'center' }}>저장된 글감이 없어요</div>
-        ) : (
-          SECTIONS.map(sec => {
+        {/* 카테고리별 소스 현황 — 항상 표시 */}
+        {ingredients.length > 0 && <SourceSummary ingredients={ingredients} />}
+
+        {/* 상세 식재료 목록 — 펼쳤을 때만 */}
+        {showIngredients && ingredients.length > 0 && (
+          <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:10, padding:'12px 16px', marginBottom:8 }}>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+              {ingredients.map(ing => (
+                <span key={ing.id} style={{
+                  fontSize:11, padding:'3px 8px', borderRadius:8,
+                  background: ing.is_limited ? '#d1fae5' : ing.is_special ? '#fef3c7' : '#f3f4f6',
+                  border: ing.is_limited ? '1px solid #10b981' : ing.is_special ? '1px solid #f59e0b' : '1px solid #e5e7eb',
+                  color: ing.is_limited ? '#059669' : ing.is_special ? '#b45309' : '#374151',
+                  fontWeight: 600,
+                }}>
+                  {ing.is_limited ? '⏰ ' : ing.is_special ? '🏆 ' : ''}{ing.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 글감 목록 */}
+      {loading ? (
+        <div style={{ color:'#888', fontSize:14, padding:'20px 0', textAlign:'center' }}>불러오는 중...</div>
+      ) : tabIdeas.length === 0 ? (
+        <div style={{ color:'#aaa', fontSize:13, padding:'16px 0', textAlign:'center' }}>저장된 글감이 없어요</div>
+      ) : (
+        <>
+          {/* 1. 월간전략 먼저 */}
+          {strategyIdeas.map(idea => (
+            <StrategyCard key={idea.id} idea={idea} onDelete={deleteIdea} />
+          ))}
+
+          {/* 2. 나머지 섹션 */}
+          {SECTIONS.filter(s => s.value !== 'strategy').map(sec => {
             const secIdeas = tabIdeas.filter(i => i.tool_id === sec.value)
             return (
               <SectionGroup
@@ -715,27 +698,9 @@ export default function ContentIdeaPanel({ adminToken }) {
                 onMove={moveIdea}
               />
             )
-          })
-        )}
-
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8 }}>
-            {ingLoading ? (
-              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>불러오는 중...</div>
-            ) : ingredients.length === 0 ? (
-              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>등록된 제철 식재료가 없어요</div>
-            ) : (
-              ingredients.map(ing => (
-                <IngredientCard
-                  key={ing.id}
-                  ing={ing}
-                  onDelete={deleteIngredient}
-                />
-              ))
-            )}
-        </div>
-      </div>
-
-
+          })}
+        </>
+      )}
 
       {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />}
       {showAdd && <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />}
