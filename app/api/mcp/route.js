@@ -1390,10 +1390,10 @@ const baseHandler = createMcpHandler(
           is_limited: z.boolean().optional().describe('true면 기간한정만'),
           is_global:  z.boolean().optional().describe('true면 해외 식재료만'),
           month:      z.number().int().min(1).max(12).optional().describe('특정 월이 제철인 식재료만 (months 배열 기준)'),
-          limit:      z.number().optional().describe('최대 반환 개수 (기본 50)'),
+          limit:      z.number().optional().describe('최대 반환 개수 (기본 500)'),
         },
       },
-      async ({ category, q, age_group, gender, is_special, is_limited, is_global, month, limit = 50 }) => {
+      async ({ category, q, age_group, gender, is_special, is_limited, is_global, month, limit = 500 }) => {
         let query = supabase
           .from('ingredients')
           .select(`
@@ -1407,6 +1407,7 @@ const baseHandler = createMcpHandler(
           `)
           .order('name')
           .limit(limit)
+        if (month)      query = query.contains('months', [month])
         if (category)   query = query.eq('category', category)
         if (q)          query = query.ilike('name', `%${q}%`)
         if (gender)     query = query.eq('gender', gender)
@@ -1433,8 +1434,6 @@ const baseHandler = createMcpHandler(
           is_global: ing.is_global || false,
           health_benefits: (ing.ingredient_health || []).map(r => r.health_benefits).filter(Boolean),
         }))
-        // 월 필터 (배열 필드라 JS에서 처리)
-        if (month) result = result.filter(ing => (ing.months || []).includes(month))
         // age_group 필터
         if (age_group) result = result.filter(ing => (ing.age_groups || []).includes(age_group) || ing.age_groups?.includes('all'))
         return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
