@@ -1037,6 +1037,7 @@ export default function ContentIdeaPanel({ adminToken }) {
   // 이미 content_ideas에 저장된 식재료 이름 목록
   const tabIdeas = ideas.filter(i => {
     if (i.tab_id !== tabId) return false
+    if (i.type === 'memo') return false  // 기획 기록은 글감 목록에서 제외
     if (filterStatus === 'pending' && i.status === 'used') return false
     if (filterStatus === 'used' && i.status !== 'used') return false
     return true
