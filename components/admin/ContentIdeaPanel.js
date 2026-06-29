@@ -346,8 +346,8 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
 }
 
 // ── 추가 모달 ────────────────────────────────────────────────
-function AddIdeaModal({ activeMonth, onClose, onSave }) {
-  const [form, setForm] = useState({ section: 'angle', type: 'idea', content: '', keyword: '', angle: '', memo: '' })
+function AddIdeaModal({ activeMonth, initialSection = 'angle', onClose, onSave }) {
+  const [form, setForm] = useState({ section: initialSection, type: 'idea', content: '', keyword: '', angle: '', memo: '' })
   const [strategy, setStrategy] = useState({ bigPicture: '', bigPictureReason: '', priority: ['', '', ''], week1: '', week2: '', week3: '', week4: '', principle: '' })
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const setSt = (k, v) => setStrategy(p => ({ ...p, [k]: v }))
@@ -749,6 +749,7 @@ export default function ContentIdeaPanel({ adminToken }) {
   const [toast, setToast] = useState('')
   const [confirmTarget, setConfirmTarget] = useState(null)
   const [showPlanningModal, setShowPlanningModal] = useState(null)
+  const [showAddStrategy, setShowAddStrategy] = useState(false)
   const [editingMemo, setEditingMemo] = useState(null)
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }
@@ -1245,7 +1246,7 @@ export default function ContentIdeaPanel({ adminToken }) {
                     </div>
                     <div style={{ padding:'14px 16px', textAlign:'center' }}>
                       <div style={{ fontSize:12, color:'#a78bfa', marginBottom:10 }}>아직 등록된 월간전략이 없어요</div>
-                      <button onClick={() => setShowAdd(true)} style={{ padding:'6px 16px', borderRadius:8, border:'none', background:'#7c3aed', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 전략 추가</button>
+                      <button onClick={() => setShowAddStrategy(true)} style={{ padding:'6px 16px', borderRadius:8, border:'none', background:'#7c3aed', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 전략 추가</button>
                     </div>
                   </div>
                 )}
@@ -1305,6 +1306,7 @@ export default function ContentIdeaPanel({ adminToken }) {
 
       {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />}
       {showAdd && <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />}
+      {showAddStrategy && <AddIdeaModal activeMonth={activeMonth} initialSection="strategy" onClose={() => setShowAddStrategy(false)} onSave={addIdea} />}
       {showPlanningModal && (
         <PlanningMemoModal
           activeMonth={activeMonth}
