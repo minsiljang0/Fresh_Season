@@ -48,35 +48,290 @@ function fmtDate(iso) {
   return `${d.getMonth()+1}/${d.getDate()}`
 }
 
-// ── 카테고리별 소스 현황 ──────────────────────────────────────
-function SourceSummary({ ingredients }) {
+// ── 이달의 소스 분석 (식재료 카드 아래 위치) ─────────────────
+function SourceAnalysis({ ingredients, activeMonth }) {
+  const [open, setOpen] = useState(true)
   if (!ingredients || ingredients.length === 0) return null
+
+  // ── 기초 분류 ──
+  const limited   = ingredients.filter(i => i.is_limited)
+  const special   = ingredients.filter(i => i.is_special)
+  const caution   = ingredients.filter(i => i.caution)
+  const superfood = ingredients.filter(i => i.is_superfood)
+  const global_   = ingredients.filter(i => i.is_global)
+  const brand     = ingredients.filter(i => i.is_brand)
+
+  // ── 카테고리 현황 ──
   const catCount = {}
   ingredients.forEach(i => {
     const label = CAT_LABELS[i.category] || i.category
     catCount[label] = (catCount[label] || 0) + 1
   })
-  const sorted = Object.entries(catCount).sort((a, b) => b[1] - a[1])
-  const limited = ingredients.filter(i => i.is_limited)
-  const special = ingredients.filter(i => i.is_special)
-  const caution = ingredients.filter(i => i.caution)
+  const catSorted = Object.entries(catCount).sort((a, b) => b[1] - a[1])
+
+  // ── 절기 묶음 ──
+  const jeolgiMonths = {seollal:[1,2],ipchun:[2],daeboreum:[1,2],hansik:[4],dano:[5,6],chopbok:[7],jungbok:[7,8],sambok:[7,8],malbok:[8],chuseok:[9,10],gimjang:[11,12],dongji:[12]}
+  const jeolgiLabels = {seollal:'🎍 설날',ipchun:'🌱 입춘',daeboreum:'🌕 정월대보름',hansik:'🌸 한식',dano:'🌿 단오',chopbok:'🔥 초복',jungbok:'🔥 중복',sambok:'🔥 삼복',malbok:'🔥 말복',chuseok:'🌕 추석',gimjang:'🥬 김장철',dongji:'☯️ 동지'}
+  const jeolgiColors = {seollal:['#fdf4ff','#7e22ce'],ipchun:['#f0fdf4','#166534'],daeboreum:['#fef9c3','#713f12'],hansik:['#fdf4ff','#7e22ce'],dano:['#f0fdf4','#166534'],chopbok:['#fff1f2','#be123c'],jungbok:['#fff1f2','#be123c'],sambok:['#fff1f2','#be123c'],malbok:['#fff1f2','#be123c'],chuseok:['#fefce8','#854d0e'],gimjang:['#f0fdf4','#166534'],dongji:['#eff6ff','#1e40af']}
+  const activeJeolgis = Object.keys(jeolgiMonths).filter(k => (jeolgiMonths[k]||[]).includes(activeMonth))
+  const jeolgiGroups = activeJeolgis.map(jeolgi => {
+    const matched = ingredients.filter(i => {
+      const badges = Array.isArray(i.jeolgi_badge) ? i.jeolgi_badge : [i.jeolgi_badge]
+      return badges.includes(jeolgi)
+    })
+    return { jeolgi, label: jeolgiLabels[jeolgi] || jeolgi, matched, color: jeolgiColors[jeolgi] || ['#f3f4f6','#374151'] }
+  }).filter(g => g.matched.length > 0)
+
+  // ── 테마 각도 묶음 ──
+  const themeMap = {
+    boyangshik: { label:'💪 보양식', bg:'#fff7ed', color:'#c2410c', border:'#fed7aa' },
+    jeolgi_food:{ label:'🎋 절기음식', bg:'#fdf4ff', color:'#7e22ce', border:'#e9d5ff' },
+    hangover:   { label:'🍶 해장', bg:'#fefce8', color:'#854d0e', border:'#fde68a' },
+    diet:       { label:'🥗 다이어트', bg:'#f0fdf4', color:'#166534', border:'#86efac' },
+  }
+  const themeGroups = Object.entries(themeMap).map(([key, meta]) => {
+    const matched = ingredients.filter(i => {
+      const badges = Array.isArray(i.special_badge) ? i.special_badge : [i.special_badge]
+      return badges.includes(key)
+    })
+    return { key, ...meta, matched }
+  }).filter(g => g.matched.length > 0)
+
+  // ── 서식/양식 각도 ──
+  const habitatLabels = {island:'🏝️ 섬',freshwater:'🐟 민물',tidal:'🌊 갯벌',mountain:'🏔️ 산',ocean:'🌊 바다'}
+  const habitatColors = {island:['#f0f9ff','#0369a1'],freshwater:['#eff6ff','#1d4ed8'],tidal:['#f0fdfa','#0f766e'],mountain:['#f7fee7','#3f6212'],ocean:['#f0f9ff','#0c4a6e']}
+  const farmingLabels = {aquaculture:'🤿 양식',wild:'🎣 자연산',fermented:'🥟 발효'}
+  const farmingColors = {aquaculture:['#fdf4ff','#7e22ce'],wild:['#fff7ed','#c2410c'],fermented:['#fef9c3','#713f12']}
+  const habitatGroups = Object.keys(habitatLabels).map(key => {
+    const matched = ingredients.filter(i => {
+      const b = Array.isArray(i.habitat_badge) ? i.habitat_badge : [i.habitat_badge]
+      return b.includes(key)
+    })
+    return { key, label: habitatLabels[key], matched, color: habitatColors[key] || ['#f3f4f6','#374151'] }
+  }).filter(g => g.matched.length > 0)
+  const farmingGroups = Object.keys(farmingLabels).map(key => {
+    const matched = ingredients.filter(i => {
+      const b = Array.isArray(i.farming_badge) ? i.farming_badge : [i.farming_badge]
+      return b.includes(key)
+    })
+    return { key, label: farmingLabels[key], matched, color: farmingColors[key] || ['#f3f4f6','#374151'] }
+  }).filter(g => g.matched.length > 0)
+
+  // ── 지역별 특산 ──
+  const regionGroups = {}
+  ingredients.forEach(i => {
+    if (!i.regions_preview?.length) return
+    i.regions_preview.forEach(r => {
+      if (!regionGroups[r]) regionGroups[r] = []
+      regionGroups[r].push(i.name)
+    })
+  })
+  const regionSorted = Object.entries(regionGroups).sort((a,b) => b[1].length - a[1].length)
+
+  // ── 연령/성별 각도 ──
+  const ageLabels = {infant:'👶 영유아',child:'🧒 어린이',adult:'🧑 성인',senior:'👴 노인',all:'전연령'}
+  const ageColors = {infant:['#fef9c3','#713f12'],child:['#fef3c7','#92400e'],adult:['#eff6ff','#1d4ed8'],senior:['#f0fdf4','#166534'],all:['#f3f4f6','#374151']}
+  const ageGroups_ = {}
+  ingredients.forEach(i => {
+    (i.age_groups||[]).forEach(a => {
+      if (a === 'all') return
+      if (!ageGroups_[a]) ageGroups_[a] = []
+      ageGroups_[a].push(i.name)
+    })
+  })
+  const maleIngs   = ingredients.filter(i => i.gender === 'male')
+  const femaleIngs = ingredients.filter(i => i.gender === 'female')
+
+  // ── 효능 카테고리별 그룹 ──
+  const benefitCatMap = {}
+  ingredients.forEach(i => {
+    (i.health_benefits||[]).forEach(hb => {
+      const cat = hb.category || '기타'
+      if (!benefitCatMap[cat]) benefitCatMap[cat] = {}
+      if (!benefitCatMap[cat][hb.name]) benefitCatMap[cat][hb.name] = []
+      benefitCatMap[cat][hb.name].push(i.name)
+    })
+  })
+  const benefitCatSorted = Object.entries(benefitCatMap).sort((a,b) => Object.keys(b[1]).length - Object.keys(a[1]).length)
+
+  // ── 공통 스타일 ──
+  const Tag = ({ label, bg='#f0fdf4', border='#86efac', color='#166534', size=10 }) => (
+    <span style={{fontSize:size,padding:'2px 8px',borderRadius:20,background:bg,border:`1px solid ${border}`,color,fontWeight:700,whiteSpace:'nowrap'}}>{label}</span>
+  )
+  const SectionTitle = ({ children, color='#374151' }) => (
+    <div style={{fontSize:12,fontWeight:800,color,marginBottom:6,marginTop:2}}>{children}</div>
+  )
+  const Block = ({ children, bg='#f9fafb', border='#e5e7eb' }) => (
+    <div style={{background:bg,border:`1px solid ${border}`,borderRadius:8,padding:'10px 14px',display:'flex',flexDirection:'column',gap:6}}>
+      {children}
+    </div>
+  )
+  const Row = ({ label, labelColor='#6b7280', children, show=true }) => !show ? null : (
+    <div style={{display:'flex',gap:6,alignItems:'flex-start',flexWrap:'wrap'}}>
+      <span style={{fontSize:11,fontWeight:700,color:labelColor,whiteSpace:'nowrap',minWidth:52,flexShrink:0,paddingTop:2}}>{label}</span>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{children}</div>
+    </div>
+  )
+
   return (
-    <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:10, marginBottom:8, overflow:'hidden' }}>
-      <div style={{ padding:'8px 16px', background:'#f0fdf4', borderBottom:'1px solid #d1e8d1', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-        <span style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📊 {ingredients.length}개 소스 현황</span>
-        {limited.length > 0 && <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:'#d1fae5', border:'1px solid #10b981', color:'#059669' }}>⏰ 기간한정 {limited.length}개</span>}
-        {special.length > 0 && <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:'#fef3c7', border:'1px solid #f59e0b', color:'#b45309' }}>🏆 특산품 {special.length}개</span>}
-        {caution.length > 0 && <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:'#fef2f2', border:'1px solid #fca5a5', color:'#dc2626' }}>⚠️ 주의사항 {caution.length}개</span>}
+    <div style={{marginTop:16,border:'2px solid #d1e8d1',borderRadius:12,overflow:'hidden'}}>
+      {/* 헤더 */}
+      <div onClick={() => setOpen(p=>!p)} style={{display:'flex',alignItems:'center',gap:8,padding:'10px 16px',background:'#f0fdf4',cursor:'pointer',borderBottom: open ? '1px solid #d1e8d1' : 'none'}}>
+        <span style={{fontSize:13,fontWeight:800,color:'#0f1f0f'}}>🔍 이달의 소스 분석</span>
+        <span style={{fontSize:11,color:'#16a34a',fontWeight:700}}>{ingredients.length}개 식재료</span>
+        {limited.length > 0 && <Tag label={`⏰ 기간한정 ${limited.length}개`} bg='#d1fae5' border='#10b981' color='#059669' size={11}/>}
+        {special.length > 0 && <Tag label={`🏆 특산품 ${special.length}개`} bg='#fef3c7' border='#f59e0b' color='#b45309' size={11}/>}
+        {caution.length > 0 && <Tag label={`⚠️ 주의 ${caution.length}개`} bg='#fef2f2' border='#fca5a5' color='#dc2626' size={11}/>}
+        <span style={{marginLeft:'auto',color:'#aaa',fontSize:12}}>{open ? '▲' : '▼'}</span>
       </div>
-      <div style={{ padding:'8px 16px', display:'flex', gap:5, flexWrap:'wrap' }}>
-        {sorted.map(([label, cnt]) => (
-          <span key={label} style={{ fontSize:11, padding:'2px 8px', borderRadius:8, background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#166534', fontWeight:600 }}>{label} {cnt}</span>
-        ))}
-      </div>
-      {limited.length > 0 && (
-        <div style={{ padding:'6px 16px', borderTop:'1px solid #d1fae5', background:'#f0fdf4', fontSize:11, color:'#059669' }}>
-          <span style={{ fontWeight:700 }}>⏰ 기간한정 — 시즌 끝나기 전 먼저 발행: </span>
-          {limited.map(i => i.name).join(' · ')}
+
+      {open && (
+        <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:14,background:'#fff'}}>
+
+          {/* ① 카테고리 현황 */}
+          <Block bg='#f9fafb' border='#e5e7eb'>
+            <SectionTitle color='#374151'>📦 카테고리별 현황</SectionTitle>
+            <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+              {catSorted.map(([label, cnt]) => (
+                <Tag key={label} label={`${label} ${cnt}`} bg='#f0fdf4' border='#bbf7d0' color='#166534' size={11}/>
+              ))}
+            </div>
+          </Block>
+
+          {/* ② 타이밍 각도 — 기간한정/특산 */}
+          {(limited.length > 0 || special.length > 0 || superfood.length > 0) && (
+            <Block bg='#fff7ed' border='#fed7aa'>
+              <SectionTitle color='#c2410c'>⏱️ 타이밍 각도</SectionTitle>
+              <Row label='⏰ 기간한정' labelColor='#059669' show={limited.length > 0}>
+                {limited.map(i => <Tag key={i.id} label={i.name} bg='#d1fae5' border='#10b981' color='#065f46' size={11}/>)}
+              </Row>
+              <Row label='🏆 특산품' labelColor='#b45309' show={special.length > 0}>
+                {special.map(i => <Tag key={i.id} label={i.name} bg='#fef3c7' border='#f59e0b' color='#92400e' size={11}/>)}
+              </Row>
+              <Row label='🌟 슈퍼푸드' labelColor='#92400e' show={superfood.length > 0}>
+                {superfood.map(i => <Tag key={i.id} label={i.name} bg='#fef3c7' border='#f59e0b' color='#78350f' size={11}/>)}
+              </Row>
+              <Row label='🌍 해외' labelColor='#1d4ed8' show={global_.length > 0}>
+                {global_.map(i => <Tag key={i.id} label={i.name} bg='#dbeafe' border='#93c5fd' color='#1e40af' size={11}/>)}
+              </Row>
+              <Row label='🏷️ 지역브랜드' labelColor='#e63946' show={brand.length > 0}>
+                {brand.map(i => <Tag key={i.id} label={i.name} bg='#ffe4e6' border='#fca5a5' color='#be123c' size={11}/>)}
+              </Row>
+            </Block>
+          )}
+
+          {/* ③ 절기 각도 */}
+          {jeolgiGroups.length > 0 && (
+            <Block bg='#fdf4ff' border='#e9d5ff'>
+              <SectionTitle color='#7e22ce'>📅 절기 각도</SectionTitle>
+              {jeolgiGroups.map(g => (
+                <Row key={g.jeolgi} label={g.label} labelColor={g.color[1]}>
+                  {g.matched.map(i => <Tag key={i.id} label={i.name} bg={g.color[0]} border={g.color[1]+'55'} color={g.color[1]} size={11}/>)}
+                </Row>
+              ))}
+            </Block>
+          )}
+
+          {/* ④ 테마 각도 */}
+          {themeGroups.length > 0 && (
+            <Block bg='#fffbeb' border='#fde68a'>
+              <SectionTitle color='#92400e'>🎯 테마 각도</SectionTitle>
+              {themeGroups.map(g => (
+                <Row key={g.key} label={g.label} labelColor={g.color}>
+                  {g.matched.map(i => <Tag key={i.id} label={i.name} bg={g.bg} border={g.border} color={g.color} size={11}/>)}
+                </Row>
+              ))}
+            </Block>
+          )}
+
+          {/* ⑤ 서식/양식 각도 */}
+          {(habitatGroups.length > 0 || farmingGroups.length > 0) && (
+            <Block bg='#f0f9ff' border='#bae6fd'>
+              <SectionTitle color='#0369a1'>🌊 서식·양식 각도</SectionTitle>
+              {habitatGroups.map(g => (
+                <Row key={g.key} label={g.label} labelColor={g.color[1]}>
+                  {g.matched.map(i => <Tag key={i.id} label={i.name} bg={g.color[0]} border={g.color[1]+'66'} color={g.color[1]} size={11}/>)}
+                </Row>
+              ))}
+              {farmingGroups.map(g => (
+                <Row key={g.key} label={g.label} labelColor={g.color[1]}>
+                  {g.matched.map(i => <Tag key={i.id} label={i.name} bg={g.color[0]} border={g.color[1]+'66'} color={g.color[1]} size={11}/>)}
+                </Row>
+              ))}
+            </Block>
+          )}
+
+          {/* ⑥ 지역별 특산 */}
+          {regionSorted.length > 0 && (
+            <Block bg='#eff6ff' border='#bfdbfe'>
+              <SectionTitle color='#1d4ed8'>🗺️ 지역별 특산</SectionTitle>
+              <div style={{display:'flex',flexDirection:'column',gap:5}}>
+                {regionSorted.map(([region, names]) => (
+                  <Row key={region} label={`📍 ${region}`} labelColor='#1d4ed8'>
+                    {names.map((n,i) => <Tag key={i} label={n} bg='#dbeafe' border='#93c5fd' color='#1e40af' size={11}/>)}
+                  </Row>
+                ))}
+              </div>
+            </Block>
+          )}
+
+          {/* ⑦ 연령·성별 각도 */}
+          {(Object.keys(ageGroups_).length > 0 || maleIngs.length > 0 || femaleIngs.length > 0) && (
+            <Block bg='#fefce8' border='#fde68a'>
+              <SectionTitle color='#854d0e'>👥 타겟 각도</SectionTitle>
+              {Object.entries(ageGroups_).map(([age, names]) => {
+                const c = ageColors[age] || ['#f3f4f6','#374151']
+                return (
+                  <Row key={age} label={ageLabels[age]||age} labelColor={c[1]}>
+                    {names.map((n,i) => <Tag key={i} label={n} bg={c[0]} border={c[1]+'55'} color={c[1]} size={11}/>)}
+                  </Row>
+                )
+              })}
+              <Row label='👨 남성 특화' labelColor='#1d4ed8' show={maleIngs.length > 0}>
+                {maleIngs.map(i => <Tag key={i.id} label={i.name} bg='#eff6ff' border='#93c5fd' color='#1e40af' size={11}/>)}
+              </Row>
+              <Row label='👩 여성 특화' labelColor='#7e22ce' show={femaleIngs.length > 0}>
+                {femaleIngs.map(i => <Tag key={i.id} label={i.name} bg='#fdf4ff' border='#e9d5ff' color='#7e22ce' size={11}/>)}
+              </Row>
+            </Block>
+          )}
+
+          {/* ⑧ 효능 카테고리별 그룹 */}
+          {benefitCatSorted.length > 0 && (
+            <Block bg='#f0fdf4' border='#bbf7d0'>
+              <SectionTitle color='#166534'>💊 효능 그룹</SectionTitle>
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {benefitCatSorted.map(([cat, benefitObj]) => (
+                  <div key={cat}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#16a34a',marginBottom:4}}>▸ {cat}</div>
+                    <div style={{display:'flex',flexDirection:'column',gap:3,paddingLeft:8}}>
+                      {Object.entries(benefitObj).map(([bname, ingNames]) => (
+                        <Row key={bname} label={`💊 ${bname}`} labelColor='#059669'>
+                          {ingNames.map((n,i) => <Tag key={i} label={n} bg='#dcfce7' border='#86efac' color='#166534' size={10}/>)}
+                        </Row>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Block>
+          )}
+
+          {/* ⑨ 주의사항 */}
+          {caution.length > 0 && (
+            <Block bg='#fef2f2' border='#fca5a5'>
+              <SectionTitle color='#dc2626'>⚠️ 주의사항 있는 식재료</SectionTitle>
+              <div style={{display:'flex',flexDirection:'column',gap:5}}>
+                {caution.map(i => (
+                  <div key={i.id} style={{display:'flex',gap:8,alignItems:'flex-start',padding:'6px 10px',background:'#fff',borderRadius:6,border:'1px solid #fecaca'}}>
+                    <Tag label={i.name} bg='#fef2f2' border='#fca5a5' color='#dc2626' size={11}/>
+                    <span style={{fontSize:11,color:'#dc2626',lineHeight:1.5}}>{i.caution}</span>
+                  </div>
+                ))}
+              </div>
+            </Block>
+          )}
+
         </div>
       )}
     </div>
@@ -895,58 +1150,26 @@ export default function ContentIdeaPanel({ adminToken }) {
               <span style={{ color:'#aaa', fontSize:12 }}>{showIngredients ? '▲' : '▼'}</span>
             </span>
           </div>
-          {ingredients.length > 0 && <SourceSummary ingredients={ingredients} />}
-          {!ingLoading && ingredients.length > 0 && showIngredients && (() => {
-            const monthToSeason = {1:'winter',2:'winter',3:'spring',4:'spring',5:'spring',6:'summer',7:'summer',8:'summer',9:'fall',10:'fall',11:'fall',12:'winter'}
-            const currentSeason = monthToSeason[activeMonth]
-            const jeolgiMonths  = {seollal:[1,2],ipchun:[2],daeboreum:[1,2],hansik:[4],dano:[5,6],chopbok:[7],jungbok:[7,8],sambok:[7,8],malbok:[8],chuseok:[9,10],gimjang:[11,12],dongji:[12]}
-            const seasonMap  = {spring:['🌸 봄','#f0fdf4','#86efac','#166534'],summer:['🌞 여름','#fefce8','#fde68a','#92400e'],fall:['🍂 가을','#fff7ed','#fdba74','#c2410c'],winter:['❄️ 겨울','#eff6ff','#bae6fd','#1e40af']}
-            const jeolgiMap  = {seollal:['🎍 설날','#fdf4ff','#e9d5ff','#7e22ce'],sambok:['🔥 삼복','#fff1f2','#fecdd3','#be123c'],chopbok:['🔥 초복','#fff1f2','#fecdd3','#be123c'],jungbok:['🔥 중복','#fff1f2','#fecdd3','#be123c'],malbok:['🔥 말복','#fff1f2','#fecdd3','#be123c'],chuseok:['🌕 추석','#fefce8','#fde68a','#854d0e'],gimjang:['🥬 김장철','#f0fdf4','#86efac','#166534'],dongji:['☯️ 동지','#eff6ff','#bae6fd','#1e40af'],dano:['🌿 단오','#f0fdf4','#86efac','#166534'],ipchun:['🌱 입춘','#f0fdf4','#86efac','#166534'],daeboreum:['🌕 정월대보름','#fef9c3','#fde68a','#713f12'],hansik:['🌸 한식','#fdf4ff','#e9d5ff','#7e22ce']}
-            const specialMap = {boyangshik:['💪 보양식','#fff7ed','#fed7aa','#c2410c'],jeolgi_food:['🎋 절기음식','#fdf4ff','#e9d5ff','#7e22ce'],hangover:['🍶 해장','#fefce8','#fde68a','#854d0e'],diet:['🥗 다이어트','#f0fdf4','#86efac','#166534']}
-            const habitatMap = {island:['🏝️ 섬','#f0f9ff','#7dd3fc','#0369a1'],freshwater:['🐟 민물','#eff6ff','#93c5fd','#1d4ed8'],tidal:['🌊 갯벌','#f0fdfa','#5eead4','#0f766e'],mountain:['🏔️ 산','#f7fee7','#a3e635','#3f6212'],ocean:['🌊 바다','#f0f9ff','#38bdf8','#0c4a6e']}
-            const farmingMap = {aquaculture:['🤿 양식','#fdf4ff','#d8b4fe','#7e22ce'],wild:['🎣 자연산','#fff7ed','#fdba74','#c2410c'],fermented:['🥟 발효','#fef9c3','#fde68a','#713f12']}
-            const collect = (field) => [...new Set(ingredients.flatMap(i=>(Array.isArray(i[field])?i[field]:[i[field]]).filter(Boolean)))]
-            const seasons  = collect('season_badge').filter(v=>v===currentSeason)
-            const jeolgis  = collect('jeolgi_badge').filter(v=>(jeolgiMonths[v]||[]).includes(activeMonth))
-            const specials = collect('special_badge')
-            const habitats = collect('habitat_badge')
-            const farmings = collect('farming_badge')
-            const boolBadges = [
-              ingredients.some(i=>i.is_special)   && ['🏆 특산',        '#fef3c7','#f59e0b','#b45309'],
-              ingredients.some(i=>i.is_limited)   && ['⏰ 기간한정',    '#d1fae5','#10b981','#059669'],
-              ingredients.some(i=>i.is_superfood) && ['🌟 슈퍼푸드',    '#fef3c7','#f59e0b','#92400e'],
-              ingredients.some(i=>i.is_global)    && ['🌍 해외',         '#dbeafe','#3b82f6','#1d4ed8'],
-              ingredients.some(i=>i.is_brand)     && ['🏷️ 지역브랜드', '#ffe4e6','#e63946','#e63946'],
-            ].filter(Boolean)
-            const ageMap = {infant:['👶 영유아','#fef9c3','#fde68a','#713f12'],child:['🧒 어린이','#fef3c7','#f59e0b','#92400e'],adult:['🧑 성인','#eff6ff','#bae6fd','#1e40af'],senior:['👴 노인','#f0fdf4','#86efac','#166534'],all:['👨‍👩‍👧‍👦 전연령','#f3f4f6','#d1d5db','#374151']}
-            const genderMap = {male:['👨 남성','#eff6ff','#93c5fd','#1d4ed8'],female:['👩 여성','#fdf4ff','#e9d5ff','#7e22ce'],all:null}
-            const ageGroups = [...new Set(ingredients.flatMap(i=>i.age_groups||[]).filter(Boolean))]
-            const genders   = [...new Set(ingredients.map(i=>i.gender).filter(v=>v&&v!=='all'))]
-            const regions  = [...new Set(ingredients.flatMap(i=>i.regions_preview||[]))]
-            const benefits = [...new Set(ingredients.flatMap(i=>(i.health_benefits||[]).map(h=>h.name).filter(Boolean)))]
-            const Bdg = ({d}) => <span style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:d[1],border:`1px solid ${d[2]}`,color:d[3],fontWeight:700}}>{d[0]}</span>
-            const Row = ({label,show,children}) => !show ? null : (
-              <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
-                <span style={{fontSize:11,color:'#9ca3af',fontWeight:600,width:30,flexShrink:0}}>{label}</span>
-                {children}
-              </div>
-            )
-            return (
-              <div style={{padding:'6px 16px 12px',borderTop:'1px solid #f0fdf4',display:'flex',flexDirection:'column',gap:5}}>
-                <Row label="계절" show={seasons.length>0}>{seasons.map((v,i)=>seasonMap[v]?<Bdg key={i} d={seasonMap[v]}/>:null)}</Row>
-                <Row label="절기" show={jeolgis.length>0}>{jeolgis.map((v,i)=>jeolgiMap[v]?<Bdg key={i} d={jeolgiMap[v]}/>:null)}</Row>
-                <Row label="특수" show={specials.length>0}>{specials.map((v,i)=>specialMap[v]?<Bdg key={i} d={specialMap[v]}/>:null)}</Row>
-                <Row label="서식" show={habitats.length>0}>{habitats.map((v,i)=>habitatMap[v]?<Bdg key={i} d={habitatMap[v]}/>:null)}</Row>
-                <Row label="양식" show={farmings.length>0}>{farmings.map((v,i)=>farmingMap[v]?<Bdg key={i} d={farmingMap[v]}/>:null)}</Row>
-                <Row label="기타" show={boolBadges.length>0}>{boolBadges.map((d,i)=><Bdg key={i} d={d}/>)}</Row>
-                <Row label="연령" show={ageGroups.length>0}>{ageGroups.map((v,i)=>ageMap[v]?<Bdg key={i} d={ageMap[v]}/>:null)}</Row>
-                <Row label="성별" show={genders.length>0}>{genders.map((v,i)=>genderMap[v]?<Bdg key={i} d={genderMap[v]}/>:null)}</Row>
-                <Row label="지역" show={regions.length>0}>{regions.map((r,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#dbeafe',border:'1px solid #93c5fd',color:'#1d4ed8',fontWeight:700}}>{r}</span>)}</Row>
-                <Row label="효능" show={benefits.length>0}>{benefits.map((b,i)=><span key={i} style={{fontSize:10,padding:'1px 7px',borderRadius:20,background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',fontWeight:700}}>💊 {b}</span>)}</Row>
-              </div>
-            )
-          })()}
         </div>
+
+        {/* ── 식재료 카드 그리드 ── */}
+        {showIngredients && (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8, marginTop:10 }}>
+            {ingLoading ? (
+              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>불러오는 중...</div>
+            ) : ingredients.length === 0 ? (
+              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>등록된 제철 식재료가 없어요</div>
+            ) : (
+              ingredients.map(ing => (
+                <IngredientCard key={ing.id} ing={ing} onDelete={deleteIngredient} />
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── 이달의 소스 분석 (카드 아래) ── */}
+        {showIngredients && <SourceAnalysis ingredients={ingredients} activeMonth={activeMonth} />}
+      </div>
 
         {/* ── 저장된 글감 목록 ── */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', margin:'12px 0 8px' }}>
@@ -989,23 +1212,6 @@ export default function ContentIdeaPanel({ adminToken }) {
             })}
           </>
         )}
-
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8 }}>
-            {ingLoading ? (
-              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>불러오는 중...</div>
-            ) : ingredients.length === 0 ? (
-              <div style={{ color:'#aaa', fontSize:13, textAlign:'center', padding:'20px 0', gridColumn:'1/-1' }}>등록된 제철 식재료가 없어요</div>
-            ) : (
-              ingredients.map(ing => (
-                <IngredientCard
-                  key={ing.id}
-                  ing={ing}
-                  onDelete={deleteIngredient}
-                />
-              ))
-            )}
-        </div>
-      </div>
 
 
 
