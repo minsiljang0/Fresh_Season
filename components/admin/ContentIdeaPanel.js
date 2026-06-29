@@ -1202,16 +1202,17 @@ export default function ContentIdeaPanel({ adminToken }) {
           })()}
         </div>
 
-        {/* ── STEP 6 기획 기록 섹션 ── */}
+        {/* ── 기획 기록 섹션 (소스각도 + 이슈각도 + 월간전략) ── */}
         {(() => {
           const tabId = `month_${activeMonth}`
           const sourceAngleMemo = ideas.find(i => i.tab_id === tabId && i.tool_id === 'angle' && i.type === 'memo' && i.angle === '소스각도')
           const issueListMemo   = ideas.find(i => i.tab_id === tabId && i.tool_id === 'season' && i.type === 'memo' && i.angle === '이슈각도')
+          const strategyIdeas   = tabIdeas.filter(i => i.tool_id === 'strategy')
           return (
             <div style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
                 <span style={{ fontSize:13, fontWeight:800, color:'#0f1f0f' }}>📋 기획 기록</span>
-                <span style={{ fontSize:11, color:'#9ca3af' }}>소스각도 · 이슈각도</span>
+                <span style={{ fontSize:11, color:'#9ca3af' }}>소스각도 · 이슈각도 · 월간전략</span>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 <PlanningMemoCard
@@ -1232,6 +1233,22 @@ export default function ContentIdeaPanel({ adminToken }) {
                   onEdit={() => { setEditingMemo(issueListMemo?.id || null); setShowPlanningModal('issue_list') }}
                   onDelete={() => issueListMemo && setConfirmTarget({ message:'이슈 기록을 삭제할까요?', onConfirm: async () => { await fetch('/api/admin/content-ideas', { method:'DELETE', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify({id:issueListMemo.id}) }); load(); setConfirmTarget(null); showToast('삭제됨') }})}
                 />
+                {/* 월간전략 — 기획 기록 안에 */}
+                {strategyIdeas.length > 0 ? (
+                  strategyIdeas.map(idea => (
+                    <StrategyCard key={idea.id} idea={idea} onDelete={deleteIdea} onEdit={() => setShowAdd(true)} />
+                  ))
+                ) : (
+                  <div style={{ border:'2px dashed #c4b5fd', borderRadius:12, overflow:'hidden' }}>
+                    <div style={{ background:'#f5f3ff', padding:'8px 14px', borderBottom:'1px dashed #c4b5fd' }}>
+                      <span style={{ fontSize:12, fontWeight:800, color:'#7c3aed' }}>🗺️ 월간 전략</span>
+                    </div>
+                    <div style={{ padding:'14px 16px', textAlign:'center' }}>
+                      <div style={{ fontSize:12, color:'#a78bfa', marginBottom:10 }}>아직 등록된 월간전략이 없어요</div>
+                      <button onClick={() => setShowAdd(true)} style={{ padding:'6px 16px', borderRadius:8, border:'none', background:'#7c3aed', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 전략 추가</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )
@@ -1246,18 +1263,6 @@ export default function ContentIdeaPanel({ adminToken }) {
           <div style={{ color:'#888', fontSize:14, padding:'20px 0', textAlign:'center' }}>불러오는 중...</div>
         ) : (
           <>
-            {/* 월간전략 카드 — 데이터 없어도 항상 표시 */}
-            {tabIdeas.filter(i => i.tool_id === 'strategy').length > 0 ? (
-              tabIdeas.filter(i => i.tool_id === 'strategy').map(idea => (
-                <StrategyCard key={idea.id} idea={idea} onDelete={deleteIdea} ingredients={ingredients} />
-              ))
-            ) : (
-              <div style={{ border:'2px dashed #c4b5fd', borderRadius:12, padding:'20px 16px', marginBottom:16, textAlign:'center', background:'#faf5ff' }}>
-                <div style={{ fontSize:13, fontWeight:700, color:'#7c3aed', marginBottom:6 }}>🗺️ 월간전략</div>
-                <div style={{ fontSize:12, color:'#a78bfa' }}>아직 등록된 월간전략이 없어요</div>
-                <button onClick={() => setShowAdd(true)} style={{ marginTop:10, padding:'6px 16px', borderRadius:8, border:'none', background:'#7c3aed', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 전략 추가</button>
-              </div>
-            )}
             {tabIdeas.filter(i => i.tool_id !== 'strategy').length === 0 && (
               <div style={{ color:'#aaa', fontSize:13, padding:'16px 0', textAlign:'center' }}>저장된 글감이 없어요</div>
             )}
