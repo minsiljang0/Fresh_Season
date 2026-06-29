@@ -11,7 +11,7 @@ const SECTIONS = [
   { value: 'health',     label: '💊 건강/효능', color: '#8b5cf6', bg: '#faf5ff' },
   { value: 'food',       label: '🍽️ 음식/요리', color: '#f59e0b', bg: '#fffbeb' },
   { value: 'festival',   label: '🎉 절기/행사', color: '#ef4444', bg: '#fff1f2' },
-  { value: 'event',      label: '🏖️ 특이사항',  color: '#06b6d4', bg: '#ecfeff' },
+  { value: 'event',      label: '👤 사용자입력',  color: '#06b6d4', bg: '#ecfeff' },
 ]
 
 const TYPE_LABELS = {
