@@ -72,34 +72,27 @@ function SourceSummary({ ingredients }) {
 
 // ── 월간전략 카드 (섹션별 파싱) ─────────────────────────────
 function parseStrategy(content) {
-  const sections = { issues: [], bigPicture: '', weeks: [], principle: '' }
+  const sections = { bigPicture: '', bigPictureReason: '', priority: [], weeks: [], principle: '' }
   const lines = (content || '').split('\n')
   let current = null
   lines.forEach(line => {
     const t = line.trim()
-    if (t === '[이달의 핵심 이슈]') { current = 'issues'; return }
     if (t === '[이달의 큰 틀]') { current = 'bigPicture'; return }
+    if (t.startsWith('근거:')) { sections.bigPictureReason = t.replace('근거:', '').trim(); return }
+    if (t === '[놓치면 안 되는 우선 특집/이슈]') { current = 'priority'; return }
     if (t === '[주차별 방향]') { current = 'weeks'; return }
     if (t === '[각도 운영 원칙]') { current = 'principle'; return }
     if (!t) return
-    if (current === 'issues') sections.issues.push(t)
-    else if (current === 'bigPicture') sections.bigPicture = t
-    else if (current === 'weeks') sections.weeks.push(t)
-    else if (current === 'principle') sections.principle = t
+    if (current === 'bigPicture' && !sections.bigPicture) sections.bigPicture = t
+    else if (current === 'priority' && t.startsWith('-')) sections.priority.push(t.slice(1).trim())
+    else if (current === 'weeks' && t.startsWith('-')) sections.weeks.push(t.slice(1).trim())
+    else if (current === 'principle') sections.principle += (sections.principle ? ' ' : '') + t
   })
   return sections
 }
 
-function StrategyCard({ idea, onDelete, ingredients }) {
+function StrategyCard({ idea, onDelete, onEdit }) {
   const s = parseStrategy(idea.content)
-
-  // 각도별 소스 — 식재료 데이터에서 자동 추출
-  const limited = (ingredients || []).filter(i => i.is_limited)
-  const special  = (ingredients || []).filter(i => i.is_special)
-  const caution  = (ingredients || []).filter(i => i.caution)
-  const child    = (ingredients || []).filter(i => (i.age_groups||[]).some(a => ['infant','child'].includes(a)))
-  const male     = (ingredients || []).filter(i => i.gender === 'male')
-
   const weekColors = ['#fecdd3','#bfdbfe','#d9f99d','#fde68a']
   const weekTextColors = ['#be123c','#1d4ed8','#166534','#92400e']
 
@@ -107,70 +100,41 @@ function StrategyCard({ idea, onDelete, ingredients }) {
     <div style={{ border:'2px solid #7c3aed', borderRadius:12, overflow:'hidden', marginBottom:16 }}>
       {/* 헤더 */}
       <div style={{ background:'#7c3aed', padding:'10px 16px', display:'flex', alignItems:'center', gap:8 }}>
-        <span style={{ fontSize:13, fontWeight:700, color:'#fff' }}>🗺️ 월간전략</span>
+        <span style={{ fontSize:13, fontWeight:700, color:'#fff' }}>🗺️ 월간 전략</span>
         <span style={{ fontSize:11, color:'#c4b5fd', marginLeft:'auto' }}>등록 {fmtDate(idea.created_at)}</span>
+        {onEdit && <button onClick={() => onEdit(idea)} style={{ background:'none', border:'1px solid #c4b5fd', borderRadius:6, color:'#ede9fe', cursor:'pointer', padding:'2px 10px', fontSize:12 }}>수정</button>}
         <button onClick={() => onDelete(idea.id)} style={{ background:'none', border:'1px solid #c4b5fd', borderRadius:6, color:'#ede9fe', cursor:'pointer', padding:'2px 8px', fontSize:12 }}>×</button>
       </div>
 
       <div style={{ background:'#faf5ff', padding:'14px 16px', display:'flex', flexDirection:'column', gap:10 }}>
 
-        {/* 각도별 소스 */}
-        {ingredients && ingredients.length > 0 && (
+        {/* 이달의 큰 틀 */}
+        {s.bigPicture && (
           <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8 }}>각도별 소스</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-              {limited.length > 0 && (
-                <div style={{ display:'flex', gap:8, alignItems:'flex-start', padding:'6px 10px', background:'#fef2f2', borderRadius:6 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:'#dc2626', whiteSpace:'nowrap' }}>⏰ 기간한정 {limited.length}개</span>
-                  <span style={{ fontSize:11, color:'#dc2626' }}>{limited.map(i => i.name).join(' · ')}</span>
-                </div>
-              )}
-              {special.length > 0 && (
-                <div style={{ display:'flex', gap:8, alignItems:'flex-start', padding:'6px 10px', background:'#fffbeb', borderRadius:6 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:'#b45309', whiteSpace:'nowrap' }}>🏆 특산품 {special.length}개</span>
-                  <span style={{ fontSize:11, color:'#b45309' }}>{special.map(i => i.name).join(' · ')}</span>
-                </div>
-              )}
-              {caution.length > 0 && (
-                <div style={{ display:'flex', gap:8, alignItems:'flex-start', padding:'6px 10px', background:'#fff7ed', borderRadius:6 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:'#c2410c', whiteSpace:'nowrap' }}>⚠️ 주의사항 {caution.length}개</span>
-                  <span style={{ fontSize:11, color:'#c2410c' }}>{caution.map(i => i.name + '(' + (i.caution||'').slice(0,10) + ')').join(' · ')}</span>
-                </div>
-              )}
-              {child.length > 0 && (
-                <div style={{ display:'flex', gap:8, alignItems:'center', padding:'6px 10px', background:'#fefce8', borderRadius:6 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:'#854d0e', whiteSpace:'nowrap' }}>👶 어린이·영유아 {child.length}개</span>
-                  <span style={{ fontSize:11, color:'#854d0e' }}>타겟별 각도 활용 가능</span>
-                </div>
-              )}
-              {male.length > 0 && (
-                <div style={{ display:'flex', gap:8, alignItems:'center', padding:'6px 10px', background:'#eff6ff', borderRadius:6 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:'#1d4ed8', whiteSpace:'nowrap' }}>👨 남성 특화 {male.length}개</span>
-                  <span style={{ fontSize:11, color:'#1d4ed8' }}>{male.map(i => i.name).join(' · ')}</span>
-                </div>
-              )}
-            </div>
+            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:6 }}>🎯 이달의 큰 틀</div>
+            <div style={{ fontSize:13, fontWeight:700, color:'#1e1b4b', lineHeight:1.6 }}>{s.bigPicture}</div>
+            {s.bigPictureReason && (
+              <div style={{ marginTop:6, fontSize:11, color:'#6b7280', lineHeight:1.6, borderTop:'1px solid #f3f4f6', paddingTop:6 }}>
+                💡 {s.bigPictureReason}
+              </div>
+            )}
           </div>
         )}
 
-        {/* 이달의 이슈 */}
-        {s.issues.length > 0 && (
-          <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8 }}>이달의 이슈 (웹 검색 결과)</div>
+        {/* 놓치면 안 되는 우선 특집/이슈 */}
+        {s.priority.length > 0 && (
+          <div style={{ background:'#fff', border:'2px solid #fca5a5', borderRadius:8, padding:'10px 14px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#dc2626', marginBottom:8 }}>🚨 놓치면 안 되는 우선 특집/이슈</div>
             <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-              {s.issues.map((issue, i) => {
-                const parts = issue.split('→')
-                const isImportant = issue.includes('복') || issue.includes('월드컵') || issue.includes('올림픽')
+              {s.priority.map((p, i) => {
+                const parts = p.split('—')
                 return (
-                  <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start', padding:'6px 10px', background: isImportant ? '#fef2f2' : '#f8fafc', borderRadius:6 }}>
-                    {parts.length > 1 ? (
-                      <>
-                        <span style={{ fontSize:11, fontWeight:700, color: isImportant ? '#dc2626' : '#374151', whiteSpace:'nowrap' }}>{parts[0].trim()}</span>
-                        <span style={{ fontSize:11, color: isImportant ? '#dc2626' : '#6b7280' }}>→ {parts[1].trim()}</span>
-                      </>
-                    ) : (
-                      <span style={{ fontSize:11, color:'#374151' }}>{issue}</span>
-                    )}
+                  <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start', padding:'6px 10px', background:'#fef2f2', borderRadius:6 }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#dc2626', flexShrink:0 }}>⚠️</span>
+                    <div>
+                      <span style={{ fontSize:12, fontWeight:700, color:'#dc2626' }}>{parts[0]?.trim()}</span>
+                      {parts[1] && <span style={{ fontSize:11, color:'#9ca3af', marginLeft:6 }}>— {parts[1].trim()}</span>}
+                    </div>
                   </div>
                 )
               })}
@@ -178,36 +142,31 @@ function StrategyCard({ idea, onDelete, ingredients }) {
           </div>
         )}
 
-        {/* 작성 순서 원칙 */}
-        {(s.weeks.length > 0 || s.principle) && (
+        {/* 주차별 방향 */}
+        {s.weeks.length > 0 && (
           <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8 }}>작성 순서 원칙</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8 }}>📅 주차별 방향</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
               {s.weeks.map((w, i) => {
                 const parts = w.split(':')
                 return (
                   <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start' }}>
-                    <span style={{ fontSize:11, fontWeight:700, padding:'1px 8px', borderRadius:10, background: weekColors[i] || '#f3f4f6', color: weekTextColors[i] || '#374151', whiteSpace:'nowrap', flexShrink:0 }}>
+                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:10, background: weekColors[i] || '#f3f4f6', color: weekTextColors[i] || '#374151', whiteSpace:'nowrap', flexShrink:0 }}>
                       {parts[0].trim()}
                     </span>
                     <span style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{parts.slice(1).join(':').trim()}</span>
                   </div>
                 )
               })}
-              {s.principle && (
-                <div style={{ marginTop:6, padding:'7px 10px', background:'#f5f3ff', borderRadius:6, fontSize:11, color:'#4c1d95', lineHeight:1.7 }}>
-                  {s.principle}
-                </div>
-              )}
             </div>
           </div>
         )}
 
-        {/* 큰 틀 */}
-        {s.bigPicture && (
-          <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:4 }}>이달의 큰 틀</div>
-            <div style={{ fontSize:12, color:'#374151', lineHeight:1.7 }}>{s.bigPicture}</div>
+        {/* 각도 운영 원칙 */}
+        {s.principle && (
+          <div style={{ background:'#f5f3ff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:4 }}>📌 각도 운영 원칙</div>
+            <div style={{ fontSize:12, color:'#4c1d95', lineHeight:1.7 }}>{s.principle}</div>
           </div>
         )}
 
@@ -389,27 +348,29 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
 // ── 추가 모달 ────────────────────────────────────────────────
 function AddIdeaModal({ activeMonth, onClose, onSave }) {
   const [form, setForm] = useState({ section: 'angle', type: 'idea', content: '', keyword: '', angle: '', memo: '' })
-  const [strategy, setStrategy] = useState({ issues: '', bigPicture: '', week1: '', week2: '', week3: '', week4: '', principle: '' })
+  const [strategy, setStrategy] = useState({ bigPicture: '', bigPictureReason: '', priority: ['', '', ''], week1: '', week2: '', week3: '', week4: '', principle: '' })
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const setSt = (k, v) => setStrategy(p => ({ ...p, [k]: v }))
   const isStrategy = form.section === 'strategy'
 
   const buildStrategyContent = () => {
     return [
-      '[이달의 핵심 이슈]', strategy.issues, '',
-      '[이달의 큰 틀]', strategy.bigPicture, '',
+      '[이달의 큰 틀]', strategy.bigPicture,
+      strategy.bigPictureReason ? '근거: ' + strategy.bigPictureReason : '', '',
+      '[놓치면 안 되는 우선 특집/이슈]',
+      ...strategy.priority.filter(p=>p.trim()).map(p => '- ' + p), '',
       '[주차별 방향]',
-      '1주차: ' + strategy.week1,
-      '2주차: ' + strategy.week2,
-      '3주차: ' + strategy.week3,
-      '4주차: ' + strategy.week4, '',
+      '- 1주차: ' + strategy.week1,
+      '- 2주차: ' + strategy.week2,
+      '- 3주차: ' + strategy.week3,
+      '- 4주차: ' + strategy.week4, '',
       '[각도 운영 원칙]', strategy.principle,
     ].join('\n')
   }
 
   const handleSave = () => {
     if (isStrategy) {
-      if (!strategy.issues.trim()) return
+      if (!strategy.bigPicture.trim()) return
       onSave({ section: 'strategy', type: 'memo', content: buildStrategyContent(), keyword: '', angle: '', memo: '', tab_id: 'month_' + activeMonth })
     } else {
       if (!form.content.trim()) return
@@ -456,33 +417,45 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
           {isStrategy ? (
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
               <div style={{ background:'#f5f3ff', border:'1px solid #c4b5fd', borderRadius:8, padding:'10px 14px', fontSize:12, color:'#4c1d95' }}>
-                글 쓰는 Claude가 이 달을 보고 방향을 잡을 수 있도록 작성합니다
+                소스·이슈·검색량 분석을 종합한 이달의 전략 판단을 기록합니다
               </div>
               <div>
-                <label style={S.label}>이달의 핵심 이슈 * <span style={{color:'#9ca3af',fontWeight:400}}>(날짜 포함)</span></label>
-                <textarea value={strategy.issues} onChange={e => setSt('issues', e.target.value)}
-                  placeholder="예: 초복 7/15 · 중복 7/25 · 북중미 월드컵 · 여름방학 · 장마" rows={2} style={S.textarea} />
-              </div>
-              <div>
-                <label style={S.label}>이달의 큰 틀</label>
+                <label style={S.label}>🎯 이달의 큰 틀 * <span style={{color:'#9ca3af',fontWeight:400}}>(방향 한 줄)</span></label>
                 <textarea value={strategy.bigPicture} onChange={e => setSt('bigPicture', e.target.value)}
-                  placeholder="예: 삼복 보양식 + 여름 과일 풍성 시즌 — 보양·urgency·이슈 각도 중심" rows={2} style={S.textarea} />
+                  placeholder="예: 삼복×보양식재료 특집 + 여름 과일 urgency — 기간한정·시의성 집중" rows={2} style={S.textarea} />
               </div>
               <div>
-                <label style={S.label}>주차별 방향</label>
+                <label style={S.label}>💡 근거 <span style={{color:'#9ca3af',fontWeight:400}}>(왜 이 방향인지)</span></label>
+                <textarea value={strategy.bigPictureReason} onChange={e => setSt('bigPictureReason', e.target.value)}
+                  placeholder="예: 초복·중복·말복이 7월에 집중, 장어·민어 기간한정, 복숭아 검색량 상위권이라 보양×urgency가 핵심" rows={2} style={S.textarea} />
+              </div>
+              <div>
+                <label style={S.label}>🚨 놓치면 안 되는 우선 특집/이슈 <span style={{color:'#9ca3af',fontWeight:400}}>(데드라인 포함)</span></label>
                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {[['week1','1주차'],['week2','2주차'],['week3','3주차'],['week4','4주차']].map(([k, label]) => (
-                    <div key={k} style={{ display:'flex', gap:8, alignItems:'center' }}>
-                      <span style={{ fontSize:11, fontWeight:700, color:'#7c3aed', background:'#ede9fe', border:'1px solid #c4b5fd', padding:'2px 8px', borderRadius:10, whiteSpace:'nowrap', flexShrink:0 }}>{label}</span>
-                      <input value={strategy[k]} onChange={e => setSt(k, e.target.value)} style={{ ...S.input, margin:0 }} placeholder={label + ' 주력 방향'} />
+                  {strategy.priority.map((p, i) => (
+                    <div key={i} style={{ display:'flex', gap:8, alignItems:'center' }}>
+                      <span style={{ fontSize:11, fontWeight:700, color:'#dc2626', background:'#fef2f2', border:'1px solid #fca5a5', padding:'2px 8px', borderRadius:10, whiteSpace:'nowrap', flexShrink:0 }}>⚠️ {i+1}</span>
+                      <input value={p} onChange={e => { const arr=[...strategy.priority]; arr[i]=e.target.value; setSt('priority',arr) }}
+                        style={{ ...S.input, margin:0 }} placeholder="예: 삼복 특집 (7/8 데드라인) — 초복 일주일 전 발행 필수" />
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <label style={S.label}>각도 운영 원칙</label>
+                <label style={S.label}>📅 주차별 방향</label>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {[['week1','1주차'],['week2','2주차'],['week3','3주차'],['week4','4주차']].map(([k, label]) => (
+                    <div key={k} style={{ display:'flex', gap:8, alignItems:'center' }}>
+                      <span style={{ fontSize:11, fontWeight:700, color:'#7c3aed', background:'#ede9fe', border:'1px solid #c4b5fd', padding:'2px 8px', borderRadius:10, whiteSpace:'nowrap', flexShrink:0 }}>{label}</span>
+                      <input value={strategy[k]} onChange={e => setSt(k, e.target.value)} style={{ ...S.input, margin:0 }} placeholder={label + ' 주력 방향 + 이유'} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={S.label}>📌 각도 운영 원칙</label>
                 <input value={strategy.principle} onChange={e => setSt('principle', e.target.value)}
-                  style={S.input} placeholder="예: 과일·해산물 번갈아 / 같은 각도 2편 연속 금지" />
+                  style={S.input} placeholder="예: 과일·해산물 번갈아 / 같은 각도 2편 연속 금지 / 특집 먼저" />
               </div>
             </div>
           ) : (
@@ -513,8 +486,8 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
         <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
           <button onClick={onClose} style={S.btnGhost}>취소</button>
           <button onClick={handleSave}
-            disabled={isStrategy ? !strategy.issues.trim() : !form.content.trim()}
-            style={{ ...S.btn(), opacity: (isStrategy ? strategy.issues.trim() : form.content.trim()) ? 1 : 0.4 }}>저장</button>
+            disabled={isStrategy ? !strategy.bigPicture.trim() : !form.content.trim()}
+            style={{ ...S.btn(), opacity: (isStrategy ? strategy.bigPicture.trim() : form.content.trim()) ? 1 : 0.4 }}>저장</button>
         </div>
       </div>
     </div>
