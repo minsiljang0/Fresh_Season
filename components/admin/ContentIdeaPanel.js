@@ -58,19 +58,13 @@ function SourceSummary({ ingredients }) {
     const label = CAT_LABELS[i.category] || i.category
     catCount[label] = (catCount[label] || 0) + 1
   })
-  const sorted    = Object.entries(catCount).sort((a, b) => b[1] - a[1])
   return (
     <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:10, marginBottom:8, overflow:'hidden' }}>
       <div style={{ padding:'6px 16px', background:'#e8f5e9', borderBottom:'1px solid #c8e6c9' }}>
         <span style={{ fontSize:12, fontWeight:800, color:'#1b5e20' }}>📋 소스 현황 요약</span>
       </div>
-      <div style={{ padding:'8px 16px', background:'#f0fdf4', borderBottom:'1px solid #d1e8d1', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+      <div style={{ padding:'8px 16px', background:'#f0fdf4', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
         <span style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📊 {ingredients.length}개 소스 현황</span>
-      </div>
-      <div style={{ padding:'8px 16px', display:'flex', gap:5, flexWrap:'wrap' }}>
-        {sorted.map(([label, cnt]) => (
-          <span key={label} style={{ fontSize:11, padding:'2px 8px', borderRadius:8, background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#166534', fontWeight:600 }}>{label} {cnt}</span>
-        ))}
       </div>
     </div>
   )
@@ -975,6 +969,15 @@ export default function ContentIdeaPanel({ adminToken }) {
             const stripEmoji = str => str.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2300}-\u{23FF}\u{FE00}-\u{FEFF}]/gu,'').replace(/[^\uAC00-\uD7A3a-zA-Z0-9\s]/g,'').trim()
             const koSort = (a,b) => stripEmoji(a.label).localeCompare(stripEmoji(b.label),'ko-KR')
 
+            // 카테고리별 재료 목록
+            const catIngMap = {}
+            ingredients.forEach(i => {
+              const label = CAT_LABELS[i.category] || i.category
+              if (!catIngMap[label]) catIngMap[label] = []
+              catIngMap[label].push(i.name)
+            })
+            Object.keys(catIngMap).forEach(k => catIngMap[k].sort(ko))
+
             // bool 카테고리별 재료 목록
             const limitedIngs   = ingredients.filter(i=>i.is_limited).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
             const specialIngs   = ingredients.filter(i=>i.is_special).sort((a,b)=>ko(a.name,b.name)).map(i=>i.name)
@@ -1036,6 +1039,10 @@ export default function ContentIdeaPanel({ adminToken }) {
               ...regionSorted.map(([region,names])=>({
                 key:`region-${region}`, label:`📍 ${region}`, labelColor:'#1d4ed8',
                 ingNames:names, bg:'#dbeafe', border:'#93c5fd', color:'#1e40af'
+              })),
+              ...Object.entries(catIngMap).map(([label, names])=>({
+                key:`cat-${label}`, label, labelColor:'#166534',
+                ingNames:names, bg:'#f0fdf4', border:'#bbf7d0', color:'#166534'
               })),
               ...(ingredients.some(i=>i.caution) ? [{
                 key:'주의사항', label:'⚠️ 주의사항', labelColor:'#dc2626',
