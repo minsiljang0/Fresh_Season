@@ -856,7 +856,7 @@ function SectionGroup({ section, ideas, allIdeas, onUse, onUndoUse, onDelete, on
             <IdeaRow
               key={idea.id}
               idea={idea}
-              index={allIdeas.findIndex(i => i.id === idea.id)}
+              index={idx}
               isFirst={idx === 0}
               isLast={idx === ideas.length - 1}
               sectionColor={section.color}
