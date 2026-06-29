@@ -521,6 +521,120 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
   )
 }
 
+// ── 기획 메모 입력 모달 (소스각도 / 이슈목록+이슈각도) ────────
+function PlanningMemoModal({ activeMonth, type, initialContent = '', onClose, onSave }) {
+  const configs = {
+    source_angle: {
+      title: '📐 소스 각도 기록',
+      color: '#16a34a',
+      bg: '#f0fdf4',
+      border: '#86efac',
+      section: 'ingredient',
+      keyword: `${activeMonth}월 소스각도`,
+      angle: '소스각도',
+      placeholder: `식재료 기반 각도 목록을 정리하세요.\n\n예)\n[기간한정]\n- 신비복숭아: 지금 아니면 못 먹는 신비복숭아, 제철이 단 2주\n\n[효능·영양]\n- 전복: 전복 효능 7가지, 이런 분께 특히 좋아요\n\n[주의·부작용]\n- 복숭아: 복숭아 먹으면 안 되는 사람 따로 있다`,
+      hint: 'STEP 1 소스 + STEP 3 검색량 기반으로 각도를 정리합니다',
+    },
+    issue_list: {
+      title: '🔍 이슈목록 + 이슈각도 기록',
+      color: '#0ea5e9',
+      bg: '#f0f9ff',
+      border: '#7dd3fc',
+      section: 'season',
+      keyword: `${activeMonth}월 이슈각도`,
+      angle: '이슈각도',
+      placeholder: `이슈 목록과 각도를 함께 정리하세요.\n\n예)\n[고정 이슈]\n- 초복 (7/15): 초복에 삼계탕 말고, 올해는 장어 어때요? → 7/8 이전 발행\n- 여름방학 (7월말): 여름방학 아이 간식으로 좋은 제철 과일 → 7/3주차\n- 폭염 (7월 전체): 폭염에 수분 보충하기 좋은 제철 식재료 → 7/1주차\n\n[사용자 추가 이슈]\n- 없음`,
+      hint: 'STEP 2 이슈 + STEP 3 검색량 기반으로 이슈별 각도와 발행 시기를 정리합니다',
+    },
+  }
+  const cfg = configs[type]
+  const [content, setContent] = useState(initialContent)
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!content.trim()) return
+    setSaving(true)
+    await onSave({
+      section: cfg.section,
+      type: 'memo',
+      content: content.trim(),
+      keyword: cfg.keyword,
+      angle: cfg.angle,
+      memo: '',
+      tab_id: `month_${activeMonth}`,
+    })
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#fff', border:`1px solid ${cfg.border}`, borderRadius:14, padding:28, width:560, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ fontSize:16, fontWeight:700, marginBottom:4, color:'#0f1f0f' }}>{cfg.title}</div>
+        <div style={{ fontSize:12, color:'#888', marginBottom:16 }}>{MONTH_ICONS[activeMonth-1]} {activeMonth}월 · {cfg.hint}</div>
+        <div style={{ background:cfg.bg, border:`1px solid ${cfg.border}`, borderRadius:8, padding:'8px 12px', fontSize:12, color:cfg.color, marginBottom:14 }}>
+          Claude가 기획 완료 후 자동으로 저장하거나, 직접 입력해서 기록해둘 수 있어요.
+        </div>
+        <textarea
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          placeholder={cfg.placeholder}
+          rows={14}
+          style={{ ...S.textarea, fontSize:12, lineHeight:1.7, fontFamily:"'Fira Mono', monospace" }}
+        />
+        <div style={{ display:'flex', gap:8, marginTop:16, justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={S.btnGhost}>취소</button>
+          <button onClick={handleSave} disabled={saving || !content.trim()}
+            style={{ ...S.btn(), background:cfg.color, opacity: (!saving && content.trim()) ? 1 : 0.4 }}>
+            {saving ? '저장 중...' : '💾 저장'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── 기획 메모 카드 ────────────────────────────────────────────
+function PlanningMemoCard({ idea, label, color, bg, border, onEdit, onDelete }) {
+  const [expanded, setExpanded] = useState(false)
+  const lines = (idea?.content || '').split('\n')
+  const preview = lines.slice(0, 3).join('\n')
+  const hasMore = lines.length > 3
+
+  const fmtDate = (iso) => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    return `${d.getMonth()+1}/${d.getDate()}`
+  }
+
+  if (!idea) return (
+    <div style={{ border:`1.5px dashed ${border}`, borderRadius:10, padding:'14px 16px', background:'#fafafa', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <span style={{ fontSize:12, color:'#aaa' }}>아직 기록이 없어요</span>
+      <button onClick={onEdit} style={{ padding:'5px 14px', borderRadius:7, border:'none', background:color, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 입력</button>
+    </div>
+  )
+
+  return (
+    <div style={{ border:`1.5px solid ${border}`, borderRadius:10, overflow:'hidden', background:'#fff' }}>
+      <div style={{ background:bg, padding:'8px 14px', display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ fontSize:12, fontWeight:800, color }}>{label}</span>
+        <span style={{ fontSize:11, color:'#9ca3af', marginLeft:'auto' }}>저장 {fmtDate(idea.created_at)}</span>
+        <button onClick={onEdit} style={{ padding:'2px 10px', borderRadius:6, border:`1px solid ${border}`, background:'#fff', color, fontSize:11, fontWeight:700, cursor:'pointer' }}>수정</button>
+        <button onClick={onDelete} style={{ padding:'2px 8px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff', color:'#dc2626', fontSize:11, cursor:'pointer' }}>×</button>
+      </div>
+      <div style={{ padding:'10px 14px' }}>
+        <pre style={{ margin:0, fontSize:12, lineHeight:1.7, color:'#374151', whiteSpace:'pre-wrap', fontFamily:"'Fira Mono', monospace" }}>
+          {expanded ? idea.content : preview}
+        </pre>
+        {hasMore && (
+          <button onClick={() => setExpanded(p=>!p)} style={{ marginTop:6, fontSize:11, color, background:'none', border:'none', cursor:'pointer', fontWeight:700 }}>
+            {expanded ? '▲ 접기' : `▼ 더 보기 (${lines.length - 3}줄 더)`}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── 사용 처리 모달 ───────────────────────────────────────────
 function UseModal({ idea, onClose, onSave }) {
   const [slug, setSlug] = useState('')
@@ -656,6 +770,8 @@ export default function ContentIdeaPanel({ adminToken }) {
   const [showIngredients, setShowIngredients] = useState(true)
   const [toast, setToast] = useState('')
   const [confirmTarget, setConfirmTarget] = useState(null)
+  const [showPlanningModal, setShowPlanningModal] = useState(null)
+  const [editingMemo, setEditingMemo] = useState(null)
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2200) }
 
@@ -721,6 +837,30 @@ export default function ContentIdeaPanel({ adminToken }) {
       body: JSON.stringify(form),
     })
     if (res.ok) { showToast('✅ 추가됨'); load() }
+  }
+
+  // 기획 메모 저장 (신규 or 수정)
+  const savePlanningMemo = async (form) => {
+    setShowPlanningModal(null)
+    if (editingMemo) {
+      // 수정: PATCH
+      await fetch('/api/admin/content-ideas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ action: 'update_content', id: editingMemo, content: form.content }),
+      })
+      setEditingMemo(null)
+      showToast('✅ 수정됨')
+    } else {
+      // 신규: POST
+      const res = await fetch('/api/admin/content-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify(form),
+      })
+      if (res.ok) showToast('✅ 저장됨')
+    }
+    load()
   }
 
 
@@ -1084,6 +1224,41 @@ export default function ContentIdeaPanel({ adminToken }) {
           })()}
         </div>
 
+        {/* ── STEP 6 기획 기록 섹션 ── */}
+        {(() => {
+          const tabId = `month_${activeMonth}`
+          const sourceAngleMemo = ideas.find(i => i.tab_id === tabId && i.tool_id === 'angle' && i.type === 'memo' && i.angle === '소스각도')
+          const issueListMemo   = ideas.find(i => i.tab_id === tabId && i.tool_id === 'season' && i.type === 'memo' && i.angle === '이슈각도')
+          return (
+            <div style={{ marginBottom:20 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                <span style={{ fontSize:13, fontWeight:800, color:'#0f1f0f' }}>📋 기획 기록</span>
+                <span style={{ fontSize:11, color:'#9ca3af' }}>소스각도 · 이슈각도</span>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <PlanningMemoCard
+                  idea={sourceAngleMemo}
+                  label="📐 소스 각도"
+                  color="#16a34a"
+                  bg="#f0fdf4"
+                  border="#86efac"
+                  onEdit={() => { setEditingMemo(sourceAngleMemo?.id || null); setShowPlanningModal('source_angle') }}
+                  onDelete={() => sourceAngleMemo && setConfirmTarget({ message:'소스 각도 기록을 삭제할까요?', onConfirm: async () => { await fetch('/api/admin/content-ideas', { method:'DELETE', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify({id:sourceAngleMemo.id}) }); load(); setConfirmTarget(null); showToast('삭제됨') }})}
+                />
+                <PlanningMemoCard
+                  idea={issueListMemo}
+                  label="🔍 이슈목록 + 이슈각도"
+                  color="#0ea5e9"
+                  bg="#f0f9ff"
+                  border="#7dd3fc"
+                  onEdit={() => { setEditingMemo(issueListMemo?.id || null); setShowPlanningModal('issue_list') }}
+                  onDelete={() => issueListMemo && setConfirmTarget({ message:'이슈 기록을 삭제할까요?', onConfirm: async () => { await fetch('/api/admin/content-ideas', { method:'DELETE', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify({id:issueListMemo.id}) }); load(); setConfirmTarget(null); showToast('삭제됨') }})}
+                />
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── 저장된 글감 목록 ── */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', margin:'12px 0 8px' }}>
           <div style={{ fontSize:13, fontWeight:700, color:'#0f1f0f' }}>📋 저장된 글감</div>
@@ -1147,6 +1322,15 @@ export default function ContentIdeaPanel({ adminToken }) {
 
       {confirmTarget && <ConfirmModal message={confirmTarget.message} onConfirm={confirmTarget.onConfirm} onCancel={() => setConfirmTarget(null)} />}
       {showAdd && <AddIdeaModal activeMonth={activeMonth} onClose={() => setShowAdd(false)} onSave={addIdea} />}
+      {showPlanningModal && (
+        <PlanningMemoModal
+          activeMonth={activeMonth}
+          type={showPlanningModal}
+          initialContent={editingMemo ? ideas.find(i => i.id === editingMemo)?.content || '' : ''}
+          onClose={() => { setShowPlanningModal(null); setEditingMemo(null) }}
+          onSave={savePlanningMemo}
+        />
+      )}
       {useTarget && <UseModal idea={useTarget} onClose={() => setUseTarget(null)} onSave={markUsed} />}
 
       {toast && (
