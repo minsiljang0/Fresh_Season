@@ -378,27 +378,29 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
               </div>
             </div>
           ) : (
-          <div>
-            <label style={S.label}>내용 *</label>
-            <textarea value={form.content} onChange={e => set('content', e.target.value)}
-              placeholder="글감 아이디어를 입력하세요" rows={3} style={S.textarea} />
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div>
+              <label style={S.label}>내용 *</label>
+              <textarea value={form.content} onChange={e => set('content', e.target.value)}
+                placeholder="글감 아이디어를 입력하세요" rows={3} style={S.textarea} />
+            </div>
+            <div>
+              <label style={S.label}>각도 (선택)</label>
+              <input value={form.angle} onChange={e => set('angle', e.target.value)}
+                style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
+            </div>
+            <div>
+              <label style={S.label}>타겟 키워드 (선택)</label>
+              <input value={form.keyword} onChange={e => set('keyword', e.target.value)}
+                style={S.input} placeholder="예: 민어 효능, 민어 제철" />
+            </div>
+            <div>
+              <label style={S.label}>메모 (선택)</label>
+              <input value={form.memo} onChange={e => set('memo', e.target.value)}
+                style={S.input} placeholder="추가 메모" />
+            </div>
           </div>
-          <div>
-            <label style={S.label}>각도 (선택)</label>
-            <input value={form.angle} onChange={e => set('angle', e.target.value)}
-              style={S.input} placeholder="예: 복날 보양식으로서의 민어" />
-          </div>
-          <div>
-            <label style={S.label}>타겟 키워드 (선택)</label>
-            <input value={form.keyword} onChange={e => set('keyword', e.target.value)}
-              style={S.input} placeholder="예: 민어 효능, 민어 제철" />
-          </div>
-          <div>
-            <label style={S.label}>메모 (선택)</label>
-            <input value={form.memo} onChange={e => set('memo', e.target.value)}
-              style={S.input} placeholder="추가 메모" />
-          </div>
-          )} 
+          )}
         </div>
         <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
           <button onClick={onClose} style={S.btnGhost}>취소</button>
@@ -841,20 +843,21 @@ export default function ContentIdeaPanel({ adminToken }) {
             ))}
             {SECTIONS.filter(s => s.value !== 'strategy').map(sec => {
               const secIdeas = tabIdeas.filter(i => i.tool_id === sec.value)
-            return (
-              <SectionGroup
-                key={sec.value}
-                section={sec}
-                ideas={secIdeas}
-                allIdeas={tabIdeas}
-                onUse={setUseTarget}
-                onUndoUse={undoUse}
-                onDelete={deleteIdea}
-                onMove={moveIdea}
-              />
-            )
+              return (
+                <SectionGroup
+                  key={sec.value}
+                  section={sec}
+                  ideas={secIdeas}
+                  allIdeas={tabIdeas}
+                  onUse={setUseTarget}
+                  onUndoUse={undoUse}
+                  onDelete={deleteIdea}
+                  onMove={moveIdea}
+                />
+              )
             })}
           </>
+        )}
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8 }}>
             {ingLoading ? (
