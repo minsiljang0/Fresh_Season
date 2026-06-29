@@ -955,13 +955,23 @@ export default function ContentIdeaPanel({ adminToken }) {
         </div>
         {loading ? (
           <div style={{ color:'#888', fontSize:14, padding:'20px 0', textAlign:'center' }}>불러오는 중...</div>
-        ) : tabIdeas.length === 0 ? (
-          <div style={{ color:'#aaa', fontSize:13, padding:'16px 0', textAlign:'center' }}>저장된 글감이 없어요</div>
         ) : (
           <>
-            {tabIdeas.filter(i => i.tool_id === 'strategy').map(idea => (
-              <StrategyCard key={idea.id} idea={idea} onDelete={deleteIdea} ingredients={ingredients} />
-            ))}
+            {/* 월간전략 카드 — 데이터 없어도 항상 표시 */}
+            {tabIdeas.filter(i => i.tool_id === 'strategy').length > 0 ? (
+              tabIdeas.filter(i => i.tool_id === 'strategy').map(idea => (
+                <StrategyCard key={idea.id} idea={idea} onDelete={deleteIdea} ingredients={ingredients} />
+              ))
+            ) : (
+              <div style={{ border:'2px dashed #c4b5fd', borderRadius:12, padding:'20px 16px', marginBottom:16, textAlign:'center', background:'#faf5ff' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#7c3aed', marginBottom:6 }}>🗺️ 월간전략</div>
+                <div style={{ fontSize:12, color:'#a78bfa' }}>아직 등록된 월간전략이 없어요</div>
+                <button onClick={() => setShowAdd(true)} style={{ marginTop:10, padding:'6px 16px', borderRadius:8, border:'none', background:'#7c3aed', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 전략 추가</button>
+              </div>
+            )}
+            {tabIdeas.filter(i => i.tool_id !== 'strategy').length === 0 && (
+              <div style={{ color:'#aaa', fontSize:13, padding:'16px 0', textAlign:'center' }}>저장된 글감이 없어요</div>
+            )}
             {SECTIONS.filter(s => s.value !== 'strategy').map(sec => {
               const secIdeas = tabIdeas.filter(i => i.tool_id === sec.value)
               return (
