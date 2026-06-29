@@ -607,9 +607,14 @@ function PlanningMemoCard({ idea, label, color, bg, border, onEdit, onDelete }) 
   }
 
   if (!idea) return (
-    <div style={{ border:`1.5px dashed ${border}`, borderRadius:10, padding:'14px 16px', background:'#fafafa', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-      <span style={{ fontSize:12, color:'#aaa' }}>아직 기록이 없어요</span>
-      <button onClick={onEdit} style={{ padding:'5px 14px', borderRadius:7, border:'none', background:color, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 입력</button>
+    <div style={{ border:`1.5px dashed ${border}`, borderRadius:10, overflow:'hidden', background:'#fafafa' }}>
+      <div style={{ background:bg, padding:'7px 14px', borderBottom:`1px dashed ${border}` }}>
+        <span style={{ fontSize:12, fontWeight:800, color }}>{label}</span>
+      </div>
+      <div style={{ padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <span style={{ fontSize:12, color:'#aaa' }}>아직 기록이 없어요</span>
+        <button onClick={onEdit} style={{ padding:'5px 14px', borderRadius:7, border:'none', background:color, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 입력</button>
+      </div>
     </div>
   )
 
