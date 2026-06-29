@@ -755,90 +755,111 @@ function UseModal({ idea, onClose, onSave }) {
   )
 }
 
-// ── 아이디어 카드 ────────────────────────────────────────────
-function IdeaCard({ idea, onUse, onUndoUse, onDelete, index, onMoveUp, onMoveDown, isFirst, isLast }) {
-  const sec = SECTIONS.find(s => s.value === idea.tool_id) || SECTIONS[7]
-  const typ = TYPE_LABELS[idea.type] || TYPE_LABELS.idea
+// ── 글감 행 (묶음 카드 내부 한 줄) ─────────────────────────
+function IdeaRow({ idea, index, onUse, onUndoUse, onDelete, onMoveUp, onMoveDown, isFirst, isLast, sectionColor }) {
   const isUsed = idea.status === 'used'
+  const keyword = idea.keyword || ''
+  const content = idea.content || ''
+  const memo    = (idea.memo || '').replace(/^\[각도\]\s*/, '')
+
   return (
     <div style={{
+      display:'flex', alignItems:'flex-start', gap:8,
+      padding:'7px 12px',
+      borderBottom:'1px solid #f3f4f6',
       background: isUsed ? '#fafafa' : '#fff',
-      border: `1px solid ${isUsed ? '#e5e7eb' : '#d1e8d1'}`,
-      borderLeft: `4px solid ${isUsed ? '#d1d5db' : sec.color}`,
-      borderRadius: 10, padding:'12px 14px',
-      opacity: isUsed ? 0.6 : 1,
-      display:'flex', alignItems:'flex-start', gap:10,
+      opacity: isUsed ? 0.55 : 1,
     }}>
-      <div style={{ display:'flex', flexDirection:'column', gap:2, flexShrink:0, paddingTop:2 }}>
+      {/* 순서 버튼 */}
+      <div style={{ display:'flex', flexDirection:'column', gap:1, flexShrink:0, paddingTop:2 }}>
         <button onClick={onMoveUp} disabled={isFirst}
-          style={{ background:'none', border:'none', cursor: isFirst ? 'default' : 'pointer', color: isFirst ? '#ddd' : '#aaa', fontSize:11, lineHeight:1, padding:'2px 4px' }}>▲</button>
-        <span style={{ fontSize:11, color:'#ccc', textAlign:'center', lineHeight:1 }}>{index+1}</span>
+          style={{ background:'none', border:'none', cursor: isFirst ? 'default' : 'pointer', color: isFirst ? '#e5e7eb' : '#d1d5db', fontSize:10, lineHeight:1, padding:'1px 3px' }}>▲</button>
+        <span style={{ fontSize:10, color:'#d1d5db', textAlign:'center', lineHeight:1 }}>{index+1}</span>
         <button onClick={onMoveDown} disabled={isLast}
-          style={{ background:'none', border:'none', cursor: isLast ? 'default' : 'pointer', color: isLast ? '#ddd' : '#aaa', fontSize:11, lineHeight:1, padding:'2px 4px' }}>▼</button>
+          style={{ background:'none', border:'none', cursor: isLast ? 'default' : 'pointer', color: isLast ? '#e5e7eb' : '#d1d5db', fontSize:10, lineHeight:1, padding:'1px 3px' }}>▼</button>
       </div>
+
+      {/* 키워드 */}
+      <div style={{ width:110, flexShrink:0, paddingTop:2 }}>
+        {keyword ? (
+          <span style={{ fontSize:11, fontWeight:700, color: isUsed ? '#9ca3af' : sectionColor, wordBreak:'break-all' }}>
+            {keyword}
+          </span>
+        ) : (
+          <span style={{ fontSize:11, color:'#d1d5db' }}>—</span>
+        )}
+        {isUsed && (
+          <div style={{ fontSize:10, color:'#16a34a', marginTop:2 }}>✓ {fmtUsedAt(idea.used_at)}</div>
+        )}
+        {isUsed && idea.used_slug && (
+          <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', marginTop:1, wordBreak:'break-all' }}>/{idea.used_slug}</div>
+        )}
+      </div>
+
+      {/* 구분선 */}
+      <span style={{ color:'#d1d5db', fontSize:12, paddingTop:2, flexShrink:0 }}>/</span>
+
+      {/* 내용 + 메모 */}
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:6, flexWrap:'wrap' }}>
-          <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:10, background:sec.bg, color:sec.color }}>{sec.label}</span>
-          <span style={{ fontSize:11, fontWeight:700, color:typ.color }}>#{typ.label}</span>
-          {isUsed && (
-            <span style={{ fontSize:11, color:'#16a34a', fontWeight:700, background:'#dcfce7', padding:'2px 7px', borderRadius:6 }}>
-              ✓ {fmtUsedAt(idea.used_at)}
-            </span>
-          )}
-          {isUsed && idea.used_slug && (
-            <span style={{ fontSize:11, color:'#6b7280', background:'#f3f4f6', padding:'2px 7px', borderRadius:6, fontFamily:'monospace' }}>
-              /{idea.used_slug}
-            </span>
-          )}
-          <span style={{ fontSize:11, color:'#bbb', marginLeft:'auto' }}>등록 {fmtDate(idea.created_at)}</span>
+        <div style={{ fontSize:13, color: isUsed ? '#9ca3af' : '#111', lineHeight:1.55, wordBreak:'break-word' }}>
+          {content}
         </div>
-        <div style={{ fontSize:14, color: isUsed ? '#9ca3af' : '#111', lineHeight:1.6, wordBreak:'break-word' }}>{idea.content}</div>
-        {idea.keyword && <div style={{ fontSize:12, color:'#16a34a', marginTop:5 }}>🔑 {idea.keyword}</div>}
-        {idea.memo && <div style={{ fontSize:12, color:'#888', marginTop:4, fontStyle:'italic' }}>📝 {idea.memo}</div>}
+        {memo && (
+          <div style={{ fontSize:11, color:'#9ca3af', marginTop:3, lineHeight:1.45 }}>
+            📝 {memo}
+          </div>
+        )}
       </div>
-      <div style={{ display:'flex', gap:5, flexShrink:0 }}>
+
+      {/* 버튼 */}
+      <div style={{ display:'flex', gap:4, flexShrink:0, paddingTop:1 }}>
         {isUsed ? (
           <button onClick={onUndoUse} title="미사용으로 되돌리기"
-            style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:7, color:'#16a34a', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>↩</button>
+            style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:6, color:'#16a34a', cursor:'pointer', padding:'3px 7px', fontSize:12 }}>↩</button>
         ) : (
           <button onClick={onUse} title="사용 완료 처리"
-            style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:7, color:'#6b7280', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>✓</button>
+            style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:6, color:'#9ca3af', cursor:'pointer', padding:'3px 7px', fontSize:12 }}>✓</button>
         )}
         <button onClick={onDelete}
-          style={{ background:'none', border:'1px solid #fecaca', borderRadius:7, color:'#f87171', cursor:'pointer', padding:'5px 9px', fontSize:13 }}>×</button>
+          style={{ background:'none', border:'1px solid #fecaca', borderRadius:6, color:'#f87171', cursor:'pointer', padding:'3px 7px', fontSize:12 }}>×</button>
       </div>
     </div>
   )
 }
 
-// ── 섹션 그룹 ────────────────────────────────────────────────
+// ── 섹션 그룹 (묶음 카드) ────────────────────────────────────
 function SectionGroup({ section, ideas, allIdeas, onUse, onUndoUse, onDelete, onMove }) {
   const [collapsed, setCollapsed] = useState(false)
   if (ideas.length === 0) return null
   const pendingCnt = ideas.filter(i => i.status !== 'used').length
+
   return (
-    <div style={{ marginBottom:16 }}>
+    <div style={{ marginBottom:12, border:`1px solid ${section.color}33`, borderRadius:10, overflow:'hidden' }}>
+      {/* 섹션 헤더 */}
       <div onClick={() => setCollapsed(p => !p)} style={{
         display:'flex', alignItems:'center', gap:8, padding:'8px 14px',
-        background: section.bg, borderRadius:8, cursor:'pointer', marginBottom:8,
-        border:`1px solid ${section.color}22`,
+        background: section.bg, cursor:'pointer',
+        borderBottom: collapsed ? 'none' : `1px solid ${section.color}22`,
       }}>
-        <span style={{ fontSize:14 }}>{section.label}</span>
-        <span style={{ fontSize:12, color:section.color, fontWeight:700 }}>{pendingCnt}개 미사용</span>
+        <span style={{ fontSize:13, fontWeight:700, color: section.color }}>{section.label}</span>
+        <span style={{ fontSize:12, color: section.color, fontWeight:700 }}>{pendingCnt}개 미사용</span>
         {ideas.length !== pendingCnt && (
           <span style={{ fontSize:11, color:'#9ca3af' }}>({ideas.length - pendingCnt}개 완료)</span>
         )}
-        <span style={{ marginLeft:'auto', color:section.color, fontSize:12 }}>{collapsed ? '▶' : '▼'}</span>
+        <span style={{ marginLeft:'auto', color: section.color, fontSize:12 }}>{collapsed ? '▶' : '▼'}</span>
       </div>
+
+      {/* 글감 행 목록 */}
       {!collapsed && (
-        <div style={{ display:'flex', flexDirection:'column', gap:6, paddingLeft:4 }}>
+        <div style={{ background:'#fff' }}>
           {ideas.map((idea, idx) => (
-            <IdeaCard
+            <IdeaRow
               key={idea.id}
               idea={idea}
               index={allIdeas.findIndex(i => i.id === idea.id)}
               isFirst={idx === 0}
               isLast={idx === ideas.length - 1}
+              sectionColor={section.color}
               onUse={() => onUse(idea)}
               onUndoUse={() => onUndoUse(idea.id)}
               onDelete={() => onDelete(idea.id)}
