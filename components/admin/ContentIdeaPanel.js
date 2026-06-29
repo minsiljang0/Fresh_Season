@@ -162,20 +162,15 @@ function AddIdeaModal({ activeMonth, onClose, onSave }) {
 
   const buildStrategyContent = () => {
     return [
-      `[이달의 핵심 이슈]
-${strategy.issues}`,
-      `[이달의 큰 틀]
-${strategy.bigPicture}`,
-      `[주차별 방향]
-1주차: ${strategy.week1}
-2주차: ${strategy.week2}
-3주차: ${strategy.week3}
-4주차: ${strategy.week4}`,
-      `[각도 운영 원칙]
-${strategy.principle}`,
-    ].join('
-
-')
+      '[이달의 핵심 이슈]', strategy.issues, '',
+      '[이달의 큰 틀]', strategy.bigPicture, '',
+      '[주차별 방향]',
+      '1주차: ' + strategy.week1,
+      '2주차: ' + strategy.week2,
+      '3주차: ' + strategy.week3,
+      '4주차: ' + strategy.week4, '',
+      '[각도 운영 원칙]', strategy.principle,
+    ].join('\n')
   }
 
   const handleSave = () => {
