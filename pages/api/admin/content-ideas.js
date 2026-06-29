@@ -68,6 +68,15 @@ export default async function handler(req, res) {
       return res.json({ ok: true })
     }
 
+    if (action === 'update_content') {
+      const { id, content } = req.body
+      if (!id || !content) return res.status(400).json({ error: 'id, content 필수' })
+      const { error } = await supabase
+        .from('content_ideas').update({ content, updated_at: nowKST() }).eq('id', id)
+      if (error) return res.status(500).json({ error: error.message })
+      return res.json({ ok: true })
+    }
+
     if (action === 'update_sort') {
       const { orders } = req.body
       await Promise.all(
