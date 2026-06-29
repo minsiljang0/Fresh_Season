@@ -108,22 +108,23 @@ function StrategyCard({ idea, onDelete, onEdit }) {
       <div style={{ background:'#faf5ff', padding:'14px 16px', display:'flex', flexDirection:'column', gap:10 }}>
 
         {/* 이달의 큰 틀 */}
-        {s.bigPicture && (
-          <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:6 }}>🎯 이달의 큰 틀</div>
-            <div style={{ fontSize:13, fontWeight:700, color:'#1e1b4b', lineHeight:1.6 }}>{s.bigPicture}</div>
-            {s.bigPictureReason && (
-              <div style={{ marginTop:6, fontSize:11, color:'#6b7280', lineHeight:1.6, borderTop:'1px solid #f3f4f6', paddingTop:6 }}>
-                💡 {s.bigPictureReason}
-              </div>
-            )}
-          </div>
-        )}
+        <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:6 }}>🎯 이달의 큰 틀</div>
+          {s.bigPicture
+            ? <div style={{ fontSize:13, fontWeight:700, color:'#1e1b4b', lineHeight:1.6 }}>{s.bigPicture}</div>
+            : <div style={{ fontSize:12, color:'#c4b5fd' }}>아직 입력된 내용이 없어요</div>
+          }
+          {s.bigPictureReason && (
+            <div style={{ marginTop:6, fontSize:11, color:'#6b7280', lineHeight:1.6, borderTop:'1px solid #f3f4f6', paddingTop:6 }}>
+              💡 {s.bigPictureReason}
+            </div>
+          )}
+        </div>
 
         {/* 놓치면 안 되는 우선 특집/이슈 */}
-        {s.priority.length > 0 && (
-          <div style={{ background:'#fff', border:'2px solid #fca5a5', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#dc2626', marginBottom:8 }}>🚨 놓치면 안 되는 우선 특집/이슈</div>
+        <div style={{ background:'#fff', border:'2px solid #fca5a5', borderRadius:8, padding:'10px 14px' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#dc2626', marginBottom:8 }}>🚨 놓치면 안 되는 우선 특집/이슈</div>
+          {s.priority.length > 0 ? (
             <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
               {s.priority.map((p, i) => {
                 const parts = p.split('—')
@@ -138,13 +139,15 @@ function StrategyCard({ idea, onDelete, onEdit }) {
                 )
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div style={{ fontSize:12, color:'#fca5a5' }}>아직 입력된 내용이 없어요</div>
+          )}
+        </div>
 
         {/* 주차별 방향 */}
-        {s.weeks.length > 0 && (
-          <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8 }}>📅 주차별 방향</div>
+        <div style={{ background:'#fff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8 }}>📅 주차별 방향</div>
+          {s.weeks.length > 0 ? (
             <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
               {s.weeks.map((w, i) => {
                 const parts = w.split(':')
@@ -158,16 +161,26 @@ function StrategyCard({ idea, onDelete, onEdit }) {
                 )
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {['1주차','2주차','3주차','4주차'].map((lbl, i) => (
+                <div key={i} style={{ display:'flex', gap:8, alignItems:'center' }}>
+                  <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:10, background: weekColors[i], color: weekTextColors[i], whiteSpace:'nowrap', flexShrink:0 }}>{lbl}</span>
+                  <span style={{ fontSize:12, color:'#c4b5fd' }}>아직 입력된 내용이 없어요</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* 각도 운영 원칙 */}
-        {s.principle && (
-          <div style={{ background:'#f5f3ff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:4 }}>📌 각도 운영 원칙</div>
-            <div style={{ fontSize:12, color:'#4c1d95', lineHeight:1.7 }}>{s.principle}</div>
-          </div>
-        )}
+        <div style={{ background:'#f5f3ff', border:'1px solid #e9d5ff', borderRadius:8, padding:'10px 14px' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:4 }}>📌 각도 운영 원칙</div>
+          {s.principle
+            ? <div style={{ fontSize:12, color:'#4c1d95', lineHeight:1.7 }}>{s.principle}</div>
+            : <div style={{ fontSize:12, color:'#c4b5fd' }}>아직 입력된 내용이 없어요</div>
+          }
+        </div>
 
       </div>
     </div>
