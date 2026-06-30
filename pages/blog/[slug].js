@@ -211,7 +211,7 @@ export default function BlogPost({ post, html, allPosts }) {
                 image: post.cover_image || 'https://www.fsfood.kr/og-image.png',
                 datePublished: post.published_at || post.created_at || undefined,
                 dateModified: post.updated_at || post.published_at || post.created_at || undefined,
-                author: { '@type': 'Organization', name: post.author_name || 'Fresh Season 편집팀' },
+                author: { '@type': 'Organization', name: post.author_name || 'Fresh Season 편집팀', url: 'https://www.fsfood.kr/' },
                 publisher: {
                   '@type': 'Organization',
                   name: 'Fresh Season',
