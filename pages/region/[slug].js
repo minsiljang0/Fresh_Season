@@ -77,6 +77,20 @@ export default function RegionPage({ regionId }) {
         <meta property="og:site_name" content="Fresh Season" />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href={`https://www.fsfood.kr/region/${regionId}`} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Fresh Season', item: 'https://www.fsfood.kr/' },
+                { '@type': 'ListItem', position: 2, name: '제철지도', item: 'https://www.fsfood.kr/map' },
+                { '@type': 'ListItem', position: 3, name: region.name, item: `https://www.fsfood.kr/region/${regionId}` },
+              ],
+            }),
+          }}
+        />
       </Head>
       <Header />
       <main className="wrap">
