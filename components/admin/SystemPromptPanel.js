@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { S, Toast } from './AdminUI'
 
 const ACCENT = '#16a34a'
@@ -73,6 +73,25 @@ export default function SystemPromptPanel({ adminToken }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  const fileInputRef = useRef(null)
+
+  const onFilePicked = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setContent(ev.target.result || '')
+      setMsg('📁 파일 불러왔어요 — 내용 확인 후 저장을 눌러주세요')
+      setTimeout(() => setMsg(''), 3000)
+    }
+    reader.onerror = () => {
+      setMsg('❌ 파일을 읽지 못했어요')
+      setTimeout(() => setMsg(''), 2500)
+    }
+    reader.readAsText(file, 'utf-8')
+    e.target.value = '' // 같은 파일 다시 선택해도 onChange 발생하도록 초기화
   }
 
   const isDirty   = cur.content !== cur.original
@@ -176,6 +195,16 @@ export default function SystemPromptPanel({ adminToken }) {
               >
                 {saving ? '저장 중...' : '💾 저장'}
               </button>
+              <button onClick={() => fileInputRef.current?.click()} style={S.btnGhost}>
+                📁 파일 업로드
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".md,.txt,text/markdown,text/plain"
+                onChange={onFilePicked}
+                style={{ display: 'none' }}
+              />
               <button onClick={copyAll} style={S.btnGhost}>
                 {copied ? '✅ 복사됨!' : '📋 전체 복사'}
               </button>
@@ -199,6 +228,7 @@ export default function SystemPromptPanel({ adminToken }) {
         <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 12 }}>💡 사용 방법</div>
         <div style={{ fontSize: 13, color: '#166534', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span>① 탭(🤖 클로드 / 🛠️ 관리자 / 🗓️ 월글감)을 선택해서 각각 따로 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
+          <span>⓪ 긴 문서는 직접 타이핑하지 않아도 <b style={{ color: '#0f1f0f' }}>📁 파일 업로드</b> 버튼으로 .md/.txt 파일을 선택하면 내용이 그대로 불러와져요 (이후 💾 저장 필수).</span>
           <span>② Claude 프로젝트 Instructions에는 아래 한 줄만 남겨두세요:</span>
           <code style={{
             display: 'block', background: '#e8f5e9', border: '1px solid #86efac',
