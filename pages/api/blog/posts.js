@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   } catch {}
 
   if (req.method === 'GET') {
-    const { slug, category, limit = 20, offset = 0, q } = req.query
+    const { slug, category, limit = 20, offset = 0, q, post_type } = req.query
     if (slug) {
       let query = supabase.from('blog_posts').select('*').eq('slug', slug)
       if (!isAdmin) query = query.eq('status', 'published')
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     }
     let query = supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
     if (!isAdmin) query = query.eq('status', 'published')
-    query = query.eq('post_type', 'blog')
+    query = query.eq('post_type', post_type || 'blog')
     if (category) query = query.eq('category', category)
     if (q) query = query.ilike('title', `%${q}%`)
     query = query.range(Number(offset), Number(offset) + Number(limit) - 1)
