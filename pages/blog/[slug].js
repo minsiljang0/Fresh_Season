@@ -92,30 +92,46 @@ function ContentWithInlineLinks({ html, relatedPool }) {
 function CuriosityBlock({ post, allPosts, inlineUsedIds }) {
   if (!post || !Array.isArray(allPosts)) return null
   const safeUsedIds = inlineUsedIds instanceof Set ? inlineUsedIds : new Set()
-  const pool = scoreRelated(post, allPosts).filter(p => !safeUsedIds.has(p.id)).slice(0, 4)
+  const pool = scoreRelated(post, allPosts).filter(p => !safeUsedIds.has(p.id)).slice(0, 3)
   if (pool.length === 0) return null
   return (
     <div style={{ marginTop: 48, paddingTop: 32, borderTop: '2px solid var(--border)' }}>
       <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>🤔 이런 글도 궁금하지 않으세요?</div>
       <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>비슷한 지역·재료의 글을 더 읽어보세요</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+      <div className="curiosity-grid">
         {pool.map(p => {
           const region = REGIONS.find(r => r.id === p.category)
+          const tags = Array.isArray(p.tags) ? p.tags.filter(Boolean).slice(0, 3) : []
           return (
-            <Link key={p.id} href={`/blog/${p.slug}`}
-              style={{ textAlign: 'left', background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8, textDecoration: 'none' }}>
+            <Link key={p.id} href={`/blog/${p.slug}`} className="curiosity-card">
               {region && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: region.color, background: `${region.color}1a`, border: `1px solid ${region.color}44`, borderRadius: 999, padding: '2px 8px', alignSelf: 'flex-start' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: region.color, background: `${region.color}1a`, border: `1px solid ${region.color}44`, borderRadius: 999, padding: '2px 7px', alignSelf: 'flex-start' }}>
                   {region.icon} {region.name}
                 </span>
               )}
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', lineHeight: 1.45 }}>{p.title}</div>
-              {p.summary && <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.summary}</div>}
-              <div style={{ fontSize: 12, color: 'var(--accent, #16a34a)', fontWeight: 700, marginTop: 4 }}>읽어보기 →</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.title}</div>
+              {p.summary && <div style={{ fontSize: 11.5, color: 'var(--text3)', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.summary}</div>}
+              {tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {tags.map((t, i) => (
+                    <span key={i} style={{ fontSize: 10.5, color: 'var(--accent, #16a34a)', background: 'rgba(22,163,74,0.08)', borderRadius: 999, padding: '2px 7px', fontWeight: 600 }}>
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: 'var(--accent, #16a34a)', fontWeight: 700, marginTop: 2 }}>읽어보기 →</div>
             </Link>
           )
         })}
       </div>
+      <style>{`
+        .curiosity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .curiosity-card { text-align: left; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; min-width: 0; }
+        @media (max-width: 640px) {
+          .curiosity-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   )
 }
