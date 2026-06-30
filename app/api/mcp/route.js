@@ -525,13 +525,14 @@ const baseHandler = createMcpHandler(
           category: z.enum(REGION_CODES).describe('카테고리(=시도 코드). 예: gangwon'),
           tags: z.array(z.string()).optional().describe('태그 5~8개 권장'),
           cover_image: z.string().optional().describe('커버 이미지 URL'),
+          author: z.string().optional().describe('작성자 표시명. 비우면 기본값(Fresh Season 편집팀) 사용'),
           status: z.enum(['published', 'draft', 'scheduled']).optional()
             .describe('기본값 published(즉시 공개). draft면 admin에만 저장되고 비공개.'),
           scheduled_at: z.string().optional().describe('status가 scheduled일 때만 사용, ISO 날짜'),
         },
         annotations: { destructiveHint: false, idempotentHint: false },
       },
-      async ({ title, slug, summary, content, category, tags, cover_image, status, scheduled_at }) => {
+      async ({ title, slug, summary, content, category, tags, cover_image, author, status, scheduled_at }) => {
         const finalStatus = status || 'published'
         const nowIso = nowKST()
         const row = {
@@ -544,6 +545,8 @@ const baseHandler = createMcpHandler(
           category,
           tags: Array.isArray(tags) ? tags : [],
           cover_image: cover_image || null,
+          // blog_posts 테이블의 author 컬럼이 NOT NULL이라 항상 값을 채워서 보낸다.
+          author: (author && author.trim()) || 'Fresh Season 편집팀',
           status: finalStatus,
           scheduled_at: finalStatus === 'scheduled' ? (scheduled_at || null) : null,
           published_at: finalStatus === 'published' ? nowIso : null,

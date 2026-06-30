@@ -38,10 +38,12 @@ export default async function handler(req, res) {
   if (!isAdmin) return res.status(401).json({ error: '인증 필요' })
 
   if (req.method === 'POST') {
-    const { title, slug, content, category, status = 'published', scheduled_at } = req.body
+    const { title, slug, content, category, author, status = 'published', scheduled_at } = req.body
     if (!title || !slug || !content) return res.status(400).json({ error: '필수 항목 누락' })
     const { data, error } = await supabase.from('blog_posts').insert([{
       id: genId(), title, slug, content, category: category || '',
+      // blog_posts 테이블의 author 컬럼이 NOT NULL이라 항상 값을 채워서 보낸다.
+      author: (author && String(author).trim()) || 'Fresh Season 편집팀',
       status, post_type: 'blog',
       scheduled_at: scheduled_at || null,
       published_at: status === 'published' ? nowKST() : null,
