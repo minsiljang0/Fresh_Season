@@ -74,6 +74,8 @@ export default function Header() {
               <Link href="/map" className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}>🗺 제철지도</Link>
               <Link href="/global" className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}>🌍 글로벌 푸드</Link>
               <Link href="/blog" className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}>📝 블로그</Link>
+              <Link href="/board/free" className={`nav-link${router.pathname === '/board/free' ? ' active' : ''}`}>💬 자유게시판</Link>
+              <Link href="/board/request" className={`nav-link${router.pathname === '/board/request' ? ' active' : ''}`}>📬 부탁해요</Link>
             </nav>
           )}
         </div>
@@ -122,6 +124,12 @@ export default function Header() {
             <a className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}
               style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
               onClick={() => handleNav('/blog')}>📝 블로그</a>
+            <a className={`nav-link${router.pathname === '/board/free' ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/board/free')}>💬 자유게시판</a>
+            <a className={`nav-link${router.pathname === '/board/request' ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/board/request')}>📬 부탁해요</a>
           </div>
         </div>
       )}
