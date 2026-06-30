@@ -21,6 +21,15 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data || [])
       }
+      if (type === 'tv_episodes') {
+        const { show_id } = req.query
+        let q = supabase.from('tv_episodes').select('*')
+        if (show_id) q = q.eq('show_id', show_id)
+        q = q.order('aired_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false })
+        const { data, error } = await q
+        if (error) throw error
+        return res.status(200).json(data || [])
+      }
       if (type === 'chefs') {
         const { data, error } = await supabase.from('chefs').select('*').order('name')
         if (error) throw error
@@ -160,6 +169,14 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json(data)
       }
+      if (type === 'tv_episodes') {
+        if (!body.show_id) throw new Error('show_id 필요')
+        const { data, error } = await supabase.from('tv_episodes')
+          .insert([{ id: genId(), show_id: body.show_id, aired_at: body.aired_at || null, episode: body.episode || '', summary: body.summary || '' }])
+          .select().single()
+        if (error) throw error
+        return res.status(200).json(data)
+      }
       if (type === 'chefs') {
         const { data, error } = await supabase.from('chefs')
           .insert([{ id: genId(), name: body.name, role: body.role || '', specialty: body.specialty || '', description: body.description || '' }])
@@ -281,6 +298,7 @@ export default async function handler(req, res) {
       const TABLE_MAP = {
         health_benefits: 'health_benefits',
         tv_shows: 'tv_shows',
+        tv_episodes: 'tv_episodes',
         chefs: 'chefs',
         ingredients: 'ingredients',
         dishes: 'dishes',
@@ -304,6 +322,7 @@ export default async function handler(req, res) {
       const TABLE_MAP = {
         health_benefits: 'health_benefits',
         tv_shows: 'tv_shows',
+        tv_episodes: 'tv_episodes',
         chefs: 'chefs',
         show_chefs: 'show_chefs',
         ingredients: 'ingredients',

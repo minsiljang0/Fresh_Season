@@ -1621,6 +1621,50 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
   const [dayFilter, setDayFilter] = useState('전체')
   const [formOpen, setFormOpen] = useState(false)
 
+  // 방송분(회차) 기록
+  const [expandedId, setExpandedId] = useState(null)
+  const [episodes, setEpisodes] = useState([])
+  const [epLoading, setEpLoading] = useState(false)
+  const [epForm, setEpForm] = useState({ aired_at:'', episode:'', summary:'' })
+  const [epSaving, setEpSaving] = useState(false)
+
+  const loadEpisodes = useCallback(async (showId) => {
+    setEpLoading(true)
+    try { setEpisodes(await apiFetch(`${api('tv_episodes')}&show_id=${showId}`)) }
+    catch(e) { showToast('❌ '+e.message); setEpisodes([]) }
+    setEpLoading(false)
+  }, [])
+
+  const toggleExpand = (id) => {
+    if (expandedId === id) { setExpandedId(null); return }
+    setExpandedId(id); setEpForm({ aired_at:'', episode:'', summary:'' }); loadEpisodes(id)
+  }
+
+  const addEpisode = async () => {
+    if (!epForm.aired_at && !epForm.episode.trim() && !epForm.summary.trim()) {
+      showToast('⚠️ 날짜·회차·내용 중 하나는 입력해주세요'); return
+    }
+    setEpSaving(true)
+    try {
+      await apiFetch(api('tv_episodes'), {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
+        body:JSON.stringify({ show_id: expandedId, ...epForm })
+      })
+      setEpForm({ aired_at:'', episode:'', summary:'' })
+      loadEpisodes(expandedId); showToast('✅ 방송분 기록됨')
+    } catch(e) { showToast('❌ '+e.message) }
+    setEpSaving(false)
+  }
+
+  const delEpisode = (id) => {
+    confirmDelete('이 방송분 기록', async () => {
+      try {
+        await apiFetch(`${api('tv_episodes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
+        setEpisodes(p => p.filter(e => e.id !== id)); showToast('🗑 삭제됨')
+      } catch(e) { showToast('❌ '+e.message) }
+    })
+  }
+
   const load = useCallback(async () => {
     setLoading(true)
     try { setShows(await apiFetch(api('tv_shows'))) } catch(e) { showToast('❌ '+e.message) }
@@ -1656,7 +1700,9 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
     confirmDelete(name, async () => {
       try {
         await apiFetch(`${api('tv_shows')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-        setShows(p => p.filter(s => s.id !== id)); showToast('🗑 삭제됨')
+        setShows(p => p.filter(s => s.id !== id))
+        if (expandedId === id) setExpandedId(null)
+        showToast('🗑 삭제됨')
       } catch(e) { showToast('❌ '+e.message) }
     })
   }
@@ -1769,8 +1815,9 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
                   </div>
                 </div>
               )
+              const isExpanded = expandedId === s.id
               return (
-                <div key={s.id} style={{ ...S.row, background:'#f5f9f5', border:'1px solid #d1e8d1' }}>
+                <div key={s.id} style={{ ...S.row, background:'#f5f9f5', border:'1px solid #d1e8d1', gridColumn: isExpanded ? '1/-1' : undefined }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap' }}>
@@ -1787,12 +1834,50 @@ function TvShowTab({ adminToken, showToast, confirmDelete }) {
                       </div>
                     </div>
                     <div style={{ display:'flex', gap:4, flexShrink:0, marginLeft:8 }}>
+                      <button onClick={()=>toggleExpand(s.id)}
+                        style={{ padding:'3px 8px', borderRadius:5, border:`1px solid ${isExpanded?'#f59e0b':'#d1e8d1'}`, background:isExpanded?'#fef3c7':'#f5f9f5', color:isExpanded?'#92400e':'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>📝 방송분 {isExpanded?'▲':'▼'}</button>
                       <button onClick={()=>{ setEditId(s.id); setEditForm({name:s.name,broadcaster:s.broadcaster||'',category:s.category||'',description:s.description||'',started_at:s.started_at||'',ended_at:s.ended_at||'',air_days:s.air_days||[]}) }}
                         style={{ padding:'3px 8px', borderRadius:5, border:'1px solid #d1e8d1', background:'#f5f9f5', color:'#4b6e4b', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>✏️</button>
                       <button onClick={()=>del(s.id,s.name)}
                         style={{ padding:'3px 8px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:11, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                     </div>
                   </div>
+
+                  {isExpanded && (
+                    <div style={{ marginTop:12, paddingTop:12, borderTop:'1px dashed #d1e8d1' }}>
+                      <div style={{ display:'grid', gridTemplateColumns:'140px 140px 1fr auto', gap:8, alignItems:'end' }}>
+                        <div>
+                          <label style={S.label}>날짜</label>
+                          <input type="date" value={epForm.aired_at} onChange={e=>setEpForm(p=>({...p,aired_at:e.target.value}))} style={S.input} />
+                        </div>
+                        <div>
+                          <label style={S.label}>회차</label>
+                          <input value={epForm.episode} onChange={e=>setEpForm(p=>({...p,episode:e.target.value}))} placeholder="예: 1234회" style={S.input} />
+                        </div>
+                        <div>
+                          <label style={S.label}>간략한 내용</label>
+                          <input value={epForm.summary} onChange={e=>setEpForm(p=>({...p,summary:e.target.value}))} placeholder="예: 제철 감자·전남 무안 소개" style={S.input} />
+                        </div>
+                        <button onClick={addEpisode} disabled={epSaving} style={{ ...S.btn(), opacity:epSaving?.6:1, height:38 }}>+ 추가</button>
+                      </div>
+                      <div style={{ marginTop:10 }}>
+                        {epLoading ? <p style={{ fontSize:12, color:'#aaa' }}>불러오는 중...</p> :
+                          episodes.length === 0 ? <p style={{ fontSize:12, color:'#aaa' }}>기록된 방송분이 없습니다.</p> :
+                          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                            {episodes.map(e => (
+                              <div key={e.id} style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #e5efe5', borderRadius:8, padding:'6px 10px' }}>
+                                {e.aired_at && <span style={{ fontSize:11, fontWeight:700, color:'#16a34a', whiteSpace:'nowrap' }}>{e.aired_at}</span>}
+                                {e.episode && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#faf5ff', color:'#7c3aed', border:'1px solid #e9d5ff', whiteSpace:'nowrap' }}>{e.episode}</span>}
+                                {e.summary && <span style={{ fontSize:12, color:'#333', flex:1 }}>{e.summary}</span>}
+                                <button onClick={()=>delEpisode(e.id)}
+                                  style={{ padding:'2px 7px', borderRadius:5, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:10, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
+                              </div>
+                            ))}
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
