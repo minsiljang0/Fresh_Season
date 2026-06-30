@@ -133,8 +133,134 @@ const MKT_CAT_COLOR = {
   '환경':   { bg:'#d1fae5', text:'#047857' },
 }
 
+// 일정의 날짜 문자열("7/15", "7/1~7/5", "6/26~7/12")을 그 달(activeMonth) 기준 day 배열로 변환
+function parseEventDays(dateStr, activeMonth) {
+  if (!dateStr) return []
+  const parseOne = (s) => {
+    const m = s.trim().match(/^(\d{1,2})\/(\d{1,2})$/)
+    if (!m) return null
+    return { month: parseInt(m[1], 10), day: parseInt(m[2], 10) }
+  }
+  const parts = dateStr.split('~').map(p => p.trim())
+  const start = parseOne(parts[0])
+  const end = parts[1] ? parseOne(parts[1]) : start
+  if (!start) return []
+  const days = []
+  if (!end || (start.month === end.month)) {
+    if (start.month !== activeMonth) return []
+    const endDay = end ? end.day : start.day
+    for (let d = start.day; d <= endDay; d++) days.push(d)
+    return days
+  }
+  // 월을 넘어가는 일정: 이 달에 해당하는 구간만 표시
+  if (start.month === activeMonth) {
+    for (let d = start.day; d <= 31; d++) days.push(d)
+  } else if (end.month === activeMonth) {
+    for (let d = 1; d <= end.day; d++) days.push(d)
+  } else if (start.month < activeMonth && end.month > activeMonth) {
+    for (let d = 1; d <= 31; d++) days.push(d)
+  }
+  return days
+}
+
+function getMonthGrid(year, month) {
+  const firstDay = new Date(year, month - 1, 1)
+  const startWeekday = firstDay.getDay() // 0=일
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const cells = []
+  for (let i = 0; i < startWeekday; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+  while (cells.length % 7 !== 0) cells.push(null)
+  const weeks = []
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  return weeks
+}
+
+const WEEKDAY_LABELS = ['일','월','화','수','목','금','토']
+
+// ── 진짜 요일별 그리드 캘린더 ──────────────────────────────
+function MarketingCalendarGrid({ schedule, activeMonth, year = 2026 }) {
+  const [selectedDay, setSelectedDay] = useState(null)
+  const weeks = getMonthGrid(year, activeMonth)
+
+  // day(1~31) → 그 날 걸리는 일정 목록
+  const dayEvents = {}
+  schedule.forEach(ev => {
+    parseEventDays(ev.date, activeMonth).forEach(d => {
+      if (!dayEvents[d]) dayEvents[d] = []
+      dayEvents[d].push(ev)
+    })
+  })
+
+  return (
+    <div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:1, background:'#e5e7eb', border:'1px solid #e5e7eb', borderRadius:8, overflow:'hidden' }}>
+        {WEEKDAY_LABELS.map((w, i) => (
+          <div key={w} style={{ background:'#f9fafb', textAlign:'center', padding:'5px 0', fontSize:11, fontWeight:700, color: i===0?'#dc2626':i===6?'#2563eb':'#6b7280' }}>{w}</div>
+        ))}
+        {weeks.flat().map((d, idx) => {
+          const evs = d ? (dayEvents[d] || []) : []
+          const isSun = idx % 7 === 0
+          const isSat = idx % 7 === 6
+          return (
+            <div
+              key={idx}
+              onClick={() => d && evs.length > 0 && setSelectedDay(selectedDay === d ? null : d)}
+              style={{
+                background: d ? '#fff' : '#fafafa',
+                minHeight: 58,
+                padding: '4px 4px',
+                cursor: d && evs.length > 0 ? 'pointer' : 'default',
+                outline: selectedDay === d ? '2px solid #ea580c' : 'none',
+                outlineOffset: -2,
+              }}
+            >
+              {d && (
+                <>
+                  <div style={{ fontSize:10.5, fontWeight:700, color: isSun?'#dc2626':isSat?'#2563eb':'#9ca3af', marginBottom:2 }}>{d}</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+                    {evs.slice(0, 2).map((ev, i) => {
+                      const c = MKT_CAT_COLOR[ev.category] || { bg:'#f3f4f6', text:'#6b7280' }
+                      return (
+                        <div key={i} title={ev.title} style={{ fontSize:9.5, fontWeight:700, color:c.text, background:c.bg, borderRadius:3, padding:'1px 3px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {ev.title.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim()}
+                        </div>
+                      )
+                    })}
+                    {evs.length > 2 && <div style={{ fontSize:9, color:'#9ca3af' }}>+{evs.length - 2}건 더</div>}
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* 선택한 날짜의 일정 상세 */}
+      {selectedDay && dayEvents[selectedDay] && (
+        <div style={{ marginTop:8, background:'#fff7ed', border:'1px solid #fdba74', borderRadius:8, padding:'8px 12px' }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'#ea580c', marginBottom:6 }}>{activeMonth}/{selectedDay} 일정</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {dayEvents[selectedDay].map((ev, i) => {
+              const c = MKT_CAT_COLOR[ev.category] || { bg:'#f3f4f6', text:'#6b7280' }
+              return (
+                <div key={i}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#1f2937' }}>{ev.title}</span>
+                    {ev.category && <span style={{ fontSize:10, fontWeight:700, padding:'1px 8px', borderRadius:8, background:c.bg, color:c.text }}>{ev.category}</span>}
+                  </div>
+                  {ev.desc && <div style={{ fontSize:11, color:'#6b7280', marginTop:2, lineHeight:1.5 }}>{ev.desc}</div>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MarketingCalendarCard({ idea, onDelete, onEdit }) {
-  const [expanded, setExpanded] = useState(false)
   if (!idea) return (
     <div style={{ border:'1.5px dashed #fdba74', borderRadius:10, overflow:'hidden', background:'#fafafa' }}>
       <div style={{ background:'#fff7ed', padding:'7px 14px', borderBottom:'1px dashed #fdba74' }}>
@@ -148,14 +274,13 @@ function MarketingCalendarCard({ idea, onDelete, onEdit }) {
   )
 
   const s = parseMarketingCalendar(idea.content)
+  const monthFromTab = parseInt((idea.tab_id || '').replace('month_', ''), 10) || 1
   const groups = [
     { key:'EAT',  label:'🍴 EAT',  color:'#dc2626', bg:'#fef2f2' },
     { key:'BUY',  label:'🛍️ BUY',  color:'#2563eb', bg:'#eff6ff' },
     { key:'DO',   label:'🏃 DO',   color:'#16a34a', bg:'#f0fdf4' },
     { key:'PLAY', label:'🎉 PLAY', color:'#7c3aed', bg:'#f5f3ff' },
   ]
-  const previewSchedule = s.schedule.slice(0, 4)
-  const restSchedule = s.schedule.slice(4)
 
   return (
     <div style={{ border:'1.5px solid #fdba74', borderRadius:10, overflow:'hidden', background:'#fff' }}>
@@ -185,34 +310,11 @@ function MarketingCalendarCard({ idea, onDelete, onEdit }) {
           ))}
         </div>
 
-        {/* 날짜별 일정 — 원본의 카드 나열 구조 */}
+        {/* 진짜 요일별 그리드 캘린더 */}
         {s.schedule.length > 0 && (
-          <div style={{ background:'#fafafa', border:'1px solid #e5e7eb', borderRadius:8, padding:'10px 12px' }}>
-            <div style={{ fontSize:11, fontWeight:800, color:'#374151', marginBottom:8 }}>🗓️ 날짜별 일정 ({s.schedule.length}건)</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-              {(expanded ? s.schedule : previewSchedule).map((ev, i) => {
-                const c = MKT_CAT_COLOR[ev.category] || { bg:'#f3f4f6', text:'#6b7280' }
-                return (
-                  <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start', padding:'6px 8px', background:'#fff', borderRadius:6, border:'1px solid #f0f0f0' }}>
-                    <span style={{ fontSize:11, fontWeight:700, color:'#ea580c', whiteSpace:'nowrap', flexShrink:0, minWidth:62 }}>{ev.date}</span>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-                        <span style={{ fontSize:12, fontWeight:700, color:'#1f2937' }}>{ev.title}</span>
-                        {ev.category && (
-                          <span style={{ fontSize:10, fontWeight:700, padding:'1px 8px', borderRadius:8, background:c.bg, color:c.text }}>{ev.category}</span>
-                        )}
-                      </div>
-                      {ev.desc && <div style={{ fontSize:11, color:'#6b7280', marginTop:2, lineHeight:1.5 }}>{ev.desc}</div>}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {restSchedule.length > 0 && (
-              <button onClick={() => setExpanded(p=>!p)} style={{ marginTop:8, fontSize:11, color:'#ea580c', background:'none', border:'none', cursor:'pointer', fontWeight:700 }}>
-                {expanded ? '▲ 접기' : `▼ 더 보기 (${restSchedule.length}건 더)`}
-              </button>
-            )}
+          <div>
+            <div style={{ fontSize:11, fontWeight:800, color:'#374151', marginBottom:6 }}>🗓️ {monthFromTab}월 일정 ({s.schedule.length}건) — 날짜 클릭하면 상세 보기</div>
+            <MarketingCalendarGrid schedule={s.schedule} activeMonth={monthFromTab} />
           </div>
         )}
 
