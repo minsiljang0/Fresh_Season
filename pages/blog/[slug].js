@@ -199,6 +199,45 @@ export default function BlogPost({ post, html, allPosts }) {
         <meta name="twitter:description" content={post?.summary || 'Fresh Season 블로그 — 제철 식재료와 건강 효능, TV 방영 레시피로 차리는 건강한 밥상 이야기를 전해드립니다.'} />
         <meta name="twitter:image" content={post?.cover_image || 'https://www.fsfood.kr/og-image.png'} />
         <link rel="canonical" href={`https://www.fsfood.kr/blog/${post?.slug || ''}`} />
+        {post && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'BlogPosting',
+                headline: post.title,
+                description: post.summary || '',
+                image: post.cover_image || 'https://www.fsfood.kr/og-image.png',
+                datePublished: post.published_at || post.created_at || undefined,
+                dateModified: post.updated_at || post.published_at || post.created_at || undefined,
+                author: { '@type': 'Organization', name: post.author_name || 'Fresh Season 편집팀' },
+                publisher: {
+                  '@type': 'Organization',
+                  name: 'Fresh Season',
+                  logo: { '@type': 'ImageObject', url: 'https://www.fsfood.kr/og-image.png' },
+                },
+                mainEntityOfPage: { '@type': 'WebPage', '@id': `https://www.fsfood.kr/blog/${post.slug}` },
+              }),
+            }}
+          />
+        )}
+        {post && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                  { '@type': 'ListItem', position: 1, name: 'Fresh Season', item: 'https://www.fsfood.kr/' },
+                  { '@type': 'ListItem', position: 2, name: '블로그', item: 'https://www.fsfood.kr/blog' },
+                  { '@type': 'ListItem', position: 3, name: post.title, item: `https://www.fsfood.kr/blog/${post.slug}` },
+                ],
+              }),
+            }}
+          />
+        )}
       </Head>
 
       <Header />
