@@ -111,6 +111,20 @@ export default function IngredientPage({ ingredientName }) {
         <meta name="twitter:description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
         <meta name="twitter:image" content="https://www.fsfood.kr/og-image.png" />
         <link rel="canonical" href={`https://www.fsfood.kr/ingredient/${encodeURIComponent(ingredientName)}`} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Fresh Season', item: 'https://www.fsfood.kr/' },
+                { '@type': 'ListItem', position: 2, name: '제철지도', item: 'https://www.fsfood.kr/map' },
+                { '@type': 'ListItem', position: 3, name: ingredientName, item: `https://www.fsfood.kr/ingredient/${encodeURIComponent(ingredientName)}` },
+              ],
+            }),
+          }}
+        />
       </Head>
       <Header />
       <main className="wrap" style={{ maxWidth: 860 }}>
