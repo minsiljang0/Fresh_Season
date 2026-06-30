@@ -50,30 +50,42 @@ export default async function handler(req, res) {
     if (error) return res.status(500).json({ error: error.message })
 
     // Google Indexing API + IndexNow — 발행 즉시 색인 요청
+    const indexStatus = { google: null, indexnow: null }
+
     if (status === 'published') {
       const pageUrl = `https://www.fsfood.kr/blog/${data.slug}`
 
       // 1) Google Indexing API
       try {
+        if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+          throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON 환경변수가 설정되어 있지 않습니다')
+        }
         const { GoogleAuth } = require('google-auth-library')
         const auth = new GoogleAuth({
           credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
           scopes: ['https://www.googleapis.com/auth/indexing'],
         })
         const client = await auth.getClient()
-        await client.request({
+        const res2 = await client.request({
           url: 'https://indexing.googleapis.com/v3/urlNotifications:publish',
           method: 'POST',
           data: { url: pageUrl, type: 'URL_UPDATED' },
         })
+        indexStatus.google = { ok: true, status: res2.status }
+        console.log('[Indexing API] 성공:', pageUrl, res2.status)
       } catch (e) {
-        console.error('[Indexing API] 오류:', e.message)
+        // googleapis 에러는 e.message에 실제 사유가 안 담기는 경우가 많아서
+        // response.data까지 같이 꺼내서 진짜 원인을 노출시킨다.
+        const detail = e?.response?.data || e?.message || String(e)
+        indexStatus.google = { ok: false, error: detail }
+        console.error('[Indexing API] 오류:', JSON.stringify(detail))
       }
 
       // 2) IndexNow — Bing·Naver·Yandex 색인 요청
       try {
         const INDEXNOW_KEY = process.env.INDEXNOW_KEY
-        await fetch('https://api.indexnow.org/indexnow', {
+        if (!INDEXNOW_KEY) throw new Error('INDEXNOW_KEY 환경변수가 설정되어 있지 않습니다')
+        const r = await fetch('https://api.indexnow.org/indexnow', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json; charset=utf-8' },
           body: JSON.stringify({
@@ -83,12 +95,16 @@ export default async function handler(req, res) {
             urlList: [pageUrl],
           }),
         })
+        indexStatus.indexnow = { ok: r.ok, status: r.status }
+        if (!r.ok) console.error('[IndexNow] 오류 응답:', r.status, await r.text().catch(() => ''))
       } catch (e) {
+        indexStatus.indexnow = { ok: false, error: e.message }
         console.error('[IndexNow] 오류:', e.message)
       }
     }
 
-    return res.status(200).json(data)
+    // 관리자 화면에서 발행 직후 색인 요청 성공/실패를 바로 확인할 수 있도록 같이 내려준다.
+    return res.status(200).json({ ...data, _indexStatus: indexStatus })
   }
 
   if (req.method === 'PUT') {
