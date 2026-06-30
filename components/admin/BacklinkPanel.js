@@ -69,6 +69,20 @@ const GROUPS = [
       { text: '사이트맵에 새 페이지 빠짐없이 반영 확인', desc: '신규 글/페이지가 sitemap.xml에 자동 포함되는지 확인', link: null },
     ],
   },
+  {
+    key: 'schema',
+    title: '🧩 구조화 데이터 & 기술 SEO 반영 현황',
+    desc: '검색결과에 리치 스니펫이 노출되도록 적용한 JSON-LD·robots.txt·MCP 작업 현황',
+    color: '#0d9488', border: '#99f6e4', bg: '#f0fdfa',
+    items: [
+      { text: 'pages/blog/[slug].js — BlogPosting + Breadcrumb JSON-LD', desc: 'JSON-LD 2개(BlogPosting+Breadcrumb) 및 author.url 포함 최신 버전 반영', link: 'https://search.google.com/test/rich-results' },
+      { text: 'pages/region/[slug].js — Breadcrumb JSON-LD', desc: '지역별 페이지에 Breadcrumb 구조화 데이터 반영', link: null },
+      { text: 'pages/ingredient/[name].js — Breadcrumb JSON-LD', desc: '식재료별 페이지에 Breadcrumb 구조화 데이터 반영', link: null },
+      { text: 'pages/index.js — WebSite JSON-LD', desc: '메인 페이지에 WebSite 구조화 데이터 반영', link: null },
+      { text: 'public/robots.txt — sitemap 주소 정상화', desc: 'sitemap 경로가 /sitemap.xml로 정상 수정됨', link: null },
+      { text: 'app/api/mcp/route.js — TV 방송 도구 반영', desc: 'list_tv_episodes, add_tv_episode 도구 정상 반영', link: null },
+    ],
+  },
 ]
 
 export default function BacklinkPanel({ adminToken }) {
