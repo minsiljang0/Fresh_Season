@@ -1,34 +1,53 @@
 import { useState, useEffect, useCallback } from 'react'
 import { S, Toast } from './AdminUI'
 
+const ACCENT = '#16a34a'
+
+const TABS = [
+  { id: 'claude', label: '🤖 클로드',   desc: 'Claude 전체 행동 지침 — 대화 시작 시 가장 먼저 불러오는 메인 시스템 프롬프트예요.' },
+  { id: 'main',   label: '🛠️ 관리자',   desc: '관리자(이 사이트) 운영·관리 관련 지침이에요.' },
+  { id: 'month',  label: '🗓️ 월글감',   desc: '월별 글감 작성 시 따라야 할 지침이에요.' },
+]
+
 export default function SystemPromptPanel({ adminToken }) {
-  const [content, setContent]     = useState('')
-  const [original, setOriginal]   = useState('')
-  const [updatedAt, setUpdatedAt] = useState('')
-  const [loading, setLoading]     = useState(true)
-  const [saving, setSaving]       = useState(false)
-  const [msg, setMsg]             = useState('')
-  const [copied, setCopied]       = useState(false)
+  const [activeTab, setActiveTab] = useState('claude')
+
+  // 탭별로 상태를 분리 보관: { [tabId]: { content, original, updatedAt, loaded } }
+  const [data, setData] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving]   = useState(false)
+  const [msg, setMsg]         = useState('')
+  const [copied, setCopied]   = useState(false)
 
   const token = () => adminToken || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('admin_token') : '')
 
-  const load = useCallback(async () => {
+  const loadTab = useCallback(async (tabId) => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/system-prompt', {
+      const res = await fetch(`/api/admin/system-prompt?id=${tabId}`, {
         headers: { 'x-admin-token': token() },
       })
       if (res.ok) {
-        const data = await res.json()
-        setContent(data.content || '')
-        setOriginal(data.content || '')
-        setUpdatedAt(data.updated_at || '')
+        const json = await res.json()
+        setData(prev => ({
+          ...prev,
+          [tabId]: { content: json.content || '', original: json.content || '', updatedAt: json.updated_at || '', loaded: true },
+        }))
       }
     } catch { /* 무시 */ }
     setLoading(false)
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (!data[activeTab]?.loaded) loadTab(activeTab)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
+
+  const cur = data[activeTab] || { content: '', original: '', updatedAt: '', loaded: false }
+
+  const setContent = (val) => {
+    setData(prev => ({ ...prev, [activeTab]: { ...cur, content: val } }))
+  }
 
   const save = async () => {
     setSaving(true)
@@ -36,12 +55,11 @@ export default function SystemPromptPanel({ adminToken }) {
       const res = await fetch('/api/admin/system-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': token() },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ id: activeTab, content: cur.content }),
       })
       if (!res.ok) throw new Error()
-      setOriginal(content)
       const kst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
-      setUpdatedAt(kst)
+      setData(prev => ({ ...prev, [activeTab]: { ...cur, original: cur.content, updatedAt: kst } }))
       setMsg('✅ 저장됐어요!')
     } catch {
       setMsg('❌ 저장 실패')
@@ -51,21 +69,23 @@ export default function SystemPromptPanel({ adminToken }) {
   }
 
   const copyAll = () => {
-    navigator.clipboard.writeText(content).then(() => {
+    navigator.clipboard.writeText(cur.content).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
   }
 
-  const isDirty   = content !== original
-  const charCount = content.length
-  const lineCount = content.split('\n').length
+  const isDirty   = cur.content !== cur.original
+  const charCount = cur.content.length
+  const lineCount = cur.content.split('\n').length
 
   const fmtDate = (iso) => {
     if (!iso) return ''
     try { return new Date(iso).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) }
     catch { return iso }
   }
+
+  const activeMeta = TABS.find(t => t.id === activeTab)
 
   return (
     <div style={{ fontFamily: "'Outfit', sans-serif" }}>
@@ -78,12 +98,39 @@ export default function SystemPromptPanel({ adminToken }) {
               MCP <code style={{ background: '#e8f5e9', padding: '1px 6px', borderRadius: 4, fontSize: 12, color: '#15803d' }}>get_system_prompt</code> 툴로 Claude가 직접 불러갈 수 있어요.
             </div>
           </div>
-          {updatedAt && (
+          {cur.updatedAt && (
             <span style={{ fontSize: 12, color: '#555', whiteSpace: 'nowrap' }}>
-              마지막 저장: {fmtDate(updatedAt)}
+              마지막 저장: {fmtDate(cur.updatedAt)}
             </span>
           )}
         </div>
+
+        {/* 탭 */}
+        <div style={{ overflowX: 'auto', marginTop: 18, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid #e5e7eb', minWidth: 'max-content' }}>
+            {TABS.map(t => {
+              const isActive = activeTab === t.id
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  style={{
+                    padding: '10px 16px', background: 'none', border: 'none',
+                    borderBottom: isActive ? `2px solid ${ACCENT}` : '2px solid transparent',
+                    marginBottom: -2,
+                    color: isActive ? ACCENT : '#6b7280',
+                    fontSize: 13, fontWeight: isActive ? 700 : 500,
+                    cursor: 'pointer', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 10 }}>{activeMeta?.desc}</div>
 
         {!loading && (
           <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
@@ -107,7 +154,8 @@ export default function SystemPromptPanel({ adminToken }) {
         ) : (
           <>
             <textarea
-              value={content}
+              key={activeTab}
+              value={cur.content}
               onChange={e => setContent(e.target.value)}
               style={{
                 ...S.textarea,
@@ -116,7 +164,7 @@ export default function SystemPromptPanel({ adminToken }) {
                 lineHeight: 1.75,
                 fontFamily: "'Fira Mono', 'Consolas', monospace",
               }}
-              placeholder="Claude 프로젝트 지침(마크다운)을 여기에 붙여넣거나 직접 작성하세요..."
+              placeholder={`${activeMeta?.label} 지침(마크다운)을 여기에 붙여넣거나 직접 작성하세요...`}
               spellCheck={false}
             />
 
@@ -132,7 +180,7 @@ export default function SystemPromptPanel({ adminToken }) {
                 {copied ? '✅ 복사됨!' : '📋 전체 복사'}
               </button>
               {isDirty && (
-                <button onClick={() => setContent(original)} style={{ ...S.btnGhost, color: '#e63946', borderColor: '#e63946' }}>
+                <button onClick={() => setData(prev => ({ ...prev, [activeTab]: { ...cur, content: cur.original } }))} style={{ ...S.btnGhost, color: '#e63946', borderColor: '#e63946' }}>
                   ↩ 되돌리기
                 </button>
               )}
@@ -150,7 +198,7 @@ export default function SystemPromptPanel({ adminToken }) {
       <div style={{ ...S.card, background: '#f0fdf4', border: '1px solid #86efac' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 12 }}>💡 사용 방법</div>
         <div style={{ fontSize: 13, color: '#166534', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span>① 위 편집기에서 지침을 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
+          <span>① 탭(🤖 클로드 / 🛠️ 관리자 / 🗓️ 월글감)을 선택해서 각각 따로 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
           <span>② Claude 프로젝트 Instructions에는 아래 한 줄만 남겨두세요:</span>
           <code style={{
             display: 'block', background: '#e8f5e9', border: '1px solid #86efac',
@@ -159,7 +207,7 @@ export default function SystemPromptPanel({ adminToken }) {
           }}>
             대화를 시작하면 즉시 get_system_prompt 툴을 호출해서 전체 지침을 로드하고, 그 지침대로만 행동하세요.
           </code>
-          <span>③ MCP 커넥터가 연결된 Claude는 대화 시작 시 자동으로 지침을 불러와요.</span>
+          <span>③ MCP <code style={{ background: '#e8f5e9', padding: '1px 6px', borderRadius: 4, fontSize: 12, color: '#15803d' }}>get_system_prompt</code> 툴에 id(<b>claude</b>/<b>main</b>/<b>month</b>)를 넘기면 해당 탭만 불러와요. id를 안 주면 기존 호환을 위해 🛠️ 관리자 탭 내용을 가져와요.</span>
           <span>④ <b style={{ color: '#0f1f0f' }}>📋 전체 복사</b>로 복사해서 직접 붙여넣는 것도 가능해요.</span>
         </div>
       </div>

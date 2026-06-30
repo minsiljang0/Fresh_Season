@@ -820,24 +820,29 @@ const baseHandler = createMcpHandler(
       {
         title: 'Claude 시스템 프롬프트(지침) 조회',
         description:
-          'admin에 저장된 Claude 프로젝트 지침 전문을 가져온다. ' +
-          '대화를 시작할 때 가장 먼저 호출해서 지침을 로드하고, 그 내용대로 행동한다. ' +
+          'admin에 저장된 Claude 프로젝트 지침을 가져온다. ' +
+          '지침은 3개 탭으로 나뉜다: claude(메인 행동 지침) / main(관리자 운영 지침) / month(월글감 작성 지침). ' +
+          'id를 주면 해당 탭만 가져오고, 비우면 하위호환을 위해 main(관리자) 탭을 가져온다. ' +
+          '대화를 시작할 때 가장 먼저 id="claude"로 호출해서 메인 지침을 로드하고, 그 내용대로 행동한다. ' +
           '지침은 admin → 🤖 Claude 지침 메뉴에서 수정할 수 있다.',
-        inputSchema: {},
+        inputSchema: {
+          id: z.enum(['claude', 'main', 'month']).optional().describe('불러올 탭. claude=메인 지침, main=관리자 지침, month=월글감 지침. 비우면 main'),
+        },
       },
-      async () => {
+      async ({ id }) => {
+        const tabId = ['claude', 'main', 'month'].includes(id) ? id : 'main'
         const { data, error } = await supabase
           .from('system_prompts')
           .select('content, updated_at')
-          .eq('id', 'main')
+          .eq('id', tabId)
           .single()
         if (error || !data) {
-          return { content: [{ type: 'text', text: '❌ 시스템 프롬프트를 불러오지 못했습니다. admin에서 저장했는지 확인해주세요.' }], isError: true }
+          return { content: [{ type: 'text', text: `❌ [${tabId}] 시스템 프롬프트를 불러오지 못했습니다. admin에서 저장했는지 확인해주세요.` }], isError: true }
         }
         return {
           content: [{
             type: 'text',
-            text: '# 시스템 프롬프트 로드 완료 (저장일시: ' + data.updated_at + ')\n\n' + data.content,
+            text: `# 시스템 프롬프트 로드 완료 [${tabId}] (저장일시: ${data.updated_at})\n\n` + data.content,
           }],
         }
       }
@@ -849,23 +854,27 @@ const baseHandler = createMcpHandler(
         title: 'Claude 시스템 프롬프트(지침) 저장',
         description:
           'admin에 저장된 Claude 프로젝트 지침을 덮어쓴다. ' +
-          '지침 전문을 content에 담아 전달하면 기존 내용을 완전히 교체한다. ' +
+          '지침은 3개 탭으로 나뉜다: claude(메인 행동 지침) / main(관리자 운영 지침) / month(월글감 작성 지침). ' +
+          'id로 어느 탭을 덮어쓸지 지정한다 (비우면 main). ' +
+          '지침 전문을 content에 담아 전달하면 해당 탭의 기존 내용을 완전히 교체한다. ' +
           '저장 후 get_system_prompt로 다시 불러와서 확인하는 것을 권장한다.',
         inputSchema: {
+          id: z.enum(['claude', 'main', 'month']).optional().describe('덮어쓸 탭. claude=메인 지침, main=관리자 지침, month=월글감 지침. 비우면 main'),
           content: z.string().describe('새로 저장할 지침 전문 (마크다운)'),
         },
         annotations: { destructiveHint: true, idempotentHint: false },
       },
-      async ({ content }) => {
+      async ({ id, content }) => {
+        const tabId = ['claude', 'main', 'month'].includes(id) ? id : 'main'
         const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
         const { error } = await supabase
           .from('system_prompts')
-          .upsert({ id: 'main', content, updated_at: nowKST }, { onConflict: 'id' })
+          .upsert({ id: tabId, content, updated_at: nowKST }, { onConflict: 'id' })
         if (error) {
           return { content: [{ type: 'text', text: `❌ 저장 실패: ${error.message}` }], isError: true }
         }
         return {
-          content: [{ type: 'text', text: `✅ 시스템 프롬프트 저장 완료 (${nowKST})\n\n저장된 글자수: ${content.length.toLocaleString()}자` }],
+          content: [{ type: 'text', text: `✅ [${tabId}] 시스템 프롬프트 저장 완료 (${nowKST})\n\n저장된 글자수: ${content.length.toLocaleString()}자` }],
         }
       }
     )
