@@ -42,8 +42,8 @@ export default async function handler(req, res) {
     if (!title || !slug || !content) return res.status(400).json({ error: '필수 항목 누락' })
     const { data, error } = await supabase.from('blog_posts').insert([{
       id: genId(), title, slug, content, category: category || '',
-      // blog_posts 테이블의 author 컬럼이 NOT NULL이라 항상 값을 채워서 보낸다.
-      author: (author && String(author).trim()) || 'Fresh Season 편집팀',
+      // ⚠️ blog_posts 테이블의 실제 컬럼명은 author가 아니라 author_name 이다.
+      author_name: (author && String(author).trim()) || 'Fresh Season 편집팀',
       status, post_type: 'blog',
       scheduled_at: scheduled_at || null,
       published_at: status === 'published' ? nowKST() : null,

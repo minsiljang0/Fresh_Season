@@ -499,7 +499,8 @@ const baseHandler = createMcpHandler(
           competition: competition || null,
           google_indexing: google_indexing || null,
           index_now: index_now || null,
-          published_at: null,
+          // ⚠️ publish_log.published_at은 NOT NULL 컬럼이라 null을 넣으면 insert가 실패한다.
+          published_at: nowKST(),
           created_at: nowKST(),
         }
         const { data, error } = await supabase.from('publish_log').insert([row]).select().single()
@@ -545,8 +546,9 @@ const baseHandler = createMcpHandler(
           category,
           tags: Array.isArray(tags) ? tags : [],
           cover_image: cover_image || null,
-          // blog_posts 테이블의 author 컬럼이 NOT NULL이라 항상 값을 채워서 보낸다.
-          author: (author && author.trim()) || 'Fresh Season 편집팀',
+          // ⚠️ blog_posts 테이블의 실제 컬럼명은 author가 아니라 author_name 이다.
+          // (author로 insert하면 "Could not find the 'author' column" 스키마 에러 발생)
+          author_name: (author && author.trim()) || 'Fresh Season 편집팀',
           status: finalStatus,
           scheduled_at: finalStatus === 'scheduled' ? (scheduled_at || null) : null,
           published_at: finalStatus === 'published' ? nowIso : null,
