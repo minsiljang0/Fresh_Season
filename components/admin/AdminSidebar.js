@@ -15,6 +15,7 @@ const NAV = [
   { id: 'password',      label: '비밀번호 변경',   icon: '🔑' },
   { id: 'popup',         label: '팝업 관리',       icon: '📢' },
   { id: 'mcp',           label: 'MCP 관리',        icon: '🔌' },
+  { id: 'backlink',      label: '백링크 관리',     icon: '🔗' },
 ]
 
 function NavItem({ item, active, onClick }) {

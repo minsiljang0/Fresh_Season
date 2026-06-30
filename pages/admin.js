@@ -14,6 +14,7 @@ import SystemPromptPanel from '../components/admin/SystemPromptPanel'
 import { S, Toast, Toggle } from '../components/admin/AdminUI'
 import PopupPanel from '../components/admin/PopupPanel'
 import McpPanel from '../components/admin/McpPanel'
+import BacklinkPanel from '../components/admin/BacklinkPanel'
 
 const TAB_LABELS = {
   settings:      '🔧 서비스 설정',
@@ -33,6 +34,7 @@ const TAB_LABELS = {
   password:      '🔑 비밀번호 변경',
   popup:         '📢 팝업 관리',
   mcp:           '🔌 MCP 관리',
+  backlink:      '🔗 백링크 관리',
 }
 
 function LoginScreen({ onLogin }) {
@@ -248,6 +250,7 @@ export default function Admin() {
             )}
             {activeTab === 'popup' && <PopupPanel adminToken={adminToken} />}
             {activeTab === 'mcp' && <McpPanel adminToken={adminToken} />}
+            {activeTab === 'backlink' && <BacklinkPanel adminToken={adminToken} />}
             {activeTab === 'password' && (
               <div style={S.card}>
                 <div style={S.cardTitle}>🔑 비밀번호 변경</div>
