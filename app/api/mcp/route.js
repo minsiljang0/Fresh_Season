@@ -1312,14 +1312,14 @@ const baseHandler = createMcpHandler(
       'list_tv_shows',
       {
         title: 'TV방송 목록 조회',
-        description: 'DB에 등록된 TV 요리방송 목록을 가져온다.',
+        description: 'DB에 등록된 TV 요리방송(프로그램) 목록을 가져온다.',
         inputSchema: {
           q:     z.string().optional().describe('방송명 검색어'),
           limit: z.number().optional().describe('최대 반환 개수 (기본 50)'),
         },
       },
       async ({ q, limit = 50 }) => {
-        let query = supabase.from('tv_shows').select('id,name,channel,category,air_day,description').order('name').limit(limit)
+        let query = supabase.from('tv_shows').select('id,name,broadcaster,category,description,started_at,ended_at,air_days').order('name').limit(limit)
         if (q) query = query.ilike('name', `%${q}%`)
         const { data, error } = await query
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
@@ -1331,21 +1331,66 @@ const baseHandler = createMcpHandler(
       'add_tv_show',
       {
         title: 'TV방송 추가',
-        description: '새 TV 요리방송을 DB에 등록한다.',
+        description: '새 TV 요리방송(프로그램)을 DB에 등록한다.',
         inputSchema: {
           name:        z.string().describe('방송명 (예: 백종원의 골목식당)'),
-          channel:     z.string().optional().describe('채널명 (예: SBS)'),
+          broadcaster: z.string().optional().describe('방송사명 (예: SBS, tvN)'),
           category:    z.string().optional().describe('카테고리 (예: 요리경연)'),
-          air_day:     z.string().optional().describe('방영 요일 (예: 수)'),
+          air_days:    z.array(z.string()).optional().describe('방영 요일 목록 (예: ["수"] 또는 ["월","화","수","목","금"])'),
           description: z.string().optional().describe('방송 설명'),
         },
         annotations: { destructiveHint: false },
       },
-      async ({ name, channel = '', category = '', air_day = '', description = '' }) => {
+      async ({ name, broadcaster = '', category = '', air_days = [], description = '' }) => {
         const id = 'tv_' + Date.now()
-        const { data, error } = await supabase.from('tv_shows').insert([{ id, name, channel, category, air_day, description }]).select().single()
+        const { data, error } = await supabase.from('tv_shows').insert([{ id, name, broadcaster, category, air_days, description }]).select().single()
         if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
         return { content: [{ type: 'text', text: `✅ TV방송 등록 완료\n${JSON.stringify(data, null, 2)}` }] }
+      }
+    )
+
+    server.registerTool(
+      'list_tv_episodes',
+      {
+        title: 'TV 방송분(회차) 기록 조회',
+        description: '특정 TV방송(show_id)의 개별 방송분(날짜·회차·간략한 내용) 기록 목록을 가져온다. show_id를 모르면 list_tv_shows로 먼저 조회.',
+        inputSchema: {
+          show_id: z.string().optional().describe('TV방송 ID (list_tv_shows로 조회 후 사용). 비우면 전체 반환'),
+          limit:   z.number().optional().describe('최대 반환 개수 (기본 50)'),
+        },
+      },
+      async ({ show_id, limit = 50 }) => {
+        let query = supabase.from('tv_episodes').select('*').order('aired_at', { ascending: false }).order('created_at', { ascending: false }).limit(limit)
+        if (show_id) query = query.eq('show_id', show_id)
+        const { data, error } = await query
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_tv_episode',
+      {
+        title: 'TV 방송분(회차) 기록 추가',
+        description: '특정 TV방송(show_id)의 개별 방송분을 기록한다. 날짜·회차·간략한 내용 모두 선택 입력이며, 아는 정보만 입력해도 된다. show_id는 list_tv_shows로 먼저 조회.',
+        inputSchema: {
+          show_id: z.string().describe('TV방송 ID (list_tv_shows로 조회 후 사용)'),
+          aired_at: z.string().optional().describe('방송 날짜 (예: 2026-07-01)'),
+          episode:  z.string().optional().describe('회차 정보 (예: 1234회, 3화)'),
+          summary:  z.string().optional().describe('간략한 내용 (예: 전남 무안 제철 식자재 소개)'),
+        },
+        annotations: { destructiveHint: false },
+      },
+      async ({ show_id, aired_at, episode = '', summary = '' }) => {
+        if (!aired_at && !episode && !summary) {
+          return { content: [{ type: 'text', text: '❌ 날짜·회차·간략한 내용 중 하나는 입력해야 합니다' }], isError: true }
+        }
+        const id = 'tve_' + Date.now()
+        const { data, error } = await supabase.from('tv_episodes')
+          .insert([{ id, show_id, aired_at: aired_at || null, episode, summary }])
+          .select().single()
+        if (error) return { content: [{ type: 'text', text: `❌ ${error.message}` }], isError: true }
+        return { content: [{ type: 'text', text: `✅ 방송분 기록 완료\n${JSON.stringify(data, null, 2)}` }] }
       }
     )
 
