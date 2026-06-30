@@ -88,6 +88,21 @@ function ContentWithInlineLinks({ html, relatedPool }) {
   return <>{result}</>
 }
 
+// ── 글 자체의 해시태그 줄
+function PostTags({ tags }) {
+  const safeTags = Array.isArray(tags) ? tags.filter(Boolean) : []
+  if (safeTags.length === 0) return null
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+      {safeTags.map((t, i) => (
+        <span key={i} style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text2, #4b5563)', background: 'var(--card, #f3f4f6)', border: '1px solid var(--border, #e5e7eb)', borderRadius: 999, padding: '5px 12px' }}>
+          #{t}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 // ── 하단 "이런 것도 궁금하지 않으세요?" 블록
 function CuriosityBlock({ post, allPosts, inlineUsedIds }) {
   if (!post || !Array.isArray(allPosts)) return null
@@ -218,6 +233,8 @@ export default function BlogPost({ post, html, allPosts }) {
             <div style={{ fontSize: 15, lineHeight: 1.85, color: 'var(--text)' }}>
               <ContentWithInlineLinks html={html} relatedPool={relatedPool} />
             </div>
+
+            <PostTags tags={post.tags} />
 
             <CuriosityBlock post={post} allPosts={allPosts} inlineUsedIds={inlineUsedIds} />
             <ServiceCTABlock post={post} />
