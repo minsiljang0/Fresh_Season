@@ -176,7 +176,7 @@ export default function KeywordPanel({ token }) {
   const [expanded, setExpanded]           = useState(null)
   const [topData, setTopData]             = useState({})
   const [topLoading, setTopLoading]       = useState({})
-  const [toast, setToast]                 = useState('')
+  const [resultModal, setResultModal]     = useState(null)   // {type:'success'|'error', message}
   const [tab, setTab]                     = useState('top')
   const [picks, setPicks]                 = useState([])
   const [picksLoading, setPicksLoading]   = useState(false)
@@ -201,7 +201,10 @@ export default function KeywordPanel({ token }) {
   const [batchPriority, setBatchPriority] = useState('search_volume')
   const [batchChunk, setBatchChunk]     = useState(100)
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
+  const showToast = (msg) => {
+    const isError = msg.trim().startsWith('❌')
+    setResultModal({ type: isError ? 'error' : 'success', message: msg })
+  }
 
   const loadStats = () => {
     fetch('/api/tools/keyword-stats', { headers: { 'x-admin-token': token } })
@@ -1421,13 +1424,33 @@ export default function KeywordPanel({ token }) {
       )}
 
 
-      {toast && (
+      {resultModal && (
         <div style={{
-          position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
-          background: '#18181b', border: '1px solid #3f3f46', borderRadius: 10,
-          padding: '12px 24px', fontSize: 14, color: '#0f1f0f',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: 9999,
-        }}>{toast}</div>
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+        }} onClick={() => setResultModal(null)}>
+          <div style={{
+            background: '#ffffff', border: `2px solid ${resultModal.type === 'error' ? '#dc2626' : '#16a34a'}`,
+            borderRadius: 14, padding: 28, width: 340, maxWidth: '90vw',
+            fontFamily: "'Outfit', sans-serif", boxShadow: '0 12px 36px rgba(0,0,0,0.25)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 26 }}>{resultModal.type === 'error' ? '⛔' : '✅'}</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: resultModal.type === 'error' ? '#dc2626' : '#15803d' }}>
+                {resultModal.type === 'error' ? '오류 발생' : '완료'}
+              </span>
+            </div>
+            <div style={{ fontSize: 14, color: '#27272a', lineHeight: 1.6, marginBottom: 24, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              {resultModal.message}
+            </div>
+            <button onClick={() => setResultModal(null)} style={{
+              width: '100%', background: resultModal.type === 'error' ? '#dc2626' : '#2563eb',
+              color: '#fff', border: 'none', borderRadius: 9, padding: '12px',
+              fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+              boxShadow: resultModal.type === 'error' ? '0 2px 10px rgba(220,38,38,0.35)' : '0 2px 10px rgba(37,99,235,0.35)',
+            }}>확인</button>
+          </div>
+        </div>
       )}
     </div>
   )
