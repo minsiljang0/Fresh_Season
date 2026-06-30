@@ -58,20 +58,34 @@ export default function BlogIndex() {
               const region = REGIONS.find(r => r.id === post.category)
               return (
                 <Link key={post.id} href={`/blog/${post.slug}`} className="card"
+                  style={{ padding: 0, overflow: 'hidden' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = region?.color || 'var(--accent)'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
-                  {region && (
-                    <span className="badge" style={{ marginBottom: 10, display: 'inline-block', background: `${region.color}22`, color: region.color, border: `1px solid ${region.color}44` }}>
-                      {region.icon} {region.name}
-                    </span>
+                  {post.cover_image ? (
+                    <img src={post.cover_image} alt={post.title} referrerPolicy="no-referrer"
+                      style={{ width: '100%', height: 150, objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{
+                      width: '100%', height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 36, background: region ? `${region.color}14` : 'var(--card, #f3f4f6)',
+                    }}>
+                      {region?.icon || '🥬'}
+                    </div>
                   )}
-                  <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, lineHeight: 1.4 }}>{post.title}</h2>
-                  <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>
-                    {post.content?.replace(/<[^>]+>/g, '').slice(0, 80)}...
-                  </p>
-                  <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
-                    {new Date(new Date(post.published_at).getTime() + 9*60*60*1000).toISOString().slice(0,10).replace(/-/g,'. ') + '.'}
-                  </p>
+                  <div style={{ padding: 20 }}>
+                    {region && (
+                      <span className="badge" style={{ marginBottom: 10, display: 'inline-block', background: `${region.color}22`, color: region.color, border: `1px solid ${region.color}44` }}>
+                        {region.icon} {region.name}
+                      </span>
+                    )}
+                    <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, lineHeight: 1.4 }}>{post.title}</h2>
+                    <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>
+                      {(post.summary || post.content?.replace(/<[^>]+>/g, ''))?.slice(0, 80)}...
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
+                      {new Date(new Date(post.published_at).getTime() + 9*60*60*1000).toISOString().slice(0,10).replace(/-/g,'. ') + '.'}
+                    </p>
+                  </div>
                 </Link>
               )
             })}
