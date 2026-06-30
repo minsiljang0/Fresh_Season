@@ -132,6 +132,33 @@ export default function McpPanel({ adminToken }) {
     if (res.ok) { showToast('✅ 툴 등록됨'); load() }
   }
 
+  const [syncingId, setSyncingId] = useState(null)
+
+  const syncServer = async (id) => {
+    setSyncingId(id)
+    try {
+      const res = await fetch('/api/admin/mcps', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ type: 'sync', server_id: id }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        showToast(`❌ ${data.error || '동기화 실패'}`)
+      } else {
+        const parts = [`✅ 동기화 완료 — 총 ${data.total}개`]
+        if (data.added) parts.push(`신규 ${data.added}개`)
+        if (data.updated) parts.push(`갱신 ${data.updated}개`)
+        if (data.missing?.length) parts.push(`⚠️ 서버에서 사라짐: ${data.missing.join(', ')}`)
+        showToast(parts.join(' · '))
+        load()
+      }
+    } catch {
+      showToast('❌ 동기화 실패 — 네트워크 오류')
+    }
+    setSyncingId(null)
+  }
+
   const deleteServer = async (id) => {
     if (!confirm('서버와 소속 툴이 모두 삭제됩니다. 계속할까요?')) return
     await fetch('/api/admin/mcps', {
@@ -226,6 +253,10 @@ export default function McpPanel({ adminToken }) {
                   <button onClick={e => { e.stopPropagation(); copyUrl(s.url) }}
                     style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:6, padding:'4px 10px', fontSize:11, color:ACCENT, cursor:'pointer', fontWeight:700, flexShrink:0 }}>
                     URL 복사
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); syncServer(s.id) }} disabled={syncingId === s.id}
+                    style={{ background:'none', border:'1px solid #bfdbfe', borderRadius:6, padding:'4px 10px', fontSize:11, color:'#2563eb', cursor: syncingId === s.id ? 'default' : 'pointer', fontWeight:700, flexShrink:0, opacity: syncingId === s.id ? 0.6 : 1 }}>
+                    {syncingId === s.id ? '동기화 중…' : '🔄 동기화'}
                   </button>
                   <button onClick={e => { e.stopPropagation(); deleteServer(s.id) }}
                     style={{ background:'none', border:'1px solid #fecaca', borderRadius:6, padding:'4px 10px', fontSize:11, color:'#ef4444', cursor:'pointer', fontWeight:700, flexShrink:0 }}>
