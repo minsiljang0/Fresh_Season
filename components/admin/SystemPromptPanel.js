@@ -75,6 +75,18 @@ export default function SystemPromptPanel({ adminToken }) {
     })
   }
 
+  const downloadMd = () => {
+    const blob = new Blob([cur.content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${activeTab}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const fileInputRef = useRef(null)
 
   const onFilePicked = (e) => {
@@ -207,6 +219,9 @@ export default function SystemPromptPanel({ adminToken }) {
               />
               <button onClick={copyAll} style={S.btnGhost}>
                 {copied ? '✅ 복사됨!' : '📋 전체 복사'}
+              </button>
+              <button onClick={downloadMd} style={S.btnGhost}>
+                ⬇️ MD 다운로드
               </button>
               {isDirty && (
                 <button onClick={() => setData(prev => ({ ...prev, [activeTab]: { ...cur, content: cur.original } }))} style={{ ...S.btnGhost, color: '#e63946', borderColor: '#e63946' }}>
