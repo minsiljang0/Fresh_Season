@@ -7,22 +7,34 @@ import { REGIONS } from '../../lib/regions'
 import { parseMarkdown } from '../../lib/parseMarkdown'
 
 // ── 관련도 점수 계산: 같은 지역 카테고리(+3), 태그(+2/개), 제목 키워드 겹침(+1/개)
+// 기존 글처럼 category/tags가 비어있어 점수가 전부 0이 되더라도
+// 풀이 텅 비지 않도록 최신순으로 폴백 채운다.
 function scoreRelated(post, allPosts) {
   if (!post || !Array.isArray(allPosts) || allPosts.length === 0) return []
-  return allPosts
-    .filter(p => p && p.id !== post.id)
-    .map(p => {
-      let score = 0
-      if (p.category && p.category === post.category) score += 3
-      const postTags = Array.isArray(post.tags) ? post.tags : []
-      const pTags = Array.isArray(p.tags) ? p.tags : []
-      pTags.forEach(t => { if (postTags.includes(t)) score += 2 })
-      const kw = (post.title || '').replace(/[^가-힣a-z0-9]/gi, ' ').split(/\s+/).filter(w => w.length > 1)
-      kw.forEach(w => { if ((p.title || '').includes(w)) score += 1 })
-      return { ...p, _score: score }
-    })
-    .filter(p => p._score > 0)
-    .sort((a, b) => b._score - a._score || new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at))
+
+  const others = allPosts.filter(p => p && p.id !== post.id)
+
+  const scored = others.map(p => {
+    let score = 0
+    if (p.category && p.category === post.category) score += 3
+    const postTags = Array.isArray(post.tags) ? post.tags : []
+    const pTags = Array.isArray(p.tags) ? p.tags : []
+    pTags.forEach(t => { if (postTags.includes(t)) score += 2 })
+    const kw = (post.title || '').replace(/[^가-힣a-z0-9]/gi, ' ').split(/\s+/).filter(w => w.length > 1)
+    kw.forEach(w => { if ((p.title || '').includes(w)) score += 1 })
+    return { ...p, _score: score }
+  })
+
+  const ranked = [...scored].sort(
+    (a, b) => b._score - a._score || new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at)
+  )
+
+  const matched = ranked.filter(p => p._score > 0)
+  const fallback = ranked.filter(p => p._score === 0)
+
+  // 점수가 매겨진 글을 우선 노출하고, 부족하면 최신 글로 채워서
+  // 관련 글 풀이 완전히 비는 일이 없게 한다.
+  return [...matched, ...fallback]
 }
 
 // ── 본문 중간 삽입용 미니 관련 글 카드
