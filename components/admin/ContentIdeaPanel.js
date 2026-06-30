@@ -90,6 +90,149 @@ function parseStrategy(content) {
   return sections
 }
 
+// ── 마케팅 달력 (원본 캘린더 구조 그대로: EAT/BUY/DO/PLAY + 날짜별 일정) ──
+// 저장 포맷:
+//   [EAT] / [BUY] / [DO] / [PLAY] — 줄마다 "- 내용"
+//   [일정]
+//   날짜 | 일정명 | 카테고리 | 설명   ← 파이프 구분, 한 줄에 하나씩
+//   [출처]
+//   - 출처명 | URL
+function parseMarketingCalendar(content) {
+  const sections = { EAT: [], BUY: [], DO: [], PLAY: [], schedule: [], sources: [] }
+  const lines = (content || '').split('\n')
+  let current = null
+  lines.forEach(line => {
+    const t = line.trim()
+    if (t === '[EAT]') { current = 'EAT'; return }
+    if (t === '[BUY]') { current = 'BUY'; return }
+    if (t === '[DO]') { current = 'DO'; return }
+    if (t === '[PLAY]') { current = 'PLAY'; return }
+    if (t === '[일정]') { current = 'schedule'; return }
+    if (t === '[출처]') { current = 'sources'; return }
+    if (!t) return
+    if (['EAT','BUY','DO','PLAY'].includes(current) && t.startsWith('-')) {
+      sections[current].push(t.slice(1).trim())
+    } else if (current === 'schedule' && t.includes('|')) {
+      const parts = t.split('|').map(p => p.trim())
+      sections.schedule.push({ date: parts[0]||'', title: parts[1]||'', category: parts[2]||'', desc: parts[3]||'' })
+    } else if (current === 'sources' && t.startsWith('-')) {
+      const raw = t.slice(1).trim()
+      const parts = raw.split('|').map(p => p.trim())
+      sections.sources.push({ name: parts[0]||raw, url: parts[1]||'' })
+    }
+  })
+  return sections
+}
+
+const MKT_CAT_COLOR = {
+  '공휴일': { bg:'#fee2e2', text:'#dc2626' },
+  '기념일': { bg:'#fef3c7', text:'#b45309' },
+  '스포츠': { bg:'#dbeafe', text:'#1d4ed8' },
+  '콘텐츠': { bg:'#ede9fe', text:'#7c3aed' },
+  '마케팅': { bg:'#dcfce7', text:'#16a34a' },
+  '환경':   { bg:'#d1fae5', text:'#047857' },
+}
+
+function MarketingCalendarCard({ idea, onDelete, onEdit }) {
+  const [expanded, setExpanded] = useState(false)
+  if (!idea) return (
+    <div style={{ border:'1.5px dashed #fdba74', borderRadius:10, overflow:'hidden', background:'#fafafa' }}>
+      <div style={{ background:'#fff7ed', padding:'7px 14px', borderBottom:'1px dashed #fdba74' }}>
+        <span style={{ fontSize:12, fontWeight:800, color:'#ea580c' }}>📅 마케팅 달력</span>
+      </div>
+      <div style={{ padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <span style={{ fontSize:12, color:'#aaa' }}>아직 입력된 마케팅 달력이 없어요</span>
+        <button onClick={onEdit} style={{ padding:'5px 14px', borderRadius:7, border:'none', background:'#ea580c', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ 입력</button>
+      </div>
+    </div>
+  )
+
+  const s = parseMarketingCalendar(idea.content)
+  const groups = [
+    { key:'EAT',  label:'🍴 EAT',  color:'#dc2626', bg:'#fef2f2' },
+    { key:'BUY',  label:'🛍️ BUY',  color:'#2563eb', bg:'#eff6ff' },
+    { key:'DO',   label:'🏃 DO',   color:'#16a34a', bg:'#f0fdf4' },
+    { key:'PLAY', label:'🎉 PLAY', color:'#7c3aed', bg:'#f5f3ff' },
+  ]
+  const previewSchedule = s.schedule.slice(0, 4)
+  const restSchedule = s.schedule.slice(4)
+
+  return (
+    <div style={{ border:'1.5px solid #fdba74', borderRadius:10, overflow:'hidden', background:'#fff' }}>
+      <div style={{ background:'#fff7ed', padding:'8px 14px', display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ fontSize:12, fontWeight:800, color:'#ea580c' }}>📅 마케팅 달력</span>
+        <span style={{ fontSize:11, color:'#9ca3af', marginLeft:'auto' }}>저장 {fmtDate(idea.created_at)}</span>
+        <button onClick={onEdit} style={{ padding:'2px 10px', borderRadius:6, border:'1px solid #fdba74', background:'#fff', color:'#ea580c', fontSize:11, fontWeight:700, cursor:'pointer' }}>수정</button>
+        <button onClick={onDelete} style={{ padding:'2px 8px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff', color:'#dc2626', fontSize:11, cursor:'pointer' }}>×</button>
+      </div>
+
+      <div style={{ padding:'12px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+        {/* EAT / BUY / DO / PLAY 4분면 */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          {groups.map(g => (
+            <div key={g.key} style={{ background:g.bg, border:`1px solid ${g.color}33`, borderRadius:8, padding:'8px 10px' }}>
+              <div style={{ fontSize:11, fontWeight:800, color:g.color, marginBottom:6 }}>{g.label}</div>
+              {s[g.key].length > 0 ? (
+                <ul style={{ margin:0, paddingLeft:14, display:'flex', flexDirection:'column', gap:3 }}>
+                  {s[g.key].map((item, i) => (
+                    <li key={i} style={{ fontSize:11.5, color:'#374151', lineHeight:1.5 }}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div style={{ fontSize:11, color:'#d1d5db' }}>없음</div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* 날짜별 일정 — 원본의 카드 나열 구조 */}
+        {s.schedule.length > 0 && (
+          <div style={{ background:'#fafafa', border:'1px solid #e5e7eb', borderRadius:8, padding:'10px 12px' }}>
+            <div style={{ fontSize:11, fontWeight:800, color:'#374151', marginBottom:8 }}>🗓️ 날짜별 일정 ({s.schedule.length}건)</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {(expanded ? s.schedule : previewSchedule).map((ev, i) => {
+                const c = MKT_CAT_COLOR[ev.category] || { bg:'#f3f4f6', text:'#6b7280' }
+                return (
+                  <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start', padding:'6px 8px', background:'#fff', borderRadius:6, border:'1px solid #f0f0f0' }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:'#ea580c', whiteSpace:'nowrap', flexShrink:0, minWidth:62 }}>{ev.date}</span>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                        <span style={{ fontSize:12, fontWeight:700, color:'#1f2937' }}>{ev.title}</span>
+                        {ev.category && (
+                          <span style={{ fontSize:10, fontWeight:700, padding:'1px 8px', borderRadius:8, background:c.bg, color:c.text }}>{ev.category}</span>
+                        )}
+                      </div>
+                      {ev.desc && <div style={{ fontSize:11, color:'#6b7280', marginTop:2, lineHeight:1.5 }}>{ev.desc}</div>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {restSchedule.length > 0 && (
+              <button onClick={() => setExpanded(p=>!p)} style={{ marginTop:8, fontSize:11, color:'#ea580c', background:'none', border:'none', cursor:'pointer', fontWeight:700 }}>
+                {expanded ? '▲ 접기' : `▼ 더 보기 (${restSchedule.length}건 더)`}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 출처 */}
+        {s.sources.length > 0 && (
+          <div style={{ fontSize:11, color:'#9ca3af', lineHeight:1.6 }}>
+            <span style={{ fontWeight:700, color:'#6b7280' }}>출처: </span>
+            {s.sources.map((src, i) => (
+              <span key={i}>
+                {i > 0 && ' · '}
+                {src.url ? <a href={src.url} target="_blank" rel="noreferrer" style={{ color:'#ea580c' }}>{src.name}</a> : src.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function StrategyCard({ idea, onDelete, onEdit }) {
   const s = parseStrategy(idea.content)
   const weekColors = ['#fecdd3','#bfdbfe','#d9f99d','#fde68a']
@@ -437,20 +580,172 @@ function AddIdeaModal({ activeMonth, initialSection = 'angle', onClose, onSave }
   )
 }
 
-// ── 기획 메모 입력 모달 (마케팅달력 / 소스각도 / 이슈목록+이슈각도 / 월간전략) ────────
-function PlanningMemoModal({ activeMonth, type, initialContent = '', onClose, onSave }) {
-  const configs = {
-    marketing_calendar: {
-      title: '📅 마케팅 달력 기록',
-      color: '#ea580c',
-      bg: '#fff7ed',
-      border: '#fdba74',
+// ── 마케팅 달력 전용 입력 모달 ──────────────────────────────
+// 원본 캘린더 구조(예: kt nasmedia 월간 마케팅 캘린더)를 그대로 따른다:
+//   카테고리 4분면 EAT/BUY/DO/PLAY + 날짜별 일정(날짜|제목|카테고리|설명) + 출처
+function MarketingCalendarMemoModal({ activeMonth, initialContent = '', onClose, onSave }) {
+  const init = parseMarketingCalendar(initialContent)
+
+  const [eat, setEat]   = useState(init.EAT.length ? init.EAT : [''])
+  const [buy, setBuy]   = useState(init.BUY.length ? init.BUY : [''])
+  const [doo, setDoo]   = useState(init.DO.length ? init.DO : [''])
+  const [play, setPlay] = useState(init.PLAY.length ? init.PLAY : [''])
+  const [schedule, setSchedule] = useState(
+    init.schedule.length ? init.schedule : [{ date:'', title:'', category:'', desc:'' }]
+  )
+  const [sources, setSources] = useState(
+    init.sources.length ? init.sources : [{ name:'', url:'' }]
+  )
+  const [saving, setSaving] = useState(false)
+
+  const setListItem = (setter) => (i, v) => setter(p => { const a=[...p]; a[i]=v; return a })
+  const addListItem = (setter) => () => setter(p => [...p, ''])
+  const removeListItem = (setter) => (i) => setter(p => p.filter((_,idx)=>idx!==i))
+
+  const setScheduleField = (i, field, v) => setSchedule(p => { const a=[...p]; a[i] = { ...a[i], [field]: v }; return a })
+  const addScheduleRow = () => setSchedule(p => [...p, { date:'', title:'', category:'', desc:'' }])
+  const removeScheduleRow = (i) => setSchedule(p => p.filter((_,idx)=>idx!==i))
+
+  const setSourceField = (i, field, v) => setSources(p => { const a=[...p]; a[i] = { ...a[i], [field]: v }; return a })
+  const addSourceRow = () => setSources(p => [...p, { name:'', url:'' }])
+  const removeSourceRow = (i) => setSources(p => p.filter((_,idx)=>idx!==i))
+
+  const buildContent = () => {
+    const lines = []
+    const pushGroup = (label, arr) => {
+      lines.push(`[${label}]`)
+      arr.filter(v => v.trim()).forEach(v => lines.push('- ' + v.trim()))
+      lines.push('')
+    }
+    pushGroup('EAT', eat)
+    pushGroup('BUY', buy)
+    pushGroup('DO', doo)
+    pushGroup('PLAY', play)
+    lines.push('[일정]')
+    schedule.filter(ev => ev.date.trim() || ev.title.trim()).forEach(ev => {
+      lines.push(`${ev.date.trim()} | ${ev.title.trim()} | ${ev.category.trim()} | ${ev.desc.trim()}`)
+    })
+    lines.push('')
+    lines.push('[출처]')
+    sources.filter(s => s.name.trim()).forEach(s => {
+      lines.push(`- ${s.name.trim()}${s.url.trim() ? ' | ' + s.url.trim() : ''}`)
+    })
+    return lines.join('\n')
+  }
+
+  const hasAnyContent = () =>
+    [...eat, ...buy, ...doo, ...play].some(v => v.trim()) ||
+    schedule.some(ev => ev.date.trim() || ev.title.trim())
+
+  const handleSave = async () => {
+    if (!hasAnyContent()) return
+    setSaving(true)
+    await onSave({
       section: 'marketing',
+      type: 'memo',
+      content: buildContent(),
       keyword: `${activeMonth}월 마케팅달력`,
       angle: '마케팅달력',
-      placeholder: `광고대행사 마케팅 이슈 캘린더에서 이번 달 EAT(식음료) 카테고리 트렌드를 정리하세요.\n\n예)\n[EAT 카테고리]\n- 월드컵 응원 먹거리: 치킨, 배달음식, 맥주\n- 초복·중복 보양식: 삼계탕, 장어\n- 여름 한정 메뉴: 콩국수, 빙수\n- 제철 음식: 햇감자, 토마토, 참외\n\n[7~8월 시즌 마케팅 권장 식재료]\n- 토마토·망고·초당옥수수·복숭아·수박\n\n[우리 DB와 비교]\n- 햇감자: 캘린더는 6~7월, 우리 DB는 감자 5~6월로만 등록 → 보완 검토 필요\n\n[출처]\n- (사이트명/링크)`,
-      hint: '업계 마케팅 캘린더로 STEP 1 소스의 우선순위를 교차검증합니다',
-    },
+      memo: '',
+      tab_id: `month_${activeMonth}`,
+    })
+    setSaving(false)
+  }
+
+  const GroupEditor = ({ label, color, items, setter }) => (
+    <div>
+      <div style={{ fontSize:12, fontWeight:700, color, marginBottom:6 }}>{label}</div>
+      <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+        {items.map((v, i) => (
+          <div key={i} style={{ display:'flex', gap:6 }}>
+            <input
+              value={v}
+              onChange={e => setListItem(setter)(i, e.target.value)}
+              placeholder="예: 🙌월드컵 응원 - 치킨, 배달음식, 맥주"
+              style={{ ...S.input, flex:1, fontSize:12 }}
+            />
+            <button onClick={() => removeListItem(setter)(i)} style={{ padding:'0 10px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff', color:'#dc2626', cursor:'pointer' }}>×</button>
+          </div>
+        ))}
+      </div>
+      <button onClick={addListItem(setter)} style={{ marginTop:6, fontSize:11, color, background:'none', border:`1px dashed ${color}`, borderRadius:6, padding:'3px 10px', cursor:'pointer' }}>+ 항목 추가</button>
+    </div>
+  )
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#fff', border:'2px solid #fdba74', borderRadius:14, padding:28, width:680, maxHeight:'92vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.18)' }}>
+
+        <div style={{ fontSize:16, fontWeight:700, marginBottom:4, color:'#0f1f0f' }}>📅 마케팅 달력 기록</div>
+        <div style={{ fontSize:12, color:'#888', marginBottom:16 }}>{MONTH_ICONS[activeMonth-1]} {activeMonth}월 · 원본 마케팅 캘린더 구조(EAT/BUY/DO/PLAY + 날짜별 일정) 그대로 입력</div>
+        <div style={{ background:'#fff7ed', border:'1px solid #fdba74', borderRadius:8, padding:'8px 12px', fontSize:12, color:'#9a3412', marginBottom:20 }}>
+          광고대행사 마케팅 캘린더(예: kt nasmedia, 아이보스)를 그대로 옮겨 적으세요. 요약하지 말고 원본 항목·날짜·설명을 빠짐없이 입력해야 STEP 1·4·5에서 정확히 교차검증할 수 있어요.
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+
+          {/* EAT/BUY/DO/PLAY 4분면 */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <GroupEditor label="🍴 EAT (식음료)" color="#dc2626" items={eat} setter={setEat} />
+            <GroupEditor label="🛍️ BUY (구매)"   color="#2563eb" items={buy} setter={setBuy} />
+            <GroupEditor label="🏃 DO (활동)"    color="#16a34a" items={doo} setter={setDoo} />
+            <GroupEditor label="🎉 PLAY (놀거리)" color="#7c3aed" items={play} setter={setPlay} />
+          </div>
+
+          {/* 날짜별 일정 */}
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:'#374151', marginBottom:6 }}>🗓️ 날짜별 일정 (원본 캘린더의 날짜 카드 그대로)</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {schedule.map((ev, i) => (
+                <div key={i} style={{ display:'grid', gridTemplateColumns:'80px 1fr 80px 1fr 28px', gap:6, alignItems:'center' }}>
+                  <input value={ev.date} onChange={e => setScheduleField(i,'date',e.target.value)} placeholder="7/15" style={{ ...S.input, fontSize:12, padding:'6px 8px' }} />
+                  <input value={ev.title} onChange={e => setScheduleField(i,'title',e.target.value)} placeholder="초복 🍗" style={{ ...S.input, fontSize:12, padding:'6px 8px' }} />
+                  <input value={ev.category} onChange={e => setScheduleField(i,'category',e.target.value)} placeholder="기념일" style={{ ...S.input, fontSize:12, padding:'6px 8px' }} />
+                  <input value={ev.desc} onChange={e => setScheduleField(i,'desc',e.target.value)} placeholder="삼복 중 첫 복날, 보양식..." style={{ ...S.input, fontSize:12, padding:'6px 8px' }} />
+                  <button onClick={() => removeScheduleRow(i)} style={{ padding:'4px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff', color:'#dc2626', cursor:'pointer' }}>×</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={addScheduleRow} style={{ marginTop:6, fontSize:11, color:'#ea580c', background:'none', border:'1px dashed #ea580c', borderRadius:6, padding:'3px 10px', cursor:'pointer' }}>+ 일정 추가</button>
+          </div>
+
+          {/* 출처 */}
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:'#374151', marginBottom:6 }}>🔗 출처 (최소 2곳 권장)</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {sources.map((src, i) => (
+                <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 2fr 28px', gap:6 }}>
+                  <input value={src.name} onChange={e => setSourceField(i,'name',e.target.value)} placeholder="kt nasmedia" style={{ ...S.input, fontSize:12, padding:'6px 8px' }} />
+                  <input value={src.url} onChange={e => setSourceField(i,'url',e.target.value)} placeholder="https://blog.nasmedia.co.kr/entry/..." style={{ ...S.input, fontSize:12, padding:'6px 8px' }} />
+                  <button onClick={() => removeSourceRow(i)} style={{ padding:'4px', borderRadius:6, border:'1px solid #fca5a5', background:'#fff', color:'#dc2626', cursor:'pointer' }}>×</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={addSourceRow} style={{ marginTop:6, fontSize:11, color:'#ea580c', background:'none', border:'1px dashed #ea580c', borderRadius:6, padding:'3px 10px', cursor:'pointer' }}>+ 출처 추가</button>
+          </div>
+
+        </div>
+
+        <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={S.btnGhost}>취소</button>
+          <button onClick={handleSave} disabled={saving || !hasAnyContent()}
+            style={{ ...S.btn(), background:'#ea580c', opacity: (!saving && hasAnyContent()) ? 1 : 0.4 }}>
+            {saving ? '저장 중...' : '💾 저장'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── 기획 메모 입력 모달 (소스각도 / 이슈목록+이슈각도 / 월간전략 / 마케팅달력) ────────
+function PlanningMemoModal({ activeMonth, type, initialContent = '', onClose, onSave }) {
+  // ── 마케팅 달력 전용 폼 ──────────────────────────────────────
+  if (type === 'marketing_calendar') {
+    return <MarketingCalendarMemoModal activeMonth={activeMonth} initialContent={initialContent} onClose={onClose} onSave={onSave} />
+  }
+
+  const configs = {
     source_angle: {
       title: '📐 소스 각도 기록',
       color: '#16a34a',
@@ -1370,12 +1665,8 @@ export default function ContentIdeaPanel({ adminToken }) {
                 <span style={{ fontSize:11, color:'#9ca3af' }}>마케팅달력 · 소스각도 · 이슈각도 · 월간전략</span>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                <PlanningMemoCard
+                <MarketingCalendarCard
                   idea={marketingCalMemo}
-                  label="📅 마케팅 달력"
-                  color="#ea580c"
-                  bg="#fff7ed"
-                  border="#fdba74"
                   onEdit={() => { setEditingMemo(marketingCalMemo?.id || null); setShowPlanningModal('marketing_calendar') }}
                   onDelete={() => marketingCalMemo && setConfirmTarget({ message:'마케팅 달력 기록을 삭제할까요?', onConfirm: async () => { await fetch('/api/admin/content-ideas', { method:'DELETE', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify({id:marketingCalMemo.id}) }); load(); setConfirmTarget(null); showToast('삭제됨') }})}
                 />
