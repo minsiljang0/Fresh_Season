@@ -536,7 +536,7 @@ const baseHandler = createMcpHandler(
         const nowIso = nowKST()
         const row = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-          type: 'blog',
+          post_type: 'blog',
           title,
           slug,
           summary: summary || null,
@@ -544,7 +544,6 @@ const baseHandler = createMcpHandler(
           category,
           tags: Array.isArray(tags) ? tags : [],
           cover_image: cover_image || null,
-          author: null,
           status: finalStatus,
           scheduled_at: finalStatus === 'scheduled' ? (scheduled_at || null) : null,
           published_at: finalStatus === 'published' ? nowIso : null,
