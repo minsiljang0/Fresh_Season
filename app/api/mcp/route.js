@@ -562,7 +562,7 @@ const baseHandler = createMcpHandler(
         const indexingResult = { googleIndexing: null, indexNow: null }
 
         if (finalStatus === 'published') {
-          const pageUrl = `https://fresh-season.vercel.app/blog/${slug}`
+          const pageUrl = `https://www.fsfood.kr/blog/${slug}`
 
           // 1) Google Indexing API
           try {
@@ -592,9 +592,9 @@ const baseHandler = createMcpHandler(
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: JSON.stringify({
-                  host: 'fresh-season.vercel.app',
+                  host: 'www.fsfood.kr',
                   key: INDEXNOW_KEY,
-                  keyLocation: `https://fresh-season.vercel.app/${INDEXNOW_KEY}.txt`,
+                  keyLocation: `https://www.fsfood.kr/${INDEXNOW_KEY}.txt`,
                   urlList: [pageUrl],
                 }),
               })
@@ -611,7 +611,7 @@ const baseHandler = createMcpHandler(
         // ────────────────────────────────────────────────────────────────────
 
         const liveNote = finalStatus === 'published'
-          ? `✅ 발행 완료 — https://fresh-season.vercel.app/blog/${slug} 에서 바로 확인 가능`
+          ? `✅ 발행 완료 — https://www.fsfood.kr/blog/${slug} 에서 바로 확인 가능`
           : `✅ ${finalStatus === 'draft' ? '임시저장(draft)' : '예약(scheduled)'} 완료 — admin에서 확인 필요`
 
         const indexNote = finalStatus === 'published'
@@ -668,7 +668,7 @@ const baseHandler = createMcpHandler(
         return {
           content: [{
             type: 'text',
-            text: `✅ 수정 완료\n제목: ${data.title}\nslug: ${data.slug}\n변경 필드: ${changedFields}\n라이브 URL: https://fresh-season.vercel.app/blog/${data.slug}`,
+            text: `✅ 수정 완료\n제목: ${data.title}\nslug: ${data.slug}\n변경 필드: ${changedFields}\n라이브 URL: https://www.fsfood.kr/blog/${data.slug}`,
           }],
         }
       }
