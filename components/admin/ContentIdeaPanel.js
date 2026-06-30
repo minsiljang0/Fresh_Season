@@ -437,9 +437,20 @@ function AddIdeaModal({ activeMonth, initialSection = 'angle', onClose, onSave }
   )
 }
 
-// ── 기획 메모 입력 모달 (소스각도 / 이슈목록+이슈각도 / 월간전략) ────────
+// ── 기획 메모 입력 모달 (마케팅달력 / 소스각도 / 이슈목록+이슈각도 / 월간전략) ────────
 function PlanningMemoModal({ activeMonth, type, initialContent = '', onClose, onSave }) {
   const configs = {
+    marketing_calendar: {
+      title: '📅 마케팅 달력 기록',
+      color: '#ea580c',
+      bg: '#fff7ed',
+      border: '#fdba74',
+      section: 'marketing',
+      keyword: `${activeMonth}월 마케팅달력`,
+      angle: '마케팅달력',
+      placeholder: `광고대행사 마케팅 이슈 캘린더에서 이번 달 EAT(식음료) 카테고리 트렌드를 정리하세요.\n\n예)\n[EAT 카테고리]\n- 월드컵 응원 먹거리: 치킨, 배달음식, 맥주\n- 초복·중복 보양식: 삼계탕, 장어\n- 여름 한정 메뉴: 콩국수, 빙수\n- 제철 음식: 햇감자, 토마토, 참외\n\n[7~8월 시즌 마케팅 권장 식재료]\n- 토마토·망고·초당옥수수·복숭아·수박\n\n[우리 DB와 비교]\n- 햇감자: 캘린더는 6~7월, 우리 DB는 감자 5~6월로만 등록 → 보완 검토 필요\n\n[출처]\n- (사이트명/링크)`,
+      hint: '업계 마케팅 캘린더로 STEP 1 소스의 우선순위를 교차검증합니다',
+    },
     source_angle: {
       title: '📐 소스 각도 기록',
       color: '#16a34a',
@@ -1343,11 +1354,12 @@ export default function ContentIdeaPanel({ adminToken }) {
           })()}
         </div>
 
-        {/* ── 기획 기록 섹션 (소스각도 + 이슈각도 + 월간전략) ── */}
+        {/* ── 기획 기록 섹션 (마케팅달력 + 소스각도 + 이슈각도 + 월간전략) ── */}
         {(() => {
           const tabId = `month_${activeMonth}`
           const allTabIdeas = ideas.filter(i => i.tab_id === tabId)
           // API에서 angle → memo 필드에 "[각도] XXX" 형식으로 저장됨
+          const marketingCalMemo = allTabIdeas.find(i => i.tool_id === 'marketing'  && i.type === 'memo' && (i.memo||'').includes('[각도] 마케팅달력'))
           const sourceAngleMemo = allTabIdeas.find(i => i.tool_id === 'ingredient' && i.type === 'memo' && (i.memo||'').includes('[각도] 소스각도'))
           const issueListMemo   = allTabIdeas.find(i => i.tool_id === 'season'     && i.type === 'memo' && (i.memo||'').includes('[각도] 이슈각도'))
           const strategyMemo    = allTabIdeas.find(i => i.tool_id === 'special'    && i.type === 'memo' && (i.memo||'').includes('[각도] 월간전략'))
@@ -1355,9 +1367,18 @@ export default function ContentIdeaPanel({ adminToken }) {
             <div style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
                 <span style={{ fontSize:13, fontWeight:800, color:'#0f1f0f' }}>📋 기획 기록</span>
-                <span style={{ fontSize:11, color:'#9ca3af' }}>소스각도 · 이슈각도 · 월간전략</span>
+                <span style={{ fontSize:11, color:'#9ca3af' }}>마케팅달력 · 소스각도 · 이슈각도 · 월간전략</span>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <PlanningMemoCard
+                  idea={marketingCalMemo}
+                  label="📅 마케팅 달력"
+                  color="#ea580c"
+                  bg="#fff7ed"
+                  border="#fdba74"
+                  onEdit={() => { setEditingMemo(marketingCalMemo?.id || null); setShowPlanningModal('marketing_calendar') }}
+                  onDelete={() => marketingCalMemo && setConfirmTarget({ message:'마케팅 달력 기록을 삭제할까요?', onConfirm: async () => { await fetch('/api/admin/content-ideas', { method:'DELETE', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify({id:marketingCalMemo.id}) }); load(); setConfirmTarget(null); showToast('삭제됨') }})}
+                />
                 <PlanningMemoCard
                   idea={sourceAngleMemo}
                   label="📐 소스 각도"
