@@ -48,6 +48,40 @@ function AddServerModal({ onClose, onSave }) {
   )
 }
 
+function EditServerModal({ server, onClose, onSave }) {
+  const [form, setForm] = useState({ name: server.name || '', url: server.url || '', description: server.description || '' })
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const valid = form.name.trim() && form.url.trim()
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:28, width:480, boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ fontSize:16, fontWeight:700, marginBottom:20, color:'#0f1f0f' }}>✏️ MCP 서버 수정</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          <div>
+            <label style={S.label}>서버 이름 *</label>
+            <input value={form.name} onChange={e => set('name', e.target.value)} style={S.input} />
+          </div>
+          <div>
+            <label style={S.label}>MCP URL *</label>
+            <input value={form.url} onChange={e => set('url', e.target.value)}
+              style={{ ...S.input, fontFamily:'monospace' }} placeholder="https://example.vercel.app/api/mcp?key=..." />
+            <div style={{ fontSize:11, color:'#9ca3af', marginTop:4 }}>인증이 필요한 서버라면 URL 끝에 ?key=공유비밀키 를 포함해주세요.</div>
+          </div>
+          <div>
+            <label style={S.label}>설명</label>
+            <input value={form.description} onChange={e => set('description', e.target.value)} style={S.input} />
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={S.btnGhost}>취소</button>
+          <button onClick={() => valid && onSave(form)} disabled={!valid}
+            style={{ ...S.btn(), opacity: valid ? 1 : 0.4 }}>저장</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AddToolModal({ serverId, groups, onClose, onSave }) {
   const [form, setForm] = useState({ name: '', group_name: groups[0] || '기타', description: '' })
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
@@ -133,6 +167,19 @@ export default function McpPanel({ adminToken }) {
   }
 
   const [syncingId, setSyncingId] = useState(null)
+  const [editingServer, setEditingServer] = useState(null)
+
+  const updateServer = async (form) => {
+    const id = editingServer.id
+    setEditingServer(null)
+    const res = await fetch('/api/admin/mcps', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ type: 'update_server', id, ...form }),
+    })
+    if (res.ok) { showToast('✅ 서버 정보 수정됨'); load() }
+    else showToast('❌ 수정 실패')
+  }
 
   const syncServer = async (id) => {
     setSyncingId(id)
@@ -254,6 +301,10 @@ export default function McpPanel({ adminToken }) {
                     style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:6, padding:'4px 10px', fontSize:11, color:ACCENT, cursor:'pointer', fontWeight:700, flexShrink:0 }}>
                     URL 복사
                   </button>
+                  <button onClick={e => { e.stopPropagation(); setEditingServer(s) }}
+                    style={{ background:'none', border:'1px solid #d1e8d1', borderRadius:6, padding:'4px 10px', fontSize:11, color:'#6b7280', cursor:'pointer', fontWeight:700, flexShrink:0 }}>
+                    ✏️ 수정
+                  </button>
                   <button onClick={e => { e.stopPropagation(); syncServer(s.id) }} disabled={syncingId === s.id}
                     style={{ background:'none', border:'1px solid #bfdbfe', borderRadius:6, padding:'4px 10px', fontSize:11, color:'#2563eb', cursor: syncingId === s.id ? 'default' : 'pointer', fontWeight:700, flexShrink:0, opacity: syncingId === s.id ? 0.6 : 1 }}>
                     {syncingId === s.id ? '동기화 중…' : '🔄 동기화'}
@@ -319,6 +370,9 @@ export default function McpPanel({ adminToken }) {
       )}
 
       {showAddServer && <AddServerModal onClose={() => setShowAddServer(false)} onSave={addServer} />}
+      {editingServer && (
+        <EditServerModal server={editingServer} onClose={() => setEditingServer(null)} onSave={updateServer} />
+      )}
       {addToolFor && (
         <AddToolModal
           serverId={addToolFor}

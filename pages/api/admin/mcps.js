@@ -127,7 +127,20 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'type 필수 (server | tool)' })
   }
 
-  // ── PATCH: 동기화 — 실제 MCP 서버에 tools/list 요청해서 mcp_tools 테이블을 최신화
+  // ── PATCH: 동기화 또는 서버 정보 수정
+  if (req.method === 'PATCH' && req.body?.type === 'update_server') {
+    const { id, name, url, description } = req.body
+    if (!id) return res.status(400).json({ error: 'id 필수' })
+    const patch = {}
+    if (name !== undefined) patch.name = name
+    if (url !== undefined) patch.url = url
+    if (description !== undefined) patch.description = description
+    if (Object.keys(patch).length === 0) return res.status(400).json({ error: '수정할 내용이 없습니다' })
+    const { error } = await supabase.from('mcp_connectors').update(patch).eq('id', id)
+    if (error) return res.status(500).json({ error: error.message })
+    return res.json({ ok: true })
+  }
+
   if (req.method === 'PATCH' && req.body?.type === 'sync') {
     const { server_id } = req.body
     if (!server_id) return res.status(400).json({ error: 'server_id 필수' })
