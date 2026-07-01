@@ -94,6 +94,13 @@ export default function Admin() {
   const [newPwConfirm, setNewPwConfirm] = useState('')
   const [pwMsg, setPwMsg] = useState(null)
 
+  // 레시피 목록(맵 관리)에서 "블로그에서 쓰기/수정" 눌렀을 때 blog_write 탭으로 넘길 대상
+  const [blogWriteTarget, setBlogWriteTarget] = useState({ postId: null, category: null })
+  const openBlogWrite = (postId, category) => {
+    setBlogWriteTarget({ postId: postId || null, category: category || null })
+    setActiveTab('blog_write')
+  }
+
   // 광고/약관 설정
   const [cooldownDur, setCooldownDur] = useState(12)
   const [adsOn, setAdsOn] = useState(true)
@@ -228,7 +235,9 @@ export default function Admin() {
             )}
 
             {(activeTab === 'blog_write' || activeTab === 'blog_admin') && (
-              <BlogAdminPanel key={activeTab} adminToken={adminToken} initialView={activeTab === 'blog_write' ? 'write' : 'list'} />
+              <BlogAdminPanel key={activeTab} adminToken={adminToken} initialView={activeTab === 'blog_write' ? 'write' : 'list'}
+                openPostId={activeTab === 'blog_write' ? blogWriteTarget.postId : null}
+                initialCategory={activeTab === 'blog_write' ? blogWriteTarget.category : null} />
             )}
             {activeTab === 'blog_menu' && <BlogMenuPanel adminToken={adminToken} />}
             {activeTab === 'content_log' && <ContentLogPanel adminToken={adminToken} />}
@@ -236,7 +245,7 @@ export default function Admin() {
             {activeTab === 'content_ideas' && <ContentIdeaPanel adminToken={adminToken} />}
             {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
             {activeTab === 'system_prompt' && <SystemPromptPanel adminToken={adminToken} />}
-            {activeTab === 'seasonal' && <MapAdminPanel adminToken={adminToken} />}
+            {activeTab === 'seasonal' && <MapAdminPanel adminToken={adminToken} onOpenRecipeWrite={openBlogWrite} />}
             {activeTab === 'free_board' && <BoardAdminPanel adminToken={adminToken} postType="free" />}
             {activeTab === 'requests' && <BoardAdminPanel adminToken={adminToken} postType="request" />}
             {activeTab === 'adsense' && (

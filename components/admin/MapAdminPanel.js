@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { S, Toast } from './AdminUI'
 import { DEFAULT_CATEGORIES, categoryLabel } from '../../lib/blogCategories'
-import { extractStepImages, injectStepImages } from '../../lib/stepContent'
 
 // ══════════════════════════════════════════════════════════
 // 상수
@@ -2160,20 +2159,11 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
 // ══════════════════════════════════════════════════════════
 // RecipeTab — 레시피 관리
 // ══════════════════════════════════════════════════════════
-function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
-  const EMPTY = { title:'', dish_id:'', show_id:'', chef_id:'', episode:'', aired_at:'', summary:'', source_url:'' }
-  const [formOpen, setFormOpen] = useState(false)
+function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows, onOpenRecipeWrite }) {
   const [list, setList]       = useState([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm]       = useState(EMPTY)
-  const [content, setContent] = useState('')
-  const [stepImages, setStepImages] = useState([''])
-  const [saving, setSaving]   = useState(false)
   const [editId, setEditId]   = useState(null)
   const [editForm, setEditForm] = useState({})
-  const [editContent, setEditContent] = useState('')
-  const [editStepImages, setEditStepImages] = useState([''])
-  const [editContentLoading, setEditContentLoading] = useState(false)
   const [searchQ, setSearchQ] = useState('')
   const [allDishes, setAllDishes] = useState([])
   const [allChefs,  setAllChefs]  = useState([])
@@ -2192,46 +2182,9 @@ function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
   }, [])
   useEffect(() => { load() }, [])
 
-  // 연동된 블로그 글의 content에 본문+사진을 그대로 써넣는다 (블로그 글쓰기와 완전히 동일한 방식)
-  const pushContentToBlog = async (recipeId, contentText, images) => {
-    const finalContent = injectStepImages(contentText, images)
-    if (!finalContent.trim()) return
-    try {
-      await fetch('/api/blog/posts', {
-        method:'PUT', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body: JSON.stringify({ id: recipeId, content: finalContent }),
-      })
-    } catch(e) { showToast('❌ 블로그 본문 저장 실패: '+e.message) }
-  }
-
-  const submit = async () => {
-    if (!form.title.trim()) { showToast('⚠️ 제목 필수'); return }
-    setSaving(true)
-    try {
-      const created = await apiFetch(api('recipes'), { method:'POST', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(form) })
-      await pushContentToBlog(created.id, content, stepImages)
-      setForm(EMPTY); setContent(''); setStepImages(['']); showToast('✅ 등록 완료 (블로그에도 함께 발행됨)'); load()
-    } catch(e) { showToast('❌ '+e.message) }
-    setSaving(false)
-  }
-
-  const startEdit = async (r) => {
-    setEditId(r.id)
-    setEditForm({title:r.title,dish_id:r.dish_id||'',show_id:r.show_id||'',chef_id:r.chef_id||'',episode:r.episode||'',aired_at:r.aired_at||'',summary:r.summary||'',source_url:r.source_url||''})
-    setEditContent(''); setEditStepImages([''])
-    setEditContentLoading(true)
-    try {
-      const post = await apiFetch(`/api/blog/posts?id=${r.id}`, { headers:{'x-admin-token':adminToken} })
-      const { content: cleanContent, images } = extractStepImages(post.content || '')
-      setEditContent(cleanContent); setEditStepImages(images.length ? images : [''])
-    } catch(e) { /* 연동된 블로그 글이 아직 없으면 빈 상태로 시작 */ }
-    setEditContentLoading(false)
-  }
-
   const saveEdit = async (id) => {
     try {
       await apiFetch(`${api('recipes')}&id=${id}`, { method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(editForm) })
-      await pushContentToBlog(id, editContent, editStepImages)
       setEditId(null); showToast('✅ 저장됨 (블로그에도 함께 반영됨)'); load()
     } catch(e) { showToast('❌ '+e.message) }
   }
@@ -2243,42 +2196,6 @@ function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
         setList(p=>p.filter(r=>r.id!==id)); showToast('🗑 삭제됨 (블로그 글도 함께 삭제됨)')
       } catch(e) { showToast('❌ '+e.message) }
     })
-  }
-
-  // 블로그 글쓰기 화면과 동일한 방식: 마크다운 본문(## 소제목 = 단계) + 오른쪽 사진 목록(순서대로 매칭)
-  const RecipeContentEditor = ({ value, onChange, images, setImages }) => {
-    const setImg = (i, val) => setImages(p => { const n=[...p]; n[i]=val; return n })
-    const addImg = () => setImages(p => [...p, ''])
-    const removeImg = (i) => setImages(p => { const n = p.filter((_,ii)=>ii!==i); return n.length?n:[''] })
-    return (
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginTop:16 }}>
-        <div>
-          <label style={S.label}>본문 (마크다운)</label>
-          <textarea value={value} onChange={e=>onChange(e.target.value)} rows={14}
-            placeholder={'## 1단계: 재료 손질하기\n\n손질 방법 설명...\n\n## 2단계: 끓이기\n\n끓이는 방법 설명...\n\n※ 오른쪽 1번째 사진이 1단계에, 2번째 사진이 2단계에 순서대로 붙습니다.'}
-            style={{ ...S.textarea, fontFamily:"'Outfit', sans-serif" }} />
-        </div>
-        <div style={{ background:'#f0fdf4', border:'1.5px solid #86efac', borderRadius:10, padding:16 }}>
-          <div style={{ fontSize:13, fontWeight:800, color:'#16a34a', marginBottom:4 }}>🖼 단계별 사진 (여러 장)</div>
-          <p style={{ fontSize:11, color:'#4b6e4b', marginBottom:12, lineHeight:1.6 }}>
-            본문의 <code>## 소제목</code> 순서대로 아래 사진이 하나씩 짝지어져, 블로그 "레시피" 글에 왼쪽 설명·오른쪽 사진 타임라인으로 나타납니다.
-          </p>
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {images.map((url, i) => (
-              <div key={i} style={{ display:'flex', gap:8, alignItems:'center' }}>
-                <span style={{ fontSize:12, fontWeight:700, color:'#4b6e4b', width:16, flexShrink:0 }}>{i+1}</span>
-                {url && <img src={url} alt="" style={{ width:36, height:36, objectFit:'cover', borderRadius:6, flexShrink:0, border:'1px solid #d1e8d1' }} onError={e=>{e.currentTarget.style.visibility='hidden'}} />}
-                <input value={url} onChange={e=>setImg(i, e.target.value)} placeholder={`https://... (${i+1}번째 사진)`} style={{ ...S.input, flex:1 }} />
-                <button onClick={()=>removeImg(i)} style={{ background:'none', border:'none', color:'#dc2626', fontSize:16, cursor:'pointer', flexShrink:0 }}>×</button>
-              </div>
-            ))}
-          </div>
-          <button onClick={addImg} style={{ ...S.btn('#fff'), color:'#16a34a', border:'1.5px dashed #86efac', marginTop:12, width:'100%', padding:'8px 0' }}>
-            + 사진 추가
-          </button>
-        </div>
-      </div>
-    )
   }
 
   const RecipeFields = ({ f, setF }) => (
@@ -2331,19 +2248,14 @@ function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
 
   return (
     <div>
-      <div style={S.card}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
-          onClick={() => setFormOpen(p => !p)}>
-          <div style={S.cardTitle}>📖 레시피 등록</div>
-          <span style={{ fontSize:16, color:'#f97316', lineHeight:1 }}>{formOpen ? '▲' : '▼'}</span>
+      <div style={{ ...S.card, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+        <div>
+          <div style={S.cardTitle}>📖 레시피 글쓰기</div>
+          <p style={{ fontSize:12, color:'#666', margin:'4px 0 0' }}>
+            레시피 본문(단계별 설명+사진)은 <b>블로그 글쓰기 화면</b>에서 작성해요 — 여기서 쓰든 블로그에서 쓰든 완전히 같은 화면입니다.
+          </p>
         </div>
-        {formOpen && (
-          <>
-            <RecipeFields f={form} setF={setForm} />
-            <RecipeContentEditor value={content} onChange={setContent} images={stepImages} setImages={setStepImages} />
-            <button onClick={submit} disabled={saving} style={{ ...S.btn(), marginTop:14, opacity:saving?.6:1 }}>+ 등록</button>
-          </>
-        )}
+        <button onClick={()=>onOpenRecipeWrite && onOpenRecipeWrite(null, '레시피')} style={S.btn()}>✍️ 새 레시피 글쓰기 (블로그로 이동)</button>
       </div>
       <div style={S.card}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
@@ -2354,14 +2266,11 @@ function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {filtered.map(r => editId===r.id ? (
               <div key={r.id} style={{ ...S.row, border:'2px solid #22c55e', background:'#fff' }}>
+                <p style={{ fontSize:11, color:'#9ca3af', marginBottom:10 }}>아래는 요리·방송·셰프 등 연결 정보만 수정해요. 본문/사진은 "✍️ 블로그에서 수정" 버튼을 눌러주세요.</p>
                 <RecipeFields f={editForm} setF={setEditForm} />
-                {editContentLoading ? (
-                  <p style={{ fontSize:12, color:'#9ca3af', marginTop:12 }}>본문 불러오는 중...</p>
-                ) : (
-                  <RecipeContentEditor value={editContent} onChange={setEditContent} images={editStepImages} setImages={setEditStepImages} />
-                )}
                 <div style={{ display:'flex', gap:8, marginTop:12 }}>
                   <button onClick={()=>saveEdit(r.id)} style={S.btn()}>저장</button>
+                  <button onClick={()=>onOpenRecipeWrite && onOpenRecipeWrite(r.id, null)} style={{ ...S.btn('#16a34a') }}>✍️ 블로그에서 본문 수정</button>
                   <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
                 </div>
               </div>
@@ -2379,8 +2288,10 @@ function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows }) {
                   {r.summary && <p style={{ fontSize:11, color:'#666', margin:'4px 0 0' }}>{r.summary}</p>}
                 </div>
                 <div style={{ display:'flex', gap:4, flexShrink:0 }}>
-                  <button onClick={()=>startEdit(r)}
-                    style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✏️</button>
+                  <button onClick={()=>onOpenRecipeWrite && onOpenRecipeWrite(r.id, null)}
+                    style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✍️ 블로그에서 수정</button>
+                  <button onClick={()=>{ setEditId(r.id); setEditForm({title:r.title,dish_id:r.dish_id||'',show_id:r.show_id||'',chef_id:r.chef_id||'',episode:r.episode||'',aired_at:r.aired_at||'',summary:r.summary||'',source_url:r.source_url||''}) }}
+                    style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>🔗 연결정보</button>
                   <button onClick={()=>del(r.id, r.title)}
                     style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
                 </div>
@@ -2405,7 +2316,7 @@ const SUBTABS = [
   { id:'utensil',    label:'🍳 조리기구' },
 ]
 
-export default function MapAdminPanel({ adminToken }) {
+export default function MapAdminPanel({ adminToken, onOpenRecipeWrite }) {
   const [subTab, setSubTab] = useState('ingredient')
   const [toast, setToast] = useState('')
   const [deleteItem, setDeleteItem] = useState(null) // { name, onConfirm }
@@ -2485,7 +2396,7 @@ export default function MapAdminPanel({ adminToken }) {
       {subTab === 'recipe' && (
         <RecipeTab
           adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete}
-          allTvShows={allTvShows}
+          allTvShows={allTvShows} onOpenRecipeWrite={onOpenRecipeWrite}
         />
       )}
       {subTab === 'utensil' && (

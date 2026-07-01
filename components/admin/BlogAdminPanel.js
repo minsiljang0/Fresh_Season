@@ -218,7 +218,7 @@ function Toggle({ value, onChange }) {
   )
 }
 
-export default function BlogAdminPanel({ adminToken, initialView }) {
+export default function BlogAdminPanel({ adminToken, initialView, openPostId, initialCategory }) {
   const [view, setView] = useState(initialView === 'write' ? 'write' : 'list') // list | write
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(false)
@@ -237,12 +237,18 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
   const [routineChecks, setRoutineChecks] = useState({})
   const [collapsedRoutines, setCollapsedRoutines] = useState({})
 
-  const emptyForm = { title:'', slug:'', summary:'', content:'', category:'thumb-down', tags:'', thumbnail:'', scheduledAt:'', publishedAt:'', stepImages:[''] }
+  const emptyForm = { title:'', slug:'', summary:'', content:'', category: initialCategory || 'thumb-down', tags:'', thumbnail:'', scheduledAt:'', publishedAt:'', stepImages:[''] }
   const [form, setForm] = useState(emptyForm)
 
   const token = () => adminToken
 
   useEffect(() => { loadPosts(); loadCategories(); loadChecklist() }, [])
+
+  useEffect(() => {
+    if (!openPostId || !posts.length) return
+    const target = posts.find(p => p.id === openPostId)
+    if (target) handleEdit(target)
+  }, [openPostId, posts])
 
   const loadChecklist = async () => {
     try {
