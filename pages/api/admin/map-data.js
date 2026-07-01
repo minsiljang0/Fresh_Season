@@ -4,6 +4,39 @@ function nowKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
 }
 
+// 한글 제목도 대응하는 간단 슬러그 생성 (BlogAdminPanel.js의 slugify와 동일 로직)
+function slugifyTitle(text) {
+  if (!text) return 'recipe'
+  let r = text.trim().toLowerCase()
+  if (/[가-힣]/.test(r)) {
+    const eng = r.match(/[a-z0-9]+/g)
+    return (eng && eng.join('').length >= 2) ? eng.join('-') : 'recipe-' + Date.now().toString(36)
+  }
+  return r.replace(/[^a-z0-9-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'recipe-' + Date.now().toString(36)
+}
+
+// 지도관리(MapAdminPanel)에서 레시피를 등록/수정/삭제하면 블로그(레시피 카테고리)에도 자동 반영한다.
+// id를 공유해서 연동하며, 이미 연동된 블로그 글이 있으면 제목·요약만 갱신하고 본문은 블로그 쪽 편집을 건드리지 않는다.
+async function syncBlogFromRecipe(recipe) {
+  if (!recipe) return
+  try {
+    const { data: existing } = await supabase.from('blog_posts').select('id').eq('id', recipe.id).maybeSingle()
+    if (existing) {
+      await supabase.from('blog_posts').update({ title: recipe.title, summary: recipe.summary || '' }).eq('id', recipe.id)
+    } else {
+      const slug = `${slugifyTitle(recipe.title)}-${String(recipe.id).slice(-6)}`
+      await supabase.from('blog_posts').insert([{
+        id: recipe.id, title: recipe.title, slug, content: recipe.summary || '', category: '레시피',
+        summary: recipe.summary || '', tags: [], cover_image: recipe.thumbnail || '',
+        author_name: 'Fresh Season 편집팀', status: 'published', post_type: 'blog',
+        published_at: nowKST(), created_at: nowKST(),
+      }])
+    }
+  } catch (e) {
+    console.error('[블로그 동기화] 오류:', e.message)
+  }
+}
+
 export default async function handler(req, res) {
   const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_SECRET_TOKEN
   const { type } = req.query
@@ -252,6 +285,7 @@ export default async function handler(req, res) {
           .insert([{ id: genId(), dish_id: body.dish_id || null, show_id: body.show_id || null, chef_id: body.chef_id || null, episode: body.episode || '', aired_at: body.aired_at || null, title: body.title || '', summary: body.summary || '', source_url: body.source_url || '' }])
           .select().single()
         if (error) throw error
+        await syncBlogFromRecipe(data)
         return res.status(200).json(data)
       }
       if (type === 'recipe_ingredients') {
@@ -309,6 +343,7 @@ export default async function handler(req, res) {
       if (!table) return res.status(400).json({ error: '수정 불가 type' })
       const { data, error } = await supabase.from(table).update(body).eq('id', id).select().single()
       if (error) throw error
+      if (type === 'recipes') await syncBlogFromRecipe(data)
       return res.status(200).json(data)
     } catch (e) {
       return res.status(500).json({ error: e.message })
@@ -343,6 +378,9 @@ export default async function handler(req, res) {
       if (!table) return res.status(400).json({ error: '삭제 불가 type' })
       if (type === 'tv_recipes') {
         await supabase.from('recipe_ingredient_map').delete().eq('recipe_id', id)
+      }
+      if (type === 'recipes') {
+        await supabase.from('blog_posts').delete().eq('id', id) // 연동된 블로그 글도 같이 삭제
       }
       const { error } = await supabase.from(table).delete().eq('id', id)
       if (error) throw error

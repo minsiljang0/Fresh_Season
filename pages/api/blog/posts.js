@@ -5,6 +5,29 @@ function nowKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
 }
 
+// 블로그 "레시피" 카테고리 글과 지도관리(MapAdminPanel)의 recipes 테이블을
+// id를 공유해서 서로 자동 연동한다 (블로그 ↔ 지도관리 양쪽에서 보이도록).
+const RECIPE_SYNC_CATEGORY = '레시피'
+
+async function syncRecipeRow(post) {
+  if (!post) return
+  try {
+    if (post.category === RECIPE_SYNC_CATEGORY) {
+      await supabase.from('recipes').upsert([{
+        id: post.id,
+        title: post.title,
+        summary: post.summary || '',
+        thumbnail: post.cover_image || '',
+      }], { onConflict: 'id' })
+    } else {
+      // 카테고리가 레시피가 아니게 바뀌었으면 지도관리 목록에서도 내려준다
+      await supabase.from('recipes').delete().eq('id', post.id)
+    }
+  } catch (e) {
+    console.error('[레시피 동기화] 오류:', e.message)
+  }
+}
+
 export default async function handler(req, res) {
   const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_SECRET_TOKEN
 
@@ -51,6 +74,7 @@ export default async function handler(req, res) {
       created_at: nowKST(),
     }]).select().single()
     if (error) return res.status(500).json({ error: error.message })
+    await syncRecipeRow(data)
 
     // Google Indexing API + IndexNow — 발행 즉시 색인 요청
     const indexStatus = { google: null, indexnow: null }
@@ -115,6 +139,7 @@ export default async function handler(req, res) {
     if (!id) return res.status(400).json({ error: 'id 필요' })
     const { data, error } = await supabase.from('blog_posts').update(updates).eq('id', id).select().single()
     if (error) return res.status(500).json({ error: error.message })
+    await syncRecipeRow(data)
     return res.status(200).json(data)
   }
 
@@ -122,6 +147,7 @@ export default async function handler(req, res) {
     const { id } = req.query
     if (!id) return res.status(400).json({ error: 'id 필요' })
     await supabase.from('blog_posts').delete().eq('id', id)
+    await supabase.from('recipes').delete().eq('id', id) // 연동된 지도관리 레시피도 같이 삭제
     return res.status(200).json({ ok: true })
   }
 
