@@ -5,12 +5,16 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { REGIONS } from '../../lib/regions'
+import { HEALTH_CATEGORIES } from '../../lib/blogCategories'
 
 export default function BlogIndex() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('')
   const [customCategories, setCustomCategories] = useState([])
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [healthCat, setHealthCat] = useState('') // 건강효능 드롭다운은 검색어로 매핑된다
 
   useEffect(() => {
     fetch('/api/blog/categories').then(r => r.json())
@@ -18,11 +22,26 @@ export default function BlogIndex() {
       .catch(() => setCustomCategories([]))
   }, [])
 
+  const runSearch = () => setSearch(searchInput.trim())
+
   useEffect(() => {
-    const url = category ? `/api/blog/posts?category=${encodeURIComponent(category)}` : '/api/blog/posts?limit=30'
-    fetch(url).then(r => r.json()).then(d => setPosts(Array.isArray(d) ? d : []))
+    setLoading(true)
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (search) params.set('q', search)
+    if (!category && !search) params.set('limit', '30')
+    fetch(`/api/blog/posts?${params.toString()}`).then(r => r.json()).then(d => setPosts(Array.isArray(d) ? d : []))
       .catch(() => setPosts([])).finally(() => setLoading(false))
-  }, [category])
+  }, [category, search])
+
+  const isRegionSelected = REGIONS.some(r => r.id === category)
+
+  const selectHealthCat = (val) => {
+    setHealthCat(val)
+    setCategory('')
+    setSearchInput(val) // 건강효능은 카테고리로 저장되는 값이 아니라 제목·본문 검색으로 매칭한다
+    setSearch(val)
+  }
 
   return (
     <>
@@ -37,21 +56,47 @@ export default function BlogIndex() {
           <p style={{ fontSize: 13, color: 'var(--text2)' }}>제철 식재료 × 건강 정보 × TV 레시피</p>
         </section>
 
-        {/* 지역 필터 */}
+        {/* 필터: 전체 / 지역 드롭다운 / 건강효능 드롭다운 / 검색 / 커스텀 카테고리 칩 */}
         <section style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={() => setCategory('')} className="month-pill"
-              style={{ borderColor: !category ? '#888' : undefined, color: !category ? 'var(--text)' : undefined, fontWeight: 600 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+            <button onClick={() => { setCategory(''); setSearchInput(''); setSearch(''); setHealthCat('') }} className="month-pill"
+              style={{ borderColor: !category && !search ? '#888' : undefined, color: !category && !search ? 'var(--text)' : undefined, fontWeight: 600 }}>
               전체
             </button>
-            {REGIONS.map(r => (
-              <button key={r.id} onClick={() => setCategory(r.id === category ? '' : r.id)} className="month-pill"
-                style={{ borderColor: category === r.id ? r.color : undefined, background: category === r.id ? `${r.color}22` : undefined, color: category === r.id ? r.color : undefined, fontWeight: 600 }}>
-                {r.icon} {r.name}
+
+            <select value={isRegionSelected ? category : ''} onChange={e => { setCategory(e.target.value); setSearchInput(''); setSearch(''); setHealthCat('') }}
+              className="month-pill" style={{ fontWeight: 600, cursor: 'pointer', paddingRight: 8 }}>
+              <option value="">📍 지역 선택</option>
+              {REGIONS.map(r => (
+                <option key={r.id} value={r.id}>{r.icon} {r.name}</option>
+              ))}
+            </select>
+
+            <select value={HEALTH_CATEGORIES.includes(searchInput) ? searchInput : ''} onChange={e => selectHealthCat(e.target.value)}
+              className="month-pill" style={{ fontWeight: 600, cursor: 'pointer', paddingRight: 8 }}>
+              <option value="">💊 건강효능 선택</option>
+              {HEALTH_CATEGORIES.map(h => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
+
+            <form onSubmit={e => { e.preventDefault(); setCategory(''); runSearch() }} style={{ display: 'flex', gap: 6, flex: '1 1 260px', maxWidth: 360 }}>
+              <input
+                value={searchInput}
+                onChange={e => { setSearchInput(e.target.value); setHealthCat('') }}
+                placeholder="🔍 제목·본문 검색"
+                className="month-pill"
+                style={{ fontWeight: 500, flex: 1, minWidth: 0 }}
+              />
+              <button type="submit" className="month-pill" style={{ fontWeight: 700, flexShrink: 0, background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}>
+                검색
               </button>
-            ))}
+            </form>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {customCategories.map(c => (
-              <button key={c.id} onClick={() => setCategory(c.label === category ? '' : c.label)} className="month-pill"
+              <button key={c.id} onClick={() => { setCategory(c.label === category ? '' : c.label); setSearchInput(''); setSearch(''); setHealthCat('') }} className="month-pill"
                 style={{ borderColor: category === c.label ? '#16a34a' : undefined, background: category === c.label ? '#16a34a22' : undefined, color: category === c.label ? '#16a34a' : undefined, fontWeight: 600 }}>
                 {c.icon || '📁'} {c.label}
               </button>
@@ -63,7 +108,7 @@ export default function BlogIndex() {
           {loading && <SkeletonBlogList count={5} />}
           {!loading && posts.length === 0 && (
             <div className="empty-state">
-              <p>아직 발행된 글이 없어요.</p>
+              <p>{search ? `"${search}"에 대한 검색 결과가 없어요.` : '아직 발행된 글이 없어요.'}</p>
             </div>
           )}
           <div className="grid-auto">
