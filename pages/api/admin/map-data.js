@@ -15,7 +15,6 @@ function slugifyTitle(text) {
   return r.replace(/[^a-z0-9-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'recipe-' + Date.now().toString(36)
 }
 
-// 지도관리(MapAdminPanel)에서 레시피를 등록/수정/삭제하면 블로그(레시피 카테고리)에도 자동 반영한다.
 // id를 공유해서 연동하며, 이미 연동된 블로그 글이 있으면 제목·요약만 갱신하고 본문은 블로그 쪽 편집을 건드리지 않는다.
 async function syncBlogFromRecipe(recipe) {
   if (!recipe) return

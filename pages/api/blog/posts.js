@@ -39,7 +39,14 @@ export default async function handler(req, res) {
   } catch {}
 
   if (req.method === 'GET') {
-    const { slug, category, limit = 20, offset = 0, q, post_type } = req.query
+    const { id, slug, category, limit = 20, offset = 0, q, post_type } = req.query
+    if (id) {
+      let query = supabase.from('blog_posts').select('*').eq('id', id)
+      if (!isAdmin) query = query.eq('status', 'published')
+      const { data, error } = await query.single()
+      if (error || !data) return res.status(404).json({ error: 'Not found' })
+      return res.status(200).json(data)
+    }
     if (slug) {
       let query = supabase.from('blog_posts').select('*').eq('slug', slug)
       if (!isAdmin) query = query.eq('status', 'published')
