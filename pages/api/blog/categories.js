@@ -10,6 +10,14 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+/** 한글/영문 라벨로부터 slug 생성 (영문 없으면 임의 문자열로 대체) */
+function slugify(label) {
+  const r = label.trim().toLowerCase()
+  const eng = r.match(/[a-z0-9]+/g)
+  if (eng && eng.join('').length >= 2) return eng.join('-')
+  return 'cat-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+}
+
 export default async function handler(req, res) {
   const token = req.headers['x-admin-token']
   const isAdmin = token === process.env.ADMIN_SECRET_TOKEN
@@ -27,6 +35,7 @@ export default async function handler(req, res) {
     const { data, error } = await supabase.from('blog_categories').insert([{
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       label,
+      slug: slugify(label),
       created_at: nowKST(),
     }]).select().single()
     if (error) return res.status(500).json({ error: error.message })
