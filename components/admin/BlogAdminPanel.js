@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { DEFAULT_CATEGORIES, categoryLabel, isStepCategory } from '../../lib/blogCategories'
+import { DEFAULT_CATEGORIES, categoryLabel, isStepCategory, STEP_CATEGORIES } from '../../lib/blogCategories'
 import { parseMarkdown as parseMd } from '../../lib/parseMarkdown'
 import { extractStepImages, injectStepImages } from '../../lib/stepContent'
 
@@ -466,6 +466,21 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
           <div style={{ display:'grid', gridTemplateColumns:(preview||stepMode)?'1fr 1.1fr':'1fr', gap:24 }}>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <h2 style={{ fontSize:18, fontWeight:700 }}>{editId ? '✏️ 글 수정' : '📝 새 글 작성'}</h2>
+
+              <div style={{ display:'flex', gap:16, alignItems:'center', background:'#f0fdf4', border:'1.5px solid #86efac', borderRadius:10, padding:'10px 14px' }}>
+                <span style={{ fontSize:12, fontWeight:700, color:'#4b6e4b' }}>단계별 사진 템플릿</span>
+                {STEP_CATEGORIES.map(cat => (
+                  <label key={cat} style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, color:'#0f1f0f', cursor:'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={form.category === cat}
+                      onChange={e => setForm(v => ({ ...v, category: e.target.checked ? cat : (allCategories.find(c=>c!==cat) || v.category) }))}
+                      style={{ width:16, height:16, accentColor:'#16a34a', cursor:'pointer' }}
+                    />
+                    {cat}
+                  </label>
+                ))}
+              </div>
 
               <input value={form.title} onChange={e=>setForm(v=>({...v,title:e.target.value,slug:v.slug||slugify(e.target.value)}))}
                 placeholder="제목을 입력하세요" style={{ ...S.input, fontSize:18, fontWeight:700, padding:'12px 14px' }} />
