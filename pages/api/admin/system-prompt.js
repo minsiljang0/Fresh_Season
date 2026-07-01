@@ -5,11 +5,12 @@
  * GET  → 현재 저장된 지침 반환 (인증 불필요 — MCP에서 호출)
  * POST → 지침 덮어쓰기 저장   (admin 인증 필요)
  *
- * id 파라미터로 탭(3종) 구분:
+ * id 파라미터로 탭(4종) 구분:
  *   - 'claude' : 🤖 클로드 탭
- *   - 'main'   : 🛠️ 관리자 탭 (기존 데이터, 하위호환을 위해 id는 그대로 'main' 유지)
+ *   - 'main'   : 🛠️ 2-1 블로그 글작성지침 (기존 데이터, 하위호환을 위해 id는 그대로 'main' 유지)
+ *   - 'main2'  : 🛠️ 2-2 블로그 글작성지침
  *   - 'month'  : 🗓️ 월글감 탭
- * id가 없거나 위 3개가 아니면 'main'으로 처리한다.
+ * id가 없거나 위 4개가 아니면 'main'으로 처리한다.
  *
  * Supabase 테이블 (최초 1회 생성):
  *   create table if not exists system_prompts (
@@ -25,11 +26,16 @@
  *   insert into system_prompts (id, content, updated_at)
  *   values ('claude', '', now()), ('month', '', now())
  *   on conflict (id) do nothing;
+ *
+ *   -- 2-2 탭 추가 시 (한 번만):
+ *   insert into system_prompts (id, content, updated_at)
+ *   values ('main2', '', now())
+ *   on conflict (id) do nothing;
  */
 
 import { createClient } from '@supabase/supabase-js'
 
-const VALID_IDS = ['claude', 'main', 'month']
+const VALID_IDS = ['claude', 'main', 'main2', 'month']
 
 function nowKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
