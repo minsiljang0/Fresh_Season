@@ -2157,154 +2157,6 @@ function UtensilTab({ adminToken, showToast, confirmDelete }) {
 }
 
 // ══════════════════════════════════════════════════════════
-// RecipeTab — 레시피 관리
-// ══════════════════════════════════════════════════════════
-function RecipeTab({ adminToken, showToast, confirmDelete, allTvShows, onOpenRecipeWrite }) {
-  const [list, setList]       = useState([])
-  const [loading, setLoading] = useState(true)
-  const [editId, setEditId]   = useState(null)
-  const [editForm, setEditForm] = useState({})
-  const [searchQ, setSearchQ] = useState('')
-  const [allDishes, setAllDishes] = useState([])
-  const [allChefs,  setAllChefs]  = useState([])
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [recipes, dishes, chefs] = await Promise.all([
-        apiFetch(api('recipes')),
-        apiFetch(api('dishes')),
-        apiFetch(api('chefs')),
-      ])
-      setList(recipes); setAllDishes(dishes); setAllChefs(chefs)
-    } catch(e) { showToast('❌ '+e.message) }
-    setLoading(false)
-  }, [])
-  useEffect(() => { load() }, [])
-
-  const saveEdit = async (id) => {
-    try {
-      await apiFetch(`${api('recipes')}&id=${id}`, { method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken}, body:JSON.stringify(editForm) })
-      setEditId(null); showToast('✅ 저장됨 (블로그에도 함께 반영됨)'); load()
-    } catch(e) { showToast('❌ '+e.message) }
-  }
-
-  const del = (id, name) => {
-    confirmDelete(name, async () => {
-      try {
-        await apiFetch(`${api('recipes')}&id=${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} })
-        setList(p=>p.filter(r=>r.id!==id)); showToast('🗑 삭제됨 (블로그 글도 함께 삭제됨)')
-      } catch(e) { showToast('❌ '+e.message) }
-    })
-  }
-
-  const RecipeFields = ({ f, setF }) => (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-      <div style={{ gridColumn:'1/-1' }}>
-        <label style={S.label}>레시피 제목 *</label>
-        <input value={f.title||''} onChange={e=>setF(p=>({...p,title:e.target.value}))} placeholder="예: 백종원 된장찌개" style={S.input} />
-      </div>
-      <div>
-        <label style={S.label}>요리</label>
-        <select value={f.dish_id||''} onChange={e=>setF(p=>({...p,dish_id:e.target.value}))} style={S.input}>
-          <option value="">선택 안 함</option>
-          {allDishes.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
-      </div>
-      <div>
-        <label style={S.label}>TV방송</label>
-        <select value={f.show_id||''} onChange={e=>setF(p=>({...p,show_id:e.target.value}))} style={S.input}>
-          <option value="">선택 안 함</option>
-          {(allTvShows||[]).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-      </div>
-      <div>
-        <label style={S.label}>셰프</label>
-        <select value={f.chef_id||''} onChange={e=>setF(p=>({...p,chef_id:e.target.value}))} style={S.input}>
-          <option value="">선택 안 함</option>
-          {allChefs.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-      </div>
-      <div>
-        <label style={S.label}>회차</label>
-        <input value={f.episode||''} onChange={e=>setF(p=>({...p,episode:e.target.value}))} placeholder="예: 302회, 3화" style={S.input} />
-      </div>
-      <div>
-        <label style={S.label}>방영일</label>
-        <input type="date" value={f.aired_at||''} onChange={e=>setF(p=>({...p,aired_at:e.target.value}))} style={S.input} />
-      </div>
-      <div>
-        <label style={S.label}>출처 URL</label>
-        <input value={f.source_url||''} onChange={e=>setF(p=>({...p,source_url:e.target.value}))} placeholder="https://..." style={S.input} />
-      </div>
-      <div style={{ gridColumn:'1/-1' }}>
-        <label style={S.label}>요약</label>
-        <input value={f.summary||''} onChange={e=>setF(p=>({...p,summary:e.target.value}))} placeholder="레시피 간단 설명" style={S.input} />
-      </div>
-    </div>
-  )
-
-  const filtered = searchQ ? list.filter(r=>r.title?.includes(searchQ)) : list
-
-  return (
-    <div>
-      <div style={{ ...S.card, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
-        <div>
-          <div style={S.cardTitle}>📖 레시피 글쓰기</div>
-          <p style={{ fontSize:12, color:'#666', margin:'4px 0 0' }}>
-            레시피 본문(단계별 설명+사진)은 <b>블로그 글쓰기 화면</b>에서 작성해요 — 여기서 쓰든 블로그에서 쓰든 완전히 같은 화면입니다.
-          </p>
-        </div>
-        <button onClick={()=>onOpenRecipeWrite && onOpenRecipeWrite(null, '레시피')} style={S.btn()}>✍️ 새 레시피 글쓰기 (블로그로 이동)</button>
-      </div>
-      <div style={S.card}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-          <div style={S.cardTitle}>📋 레시피 목록 ({list.length})</div>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="검색..." style={{ ...S.input, width:160, fontSize:12 }} />
-        </div>
-        {loading ? <p style={{ textAlign:'center', color:'#aaa', padding:30 }}>불러오는 중...</p> : (
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {filtered.map(r => editId===r.id ? (
-              <div key={r.id} style={{ ...S.row, border:'2px solid #22c55e', background:'#fff' }}>
-                <p style={{ fontSize:11, color:'#9ca3af', marginBottom:10 }}>아래는 요리·방송·셰프 등 연결 정보만 수정해요. 본문/사진은 "✍️ 블로그에서 수정" 버튼을 눌러주세요.</p>
-                <RecipeFields f={editForm} setF={setEditForm} />
-                <div style={{ display:'flex', gap:8, marginTop:12 }}>
-                  <button onClick={()=>saveEdit(r.id)} style={S.btn()}>저장</button>
-                  <button onClick={()=>onOpenRecipeWrite && onOpenRecipeWrite(r.id, null)} style={{ ...S.btn('#16a34a') }}>✍️ 블로그에서 본문 수정</button>
-                  <button onClick={()=>setEditId(null)} style={S.btnGhost}>취소</button>
-                </div>
-              </div>
-            ) : (
-              <div key={r.id} style={{ ...S.row, display:'flex', justifyContent:'space-between', alignItems:'flex-start', background:'#f5f9f5' }}>
-                <div>
-                  <div style={{ fontWeight:700, color:'#111', marginBottom:4 }}>📖 {r.title}</div>
-                  <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                    {r.dishes    && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#fef3c7', color:'#92400e', border:'1px solid #fde68a' }}>{r.dishes.name}</span>}
-                    {r.tv_shows  && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#e0f2fe', color:'#0369a1', border:'1px solid #bae6fd' }}>📺 {r.tv_shows.name}</span>}
-                    {r.chefs     && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#f0fdf4', color:'#16a34a', border:'1px solid #bbf7d0' }}>👨‍🍳 {r.chefs.name}</span>}
-                    {r.episode   && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#faf5ff', color:'#7c3aed', border:'1px solid #e9d5ff' }}>{r.episode}</span>}
-                    {r.aired_at  && <span style={{ fontSize:10, color:'#9ca3af' }}>{r.aired_at}</span>}
-                  </div>
-                  {r.summary && <p style={{ fontSize:11, color:'#666', margin:'4px 0 0' }}>{r.summary}</p>}
-                </div>
-                <div style={{ display:'flex', gap:4, flexShrink:0 }}>
-                  <button onClick={()=>onOpenRecipeWrite && onOpenRecipeWrite(r.id, null)}
-                    style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>✍️ 블로그에서 수정</button>
-                  <button onClick={()=>{ setEditId(r.id); setEditForm({title:r.title,dish_id:r.dish_id||'',show_id:r.show_id||'',chef_id:r.chef_id||'',episode:r.episode||'',aired_at:r.aired_at||'',summary:r.summary||'',source_url:r.source_url||''}) }}
-                    style={{ ...S.btnGhost, padding:'4px 10px', fontSize:12 }}>🔗 연결정보</button>
-                  <button onClick={()=>del(r.id, r.title)}
-                    style={{ padding:'4px 10px', borderRadius:7, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontSize:12, cursor:'pointer', fontFamily:"'Outfit',sans-serif" }}>삭제</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ══════════════════════════════════════════════════════════
 // 메인 MapAdminPanel — 전역 데이터 공유 허브
 // ══════════════════════════════════════════════════════════
 const SUBTABS = [
@@ -2312,11 +2164,10 @@ const SUBTABS = [
   { id:'health',     label:'💊 건강효능' },
   { id:'tv',         label:'📺 TV방송' },
   { id:'chef',       label:'👨‍🍳 셰프' },
-  { id:'recipe',     label:'📖 레시피' },
   { id:'utensil',    label:'🍳 조리기구' },
 ]
 
-export default function MapAdminPanel({ adminToken, onOpenRecipeWrite }) {
+export default function MapAdminPanel({ adminToken }) {
   const [subTab, setSubTab] = useState('ingredient')
   const [toast, setToast] = useState('')
   const [deleteItem, setDeleteItem] = useState(null) // { name, onConfirm }
@@ -2392,12 +2243,6 @@ export default function MapAdminPanel({ adminToken, onOpenRecipeWrite }) {
       )}
       {subTab === 'chef' && (
         <ChefTab adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />
-      )}
-      {subTab === 'recipe' && (
-        <RecipeTab
-          adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete}
-          allTvShows={allTvShows} onOpenRecipeWrite={onOpenRecipeWrite}
-        />
       )}
       {subTab === 'utensil' && (
         <UtensilTab adminToken={adminToken} showToast={showToast} confirmDelete={confirmDelete} />
