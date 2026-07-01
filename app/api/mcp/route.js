@@ -104,6 +104,7 @@ import { createMcpHandler } from 'mcp-handler'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import crypto from 'crypto'
+import { injectStepImages, extractStepImages } from '../../../lib/stepContent'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -553,6 +554,11 @@ const baseHandler = createMcpHandler(
           ),
           tags: z.array(z.string()).optional().describe('태그 5~8개 권장'),
           cover_image: z.string().optional().describe('커버 이미지 URL'),
+          step_images: z.array(z.string()).optional().describe(
+            '레시피/식재료손질처럼 "설명 + 사진"을 단계별(H2 소제목마다)로 보여주는 카테고리에서 쓰는 ' +
+            '단계별 사진 URL 배열. 배열의 n번째 값이 본문 n번째 H2 섹션과 매칭된다. 해당 단계에 사진이 ' +
+            '없으면 그 자리에 빈 문자열(\'\')을 넣어 순서를 맞춘다. 레시피/식재료손질 카테고리가 아니면 무시된다.'
+          ),
           author: z.string().optional().describe('작성자 표시명. 비우면 기본값(Fresh Season 편집팀) 사용'),
           status: z.enum(['published', 'draft', 'scheduled']).optional()
             .describe('기본값 published(즉시 공개). draft면 admin에만 저장되고 비공개.'),
@@ -560,7 +566,7 @@ const baseHandler = createMcpHandler(
         },
         annotations: { destructiveHint: false, idempotentHint: false },
       },
-      async ({ title, slug, summary, content, category, tags, cover_image, author, status, scheduled_at }) => {
+      async ({ title, slug, summary, content, category, tags, cover_image, step_images, author, status, scheduled_at }) => {
         const catCheck = await validateCategory(category)
         if (!catCheck.valid) {
           return {
@@ -572,6 +578,9 @@ const baseHandler = createMcpHandler(
             isError: true,
           }
         }
+        const finalContent = Array.isArray(step_images) && step_images.length
+          ? injectStepImages(content, step_images)
+          : content
         const finalStatus = status || 'published'
         const nowIso = nowKST()
         const row = {
@@ -580,7 +589,7 @@ const baseHandler = createMcpHandler(
           title,
           slug,
           summary: summary || null,
-          content,
+          content: finalContent,
           category,
           tags: Array.isArray(tags) ? tags : [],
           cover_image: cover_image || null,
@@ -675,12 +684,16 @@ const baseHandler = createMcpHandler(
           summary: z.string().optional().describe('새 SEO 요약'),
           content: z.string().optional().describe('새 본문 마크다운 전체'),
           cover_image: z.string().optional().describe('새 커버 이미지 URL'),
+          step_images: z.array(z.string()).optional().describe(
+            '레시피/식재료손질 카테고리 글의 단계별 사진 URL 배열을 통째로 교체한다. content를 함께 넘기면 ' +
+            '그 새 content에 적용되고, content를 안 넘기면 기존 본문은 그대로 두고 사진 배열만 교체한다.'
+          ),
           tags: z.array(z.string()).optional().describe('새 태그 배열'),
           status: z.enum(['published', 'draft']).optional().describe('글 상태 변경'),
         },
         annotations: { destructiveHint: false, idempotentHint: true },
       },
-      async ({ slug, title, summary, content, cover_image, tags, status }) => {
+      async ({ slug, title, summary, content, cover_image, step_images, tags, status }) => {
         const patch = {}
         if (title !== undefined)       patch.title = title
         if (summary !== undefined)     patch.summary = summary
@@ -688,8 +701,22 @@ const baseHandler = createMcpHandler(
         if (cover_image !== undefined) patch.cover_image = cover_image
         if (tags !== undefined)        patch.tags = tags
         if (status !== undefined)      patch.status = status
+
+        if (step_images !== undefined) {
+          // content를 함께 안 넘겼으면, 기존 본문을 먼저 가져와서 그 위에 사진 배열만 교체한다.
+          let baseContent = patch.content
+          if (baseContent === undefined) {
+            const { data: existing, error: fetchErr } = await supabase
+              .from('blog_posts').select('content').eq('slug', slug).single()
+            if (fetchErr) return { content: [{ type: 'text', text: `오류: 기존 글을 불러오지 못했습니다 — ${fetchErr.message}` }], isError: true }
+            if (!existing) return { content: [{ type: 'text', text: `슬러그 '${slug}'에 해당하는 글을 찾을 수 없습니다.` }], isError: true }
+            baseContent = extractStepImages(existing.content || '').content
+          }
+          patch.content = injectStepImages(baseContent, step_images)
+        }
+
         if (Object.keys(patch).length === 0) {
-          return { content: [{ type: 'text', text: '오류: 수정할 필드가 없습니다. title/summary/content/cover_image/tags/status 중 하나 이상을 전달해주세요.' }], isError: true }
+          return { content: [{ type: 'text', text: '오류: 수정할 필드가 없습니다. title/summary/content/cover_image/step_images/tags/status 중 하나 이상을 전달해주세요.' }], isError: true }
         }
         patch.updated_at = nowKST()
 
