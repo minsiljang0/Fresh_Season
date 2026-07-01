@@ -58,7 +58,11 @@ export default async function handler(req, res) {
     if (!isAdmin) query = query.eq('status', 'published')
     query = query.eq('post_type', post_type || 'blog')
     if (category) query = query.eq('category', category)
-    if (q) query = query.ilike('title', `%${q}%`)
+    if (q) {
+      // 콤마·괄호는 Supabase or() 구문 파서를 깨뜨릴 수 있어 검색어에서 제거
+      const safeQ = String(q).replace(/[(),]/g, ' ').trim()
+      if (safeQ) query = query.or(`title.ilike.%${safeQ}%,content.ilike.%${safeQ}%`)
+    }
     query = query.range(Number(offset), Number(offset) + Number(limit) - 1)
     const { data, error } = await query
     if (error) return res.status(500).json({ error: error.message })
