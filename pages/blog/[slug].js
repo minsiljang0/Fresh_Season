@@ -36,14 +36,24 @@ function scoreRelated(post, allPosts) {
   return [...matched, ...fallback]
 }
 
+// ── 카테고리 배지 정보(아이콘/이름/색상) 계산 — 지역(REGIONS) + 커스텀 카테고리(레시피·식재료손질·팁·해외 등) 모두 지원
+function resolveCategoryBadge(category, customCategories) {
+  if (!category) return null
+  const region = REGIONS.find(r => r.id === category)
+  if (region) return { icon: region.icon, name: region.name, color: region.color }
+  const customCat = (Array.isArray(customCategories) ? customCategories : []).find(c => c.label === category)
+  if (customCat) return { icon: customCat.icon || '📁', name: customCat.label, color: '#16a34a' }
+  return null
+}
+
 // ── 본문 중간 삽입용 미니 관련 글 카드
-function InlineRelatedCard({ post }) {
-  const region = REGIONS.find(r => r.id === post.category)
+function InlineRelatedCard({ post, customCategories }) {
+  const badge = resolveCategoryBadge(post.category, customCategories)
   return (
     <div style={{ margin: '28px 0', padding: 1, background: 'linear-gradient(90deg,#22c55e,#86efac)', borderRadius: 14 }}>
       <Link href={`/blog/${post.slug}`}
         style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%', textAlign: 'left', background: 'var(--bg)', borderRadius: 13, padding: '16px 20px', textDecoration: 'none' }}>
-        <span style={{ fontSize: 20, flexShrink: 0 }}>{region?.icon || '📎'}</span>
+        <span style={{ fontSize: 20, flexShrink: 0 }}>{badge?.icon || '📎'}</span>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent, #16a34a)', marginBottom: 4, letterSpacing: '0.5px' }}>관련 글</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</div>
@@ -56,7 +66,7 @@ function InlineRelatedCard({ post }) {
 }
 
 // ── 본문 HTML을 블록 단위로 쪼개서 일정 간격마다 관련 글 카드 자동 삽입
-function ContentWithInlineLinks({ html, relatedPool }) {
+function ContentWithInlineLinks({ html, relatedPool, customCategories }) {
   if (!html) return null
   const safePool = Array.isArray(relatedPool) ? relatedPool : []
   const blocks = []
@@ -82,7 +92,7 @@ function ContentWithInlineLinks({ html, relatedPool }) {
       const card = safePool[cardIdx]
       if (card && !usedIds.has(card.id)) {
         usedIds.add(card.id)
-        result.push(<InlineRelatedCard key={`rc${cardIdx}`} post={card} />)
+        result.push(<InlineRelatedCard key={`rc${cardIdx}`} post={card} customCategories={customCategories} />)
         cardIdx++
       }
     }
@@ -106,7 +116,7 @@ function PostTags({ tags }) {
 }
 
 // ── 하단 "이런 것도 궁금하지 않으세요?" 블록
-function CuriosityBlock({ post, allPosts, inlineUsedIds }) {
+function CuriosityBlock({ post, allPosts, inlineUsedIds, customCategories }) {
   if (!post || !Array.isArray(allPosts)) return null
   const safeUsedIds = inlineUsedIds instanceof Set ? inlineUsedIds : new Set()
   const pool = scoreRelated(post, allPosts).filter(p => !safeUsedIds.has(p.id)).slice(0, 3)
@@ -117,13 +127,13 @@ function CuriosityBlock({ post, allPosts, inlineUsedIds }) {
       <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>비슷한 지역·재료의 글을 더 읽어보세요</div>
       <div className="curiosity-grid">
         {pool.map(p => {
-          const region = REGIONS.find(r => r.id === p.category)
+          const badge = resolveCategoryBadge(p.category, customCategories)
           const tags = Array.isArray(p.tags) ? p.tags.filter(Boolean).slice(0, 3) : []
           return (
             <Link key={p.id} href={`/blog/${p.slug}`} className="curiosity-card">
-              {region && (
-                <span style={{ fontSize: 10, fontWeight: 700, color: region.color, background: `${region.color}1a`, border: `1px solid ${region.color}44`, borderRadius: 999, padding: '2px 7px', alignSelf: 'flex-start' }}>
-                  {region.icon} {region.name}
+              {badge && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: badge.color, background: `${badge.color}1a`, border: `1px solid ${badge.color}44`, borderRadius: 999, padding: '2px 7px', alignSelf: 'flex-start' }}>
+                  {badge.icon} {badge.name}
                 </span>
               )}
               <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.title}</div>
@@ -218,8 +228,8 @@ function StepTimeline({ introHtml, steps, images }) {
   )
 }
 
-export default function BlogPost({ post, html, allPosts, stepImages }) {
-  const region = post ? REGIONS.find(r => r.id === post.category) : null
+export default function BlogPost({ post, html, allPosts, stepImages, customCategories }) {
+  const topBadge = post ? resolveCategoryBadge(post.category, customCategories) : null
   const relatedPool = post ? scoreRelated(post, allPosts).slice(0, 3) : []
   const inlineUsedIds = new Set(relatedPool.map(p => p.id))
   const stepMode = post ? isStepCategory(post.category) : false
@@ -293,9 +303,9 @@ export default function BlogPost({ post, html, allPosts, stepImages }) {
           </div>
         ) : (
           <article style={{ padding: '40px 0 64px' }}>
-            {region && (
-              <span className="badge" style={{ marginBottom: 14, display: 'inline-block', background: `${region.color}22`, color: region.color, border: `1px solid ${region.color}44`, fontSize: 12, padding: '4px 12px' }}>
-                {region.icon} {region.name}
+            {topBadge && (
+              <span className="badge" style={{ marginBottom: 14, display: 'inline-block', background: `${topBadge.color}22`, color: topBadge.color, border: `1px solid ${topBadge.color}44`, fontSize: 12, padding: '4px 12px' }}>
+                {topBadge.icon} {topBadge.name}
               </span>
             )}
             <h1 style={{ fontSize: 'clamp(22px,4vw,32px)', fontWeight: 900, lineHeight: 1.3, marginBottom: 12 }}>{post.title}</h1>
@@ -317,13 +327,13 @@ export default function BlogPost({ post, html, allPosts, stepImages }) {
               {stepMode ? (
                 <StepTimeline introHtml={introHtml} steps={steps} images={stepImages} />
               ) : (
-                <ContentWithInlineLinks html={html} relatedPool={relatedPool} />
+                <ContentWithInlineLinks html={html} relatedPool={relatedPool} customCategories={customCategories} />
               )}
             </div>
 
             <PostTags tags={post.tags} />
 
-            <CuriosityBlock post={post} allPosts={allPosts} inlineUsedIds={inlineUsedIds} />
+            <CuriosityBlock post={post} allPosts={allPosts} inlineUsedIds={inlineUsedIds} customCategories={customCategories} />
             <ServiceCTABlock post={post} />
 
             <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
@@ -356,9 +366,9 @@ export async function getServerSideProps(context) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.fsfood.kr'
     const res = await fetch(`${baseUrl}/api/blog/posts?slug=${slug}`)
-    if (!res.ok) return { props: { post: null, html: '', allPosts: [], stepImages: [] } }
+    if (!res.ok) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
     const post = await res.json()
-    if (!post) return { props: { post: null, html: '', allPosts: [], stepImages: [] } }
+    if (!post) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
 
     // 서버에서 마크다운 → HTML 변환 (레시피/식재료손질은 본문 끝에 숨겨진 사진 목록을 먼저 분리)
     const { parseMarkdown } = await import('../../lib/parseMarkdown')
@@ -373,9 +383,17 @@ export async function getServerSideProps(context) {
       if (listRes.ok) allPosts = await listRes.json()
     } catch {}
 
-    return { props: { post, html, allPosts: Array.isArray(allPosts) ? allPosts : [], stepImages } }
+    // 커스텀 카테고리(레시피·식재료손질·팁·해외 등)도 함께 가져와야 지역이 아닌
+    // 카테고리로 발행된 글에서도 배지가 정상적으로 표시된다
+    let customCategories = []
+    try {
+      const catRes = await fetch(`${baseUrl}/api/blog/categories`)
+      if (catRes.ok) customCategories = await catRes.json()
+    } catch {}
+
+    return { props: { post, html, allPosts: Array.isArray(allPosts) ? allPosts : [], stepImages, customCategories: Array.isArray(customCategories) ? customCategories : [] } }
   } catch (error) {
     console.error('블로그 상세 SSR 에러:', error)
-    return { props: { post: null, html: '', allPosts: [], stepImages: [] } }
+    return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
   }
 }
