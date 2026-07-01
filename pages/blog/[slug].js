@@ -4,6 +4,8 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { REGIONS } from '../../lib/regions'
 import { parseMarkdown } from '../../lib/parseMarkdown'
+import { isStepCategory } from '../../lib/blogCategories'
+import { extractStepImages, splitStepsHtml } from '../../lib/stepContent'
 
 // ── 관련도 점수 계산: 같은 지역 카테고리(+3), 태그(+2/개), 제목 키워드 겹침(+1/개)
 // 기존 글처럼 category/tags가 비어있어 점수가 전부 0이 되더라도
@@ -176,10 +178,52 @@ function ServiceCTABlock({ post }) {
   )
 }
 
-export default function BlogPost({ post, html, allPosts }) {
+// ── 레시피 / 식재료손질: 왼쪽 설명 + 오른쪽 사진, 위→아래 타임라인
+function StepTimeline({ introHtml, steps, images }) {
+  return (
+    <div>
+      {introHtml && (
+        <div className="blog-content" style={{ marginBottom: 28 }} dangerouslySetInnerHTML={{ __html: introHtml }} />
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {steps.map((step, i) => {
+          const img = images[i]
+          const isLast = i === steps.length - 1
+          return (
+            <div key={i} style={{ display: 'flex', gap: 24, position: 'relative', paddingBottom: isLast ? 0 : 32 }}>
+              {/* 타임라인 점 + 선 */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--accent, #16a34a)', marginTop: 6, flexShrink: 0 }} />
+                {!isLast && <div style={{ flex: 1, width: 2, background: 'var(--border, #e5e7eb)', marginTop: 4 }} />}
+              </div>
+
+              <div className="step-row" style={{ display: 'flex', gap: 24, flex: 1, minWidth: 0 }}>
+                <div className="blog-content step-desc" style={{ flex: img ? '1 1 55%' : '1 1 100%', minWidth: 0 }} dangerouslySetInnerHTML={{ __html: step.html }} />
+                {img && (
+                  <div className="step-photo" style={{ flex: '1 1 45%', minWidth: 0 }}>
+                    <img src={img} alt="" style={{ width: '100%', borderRadius: 12, display: 'block', objectFit: 'cover', maxHeight: 320 }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .step-row { flex-direction: column; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+export default function BlogPost({ post, html, allPosts, stepImages }) {
   const region = post ? REGIONS.find(r => r.id === post.category) : null
   const relatedPool = post ? scoreRelated(post, allPosts).slice(0, 3) : []
   const inlineUsedIds = new Set(relatedPool.map(p => p.id))
+  const stepMode = post ? isStepCategory(post.category) : false
+  const { introHtml, steps } = stepMode ? splitStepsHtml(html) : { introHtml: '', steps: [] }
 
   return (
     <>
@@ -268,9 +312,13 @@ export default function BlogPost({ post, html, allPosts }) {
               />
             )}
 
-            {/* 본문 — 마크다운 → HTML 렌더링 (관련 글 카드 자동 삽입) */}
+            {/* 본문 — 마크다운 → HTML 렌더링 (관련 글 카드 자동 삽입 / 레시피·식재료손질은 단계별 타임라인) */}
             <div style={{ fontSize: 15, lineHeight: 1.85, color: 'var(--text)' }}>
-              <ContentWithInlineLinks html={html} relatedPool={relatedPool} />
+              {stepMode ? (
+                <StepTimeline introHtml={introHtml} steps={steps} images={stepImages} />
+              ) : (
+                <ContentWithInlineLinks html={html} relatedPool={relatedPool} />
+              )}
             </div>
 
             <PostTags tags={post.tags} />
@@ -308,13 +356,14 @@ export async function getServerSideProps(context) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.fsfood.kr'
     const res = await fetch(`${baseUrl}/api/blog/posts?slug=${slug}`)
-    if (!res.ok) return { props: { post: null, html: '', allPosts: [] } }
+    if (!res.ok) return { props: { post: null, html: '', allPosts: [], stepImages: [] } }
     const post = await res.json()
-    if (!post) return { props: { post: null, html: '', allPosts: [] } }
+    if (!post) return { props: { post: null, html: '', allPosts: [], stepImages: [] } }
 
-    // 서버에서 마크다운 → HTML 변환
+    // 서버에서 마크다운 → HTML 변환 (레시피/식재료손질은 본문 끝에 숨겨진 사진 목록을 먼저 분리)
     const { parseMarkdown } = await import('../../lib/parseMarkdown')
-    const html = parseMarkdown(post.content || '')
+    const { content: cleanContent, images: stepImages } = extractStepImages(post.content || '')
+    const html = parseMarkdown(cleanContent)
 
     // 관련 글 추천을 위해 글 목록도 서버에서 같이 가져온다 (SSR에 포함되어야
     // 검색엔진도 내부링크를 크롤링할 수 있다)
@@ -324,9 +373,9 @@ export async function getServerSideProps(context) {
       if (listRes.ok) allPosts = await listRes.json()
     } catch {}
 
-    return { props: { post, html, allPosts: Array.isArray(allPosts) ? allPosts : [] } }
+    return { props: { post, html, allPosts: Array.isArray(allPosts) ? allPosts : [], stepImages } }
   } catch (error) {
     console.error('블로그 상세 SSR 에러:', error)
-    return { props: { post: null, html: '', allPosts: [] } }
+    return { props: { post: null, html: '', allPosts: [], stepImages: [] } }
   }
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { DEFAULT_CATEGORIES, categoryLabel } from '../../lib/blogCategories'
+import { DEFAULT_CATEGORIES, categoryLabel, isStepCategory } from '../../lib/blogCategories'
 import { parseMarkdown as parseMd } from '../../lib/parseMarkdown'
+import { extractStepImages, injectStepImages } from '../../lib/stepContent'
 
 /** 현재 시각을 KST(UTC+9) 기준 ISO 문자열로 반환 */
 function nowKST() {
@@ -236,7 +237,7 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
   const [routineChecks, setRoutineChecks] = useState({})
   const [collapsedRoutines, setCollapsedRoutines] = useState({})
 
-  const emptyForm = { title:'', slug:'', summary:'', content:'', category:'thumb-down', tags:'', thumbnail:'', scheduledAt:'', publishedAt:'' }
+  const emptyForm = { title:'', slug:'', summary:'', content:'', category:'thumb-down', tags:'', thumbnail:'', scheduledAt:'', publishedAt:'', stepImages:[''] }
   const [form, setForm] = useState(emptyForm)
 
   const token = () => adminToken
@@ -289,16 +290,18 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
 
   const handleEdit = (post) => {
     setEditId(post.id)
+    const { content: cleanContent, images: stepImgs } = extractStepImages(post.content || '')
     setForm({
       title: post.title || '',
       slug: post.slug || '',
       summary: post.summary || '',
-      content: post.content || '',
+      content: cleanContent,
       category: post.category || 'thumb-down',
       tags: Array.isArray(post.tags) ? post.tags.join(', ') : '',
       thumbnail: post.cover_image || '',
       scheduledAt: post.scheduled_at ? post.scheduled_at.slice(0,16) : '',
       publishedAt: post.published_at || '',
+      stepImages: stepImgs.length ? stepImgs : [''],
     })
     setPreview(false); setView('write')
   }
@@ -320,9 +323,12 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
     try {
       const slug = form.slug.trim() || slugify(form.title)
       const tags = form.tags ? form.tags.split(',').map(t=>t.trim()).filter(Boolean) : []
+      const contentToSave = isStepCategory(form.category)
+        ? injectStepImages(form.content, form.stepImages)
+        : form.content
       const body = {
         title: form.title.trim(), slug, summary: form.summary.trim(),
-        content: form.content, category: form.category, tags,
+        content: contentToSave, category: form.category, tags,
         cover_image: form.thumbnail.trim(),
         status,
         scheduled_at: status === 'scheduled' ? new Date(form.scheduledAt).toISOString() : null,
@@ -446,8 +452,18 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
         {msg && <div style={{ padding:'12px 16px', borderRadius:10, marginBottom:16, fontSize:14, background:msg.startsWith('🚀')||msg.startsWith('💾')||msg.startsWith('⏰')?'#f0fdf4':'#fef2f2', color:msg.startsWith('🚀')||msg.startsWith('💾')||msg.startsWith('⏰')?'#16a34a':'#dc2626' }}>{msg}</div>}
 
         {/* ── 글쓰기 뷰 */}
-        {view === 'write' && (
-          <div style={{ display:'grid', gridTemplateColumns:preview?'1fr 1.1fr':'1fr', gap:24 }}>
+        {view === 'write' && (() => {
+          const stepMode = isStepCategory(form.category)
+          const setStepImage = (i, val) => setForm(v => {
+            const next = [...v.stepImages]; next[i] = val; return { ...v, stepImages: next }
+          })
+          const addStepImage = () => setForm(v => ({ ...v, stepImages: [...v.stepImages, ''] }))
+          const removeStepImage = (i) => setForm(v => {
+            const next = v.stepImages.filter((_, ii) => ii !== i)
+            return { ...v, stepImages: next.length ? next : [''] }
+          })
+          return (
+          <div style={{ display:'grid', gridTemplateColumns:(preview||stepMode)?'1fr 1.1fr':'1fr', gap:24 }}>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <h2 style={{ fontSize:18, fontWeight:700 }}>{editId ? '✏️ 글 수정' : '📝 새 글 작성'}</h2>
 
@@ -464,6 +480,11 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
                   <select value={form.category} onChange={e=>setForm(v=>({...v,category:e.target.value}))} style={{ ...S.input, background:'#f5f9f5' }}>
                     {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
+                  {stepMode && (
+                    <div style={{ fontSize:11, color:'#16a34a', marginTop:4 }}>
+                      🖼 이 카테고리는 오른쪽에서 단계별 사진을 여러 장 추가할 수 있어요 (본문의 ## 소제목마다 사진 하나씩 순서대로 매칭됩니다)
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={S.label}>태그 (쉼표 구분)</label>
@@ -492,23 +513,55 @@ export default function BlogAdminPanel({ adminToken, initialView }) {
               <div>
                 <label style={S.label}>본문 (마크다운)</label>
                 <textarea value={form.content} onChange={e=>{setForm(v=>({...v,content:e.target.value}))}}
-                  rows={22} placeholder={'# 제목\n\n본문을 마크다운으로 작성하세요.\n\n## 소제목\n\n- 항목 1\n- 항목 2\n\n**굵게** *기울임* `코드`'}
+                  rows={22} placeholder={stepMode
+                    ? '## 1단계: 재료 손질하기\n\n손질 방법 설명...\n\n## 2단계: 끓이기\n\n끓이는 방법 설명...\n\n※ 오른쪽 사진 목록의 1번째 사진이 1단계에, 2번째 사진이 2단계에 순서대로 붙습니다.'
+                    : '# 제목\n\n본문을 마크다운으로 작성하세요.\n\n## 소제목\n\n- 항목 1\n- 항목 2\n\n**굵게** *기울임* `코드`'}
                   style={S.textarea} />
               </div>
             </div>
 
-            {/* 미리보기 */}
-            {preview && (
-              <div style={{ background:'#f9fafb', borderRadius:12, border:'1px solid #e5e7eb', padding:24, overflowY:'auto', maxHeight:'90vh', position:'sticky', top:80 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', marginBottom:12, textTransform:'uppercase', letterSpacing:1 }}>미리보기</div>
-                {form.thumbnail && <img src={form.thumbnail} alt="" style={{ width:'100%', height:160, objectFit:'cover', borderRadius:10, marginBottom:16, display:'block' }} />}
-                <h1 style={{ fontSize:22, fontWeight:800, color:'#111827', marginBottom:12 }}>{form.title||'(제목 없음)'}</h1>
-                {form.summary && <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#92400e', lineHeight:1.7 }}>{form.summary}</div>}
-                <div className="md-preview" dangerouslySetInnerHTML={{ __html: parseMd(form.content) }} />
+            {/* 오른쪽 컬럼: 스텝형 카테고리 사진 목록 + (토글 시) 미리보기 */}
+            {(preview || stepMode) && (
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                {stepMode && (
+                  <div style={{ background:'#fff', borderRadius:12, border:'1.5px solid #86efac', padding:20 }}>
+                    <div style={{ fontSize:13, fontWeight:800, color:'#16a34a', marginBottom:4 }}>🖼 단계별 사진 (여러 장)</div>
+                    <p style={{ fontSize:12, color:'#4b6e4b', marginBottom:14, lineHeight:1.6 }}>
+                      본문의 <code>## 소제목</code> 순서대로 아래 사진이 하나씩 짝지어져, 왼쪽 설명 · 오른쪽 사진으로 위→아래 타임라인처럼 보여집니다.
+                    </p>
+                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                      {form.stepImages.map((url, i) => (
+                        <div key={i} style={{ display:'flex', gap:8, alignItems:'center' }}>
+                          <span style={{ fontSize:12, fontWeight:700, color:'#4b6e4b', width:20, flexShrink:0 }}>{i+1}</span>
+                          {url && (
+                            <img src={url} alt="" style={{ width:40, height:40, objectFit:'cover', borderRadius:6, flexShrink:0, border:'1px solid #d1e8d1' }} onError={e=>{e.currentTarget.style.visibility='hidden'}} />
+                          )}
+                          <input value={url} onChange={e=>setStepImage(i, e.target.value)} placeholder={`https://... (${i+1}번째 사진)`} style={{ ...S.input, flex:1 }} />
+                          <button onClick={()=>removeStepImage(i)} style={{ background:'none', border:'none', color:'#dc2626', fontSize:16, cursor:'pointer', flexShrink:0, padding:'0 4px' }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={addStepImage} style={{ ...S.btn('#f5f9f5'), color:'#16a34a', border:'1.5px dashed #86efac', marginTop:12, width:'100%', padding:'8px 0' }}>
+                      + 사진 추가
+                    </button>
+                  </div>
+                )}
+
+                {preview && (
+                  <div style={{ background:'#f9fafb', borderRadius:12, border:'1px solid #e5e7eb', padding:24, overflowY:'auto', maxHeight:'90vh', position:'sticky', top:80 }}>
+                    <div style={{ fontSize:11, fontWeight:700, color:'#9ca3af', marginBottom:12, textTransform:'uppercase', letterSpacing:1 }}>미리보기</div>
+                    {form.thumbnail && <img src={form.thumbnail} alt="" style={{ width:'100%', height:160, objectFit:'cover', borderRadius:10, marginBottom:16, display:'block' }} />}
+                    <h1 style={{ fontSize:22, fontWeight:800, color:'#111827', marginBottom:12 }}>{form.title||'(제목 없음)'}</h1>
+                    {form.summary && <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#92400e', lineHeight:1.7 }}>{form.summary}</div>}
+                    <div className="md-preview" dangerouslySetInnerHTML={{ __html: parseMd(form.content) }} />
+                    {stepMode && <div style={{ fontSize:11, color:'#9ca3af', marginTop:10 }}>* 실제 발행 화면에서는 사진이 단계별로 오른쪽에 배치됩니다.</div>}
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
+          )
+        })()}
 
         {/* ── 목록 뷰 */}
         {view === 'list' && (

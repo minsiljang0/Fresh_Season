@@ -38,10 +38,11 @@ export default async function handler(req, res) {
   if (!isAdmin) return res.status(401).json({ error: '인증 필요' })
 
   if (req.method === 'POST') {
-    const { title, slug, content, category, author, status = 'published', scheduled_at } = req.body
+    const { title, slug, content, category, author, status = 'published', scheduled_at, summary, tags, cover_image } = req.body
     if (!title || !slug || !content) return res.status(400).json({ error: '필수 항목 누락' })
     const { data, error } = await supabase.from('blog_posts').insert([{
       id: genId(), title, slug, content, category: category || '',
+      summary: summary || '', tags: Array.isArray(tags) ? tags : [], cover_image: cover_image || '',
       // ⚠️ blog_posts 테이블의 실제 컬럼명은 author가 아니라 author_name 이다.
       author_name: (author && String(author).trim()) || 'Fresh Season 편집팀',
       status, post_type: 'blog',
