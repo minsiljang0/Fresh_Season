@@ -4,9 +4,10 @@ import { S, Toast } from './AdminUI'
 const ACCENT = '#16a34a'
 
 const TABS = [
-  { id: 'claude', label: '1️⃣ 클로드 실행지침',     desc: 'Claude 전체 행동 지침 — 대화 시작 시 가장 먼저 불러오는 메인 시스템 프롬프트예요.' },
-  { id: 'main',   label: '2️⃣ 블로그 글작성지침',   desc: '"오늘 블로그 글 써줘" 할 때 사용하는 지침 — 글 1편 작성·발행 절차예요.' },
-  { id: 'month',  label: '3️⃣ 글감관리 월기획지침', desc: '글감관리에서 해당 월 글감을 기획·조사할 때("N월 기획하자") 사용하는 지침이에요.' },
+  { id: 'claude', label: '1️⃣ 클로드 실행지침',       desc: 'Claude 전체 행동 지침 — 대화 시작 시 가장 먼저 불러오는 메인 시스템 프롬프트예요.' },
+  { id: 'main',   label: '2-1️⃣ 블로그 글작성지침',   desc: '"오늘 블로그 글 써줘" 할 때 사용하는 지침 — 글 1편 작성·발행 절차예요.' },
+  { id: 'main2',  label: '2-2️⃣ 블로그 글작성지침',   desc: '2-1과 별도로 관리하는 블로그 글작성 지침이에요.' },
+  { id: 'month',  label: '3️⃣ 글감관리 월기획지침',   desc: '글감관리에서 해당 월 글감을 기획·조사할 때("N월 기획하자") 사용하는 지침이에요.' },
 ]
 
 export default function SystemPromptPanel({ adminToken }) {
@@ -242,7 +243,7 @@ export default function SystemPromptPanel({ adminToken }) {
       <div style={{ ...S.card, background: '#f0fdf4', border: '1px solid #86efac' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 12 }}>💡 사용 방법</div>
         <div style={{ fontSize: 13, color: '#166534', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span>① 탭(1️⃣ 클로드 실행지침 / 2️⃣ 블로그 글작성지침 / 3️⃣ 글감관리 월기획지침)을 선택해서 각각 따로 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
+          <span>① 탭(1️⃣ 클로드 실행지침 / 2-1️⃣ 블로그 글작성지침 / 2-2️⃣ 블로그 글작성지침 / 3️⃣ 글감관리 월기획지침)을 선택해서 각각 따로 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
           <span>⓪ 긴 문서는 직접 타이핑하지 않아도 <b style={{ color: '#0f1f0f' }}>📁 파일 업로드</b> 버튼으로 .md/.txt 파일을 선택하면 내용이 그대로 불러와져요 (이후 💾 저장 필수).</span>
           <span>② Claude 프로젝트 Instructions에는 아래 한 줄만 남겨두세요:</span>
           <code style={{
@@ -252,7 +253,7 @@ export default function SystemPromptPanel({ adminToken }) {
           }}>
             대화를 시작하면 즉시 get_system_prompt 툴을 호출해서 전체 지침을 로드하고, 그 지침대로만 행동하세요.
           </code>
-          <span>③ MCP <code style={{ background: '#e8f5e9', padding: '1px 6px', borderRadius: 4, fontSize: 12, color: '#15803d' }}>get_system_prompt</code> 툴에 id(<b>claude</b>=클로드 실행지침/<b>main</b>=블로그 글작성지침/<b>month</b>=글감관리 월기획지침)를 넘기면 해당 탭만 불러와요. id를 안 주면 기존 호환을 위해 2️⃣ 블로그 글작성지침 탭 내용을 가져와요.</span>
+          <span>③ MCP <code style={{ background: '#e8f5e9', padding: '1px 6px', borderRadius: 4, fontSize: 12, color: '#15803d' }}>get_system_prompt</code> 툴에 id(<b>claude</b>=클로드 실행지침/<b>main</b>=2-1 블로그 글작성지침/<b>main2</b>=2-2 블로그 글작성지침/<b>month</b>=글감관리 월기획지침)를 넘기면 해당 탭만 불러와요. id를 안 주면 기존 호환을 위해 2-1️⃣ 블로그 글작성지침 탭 내용을 가져와요.</span>
           <span>④ <b style={{ color: '#0f1f0f' }}>📋 전체 복사</b>로 복사해서 직접 붙여넣는 것도 가능해요.</span>
         </div>
       </div>
