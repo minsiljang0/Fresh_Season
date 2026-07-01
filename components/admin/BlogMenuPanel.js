@@ -33,12 +33,15 @@ export default function BlogMenuPanel({ adminToken }) {
         headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
         body: JSON.stringify({ label }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${res.status}`)
+      }
       setNewCat('')
       setMsg('✅ 추가되었습니다')
       setTimeout(() => setMsg(''), 2500)
       loadCategories()
-    } catch { setMsg('❌ 추가 실패'); setTimeout(() => setMsg(''), 2500) }
+    } catch (e) { setMsg(`❌ 추가 실패: ${e.message || '알 수 없는 오류'}`); setTimeout(() => setMsg(''), 4000) }
     setLoading(false)
   }
 

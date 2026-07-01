@@ -10,9 +10,16 @@ export default function BlogIndex() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('')
+  const [customCategories, setCustomCategories] = useState([])
 
   useEffect(() => {
-    const url = category ? `/api/blog/posts?category=${category}` : '/api/blog/posts?limit=30'
+    fetch('/api/blog/categories').then(r => r.json())
+      .then(d => setCustomCategories(Array.isArray(d) ? d : []))
+      .catch(() => setCustomCategories([]))
+  }, [])
+
+  useEffect(() => {
+    const url = category ? `/api/blog/posts?category=${encodeURIComponent(category)}` : '/api/blog/posts?limit=30'
     fetch(url).then(r => r.json()).then(d => setPosts(Array.isArray(d) ? d : []))
       .catch(() => setPosts([])).finally(() => setLoading(false))
   }, [category])
@@ -43,6 +50,12 @@ export default function BlogIndex() {
                 {r.icon} {r.name}
               </button>
             ))}
+            {customCategories.map(c => (
+              <button key={c.id} onClick={() => setCategory(c.label === category ? '' : c.label)} className="month-pill"
+                style={{ borderColor: category === c.label ? '#16a34a' : undefined, background: category === c.label ? '#16a34a22' : undefined, color: category === c.label ? '#16a34a' : undefined, fontWeight: 600 }}>
+                📂 {c.label}
+              </button>
+            ))}
           </div>
         </section>
 
@@ -56,6 +69,7 @@ export default function BlogIndex() {
           <div className="grid-auto">
             {posts.map(post => {
               const region = REGIONS.find(r => r.id === post.category)
+              const isCustom = !region && post.category
               return (
                 <Link key={post.id} href={`/blog/${post.slug}`} className="card"
                   style={{ padding: 0, overflow: 'hidden' }}
@@ -76,6 +90,11 @@ export default function BlogIndex() {
                     {region && (
                       <span className="badge" style={{ marginBottom: 10, display: 'inline-block', background: `${region.color}22`, color: region.color, border: `1px solid ${region.color}44` }}>
                         {region.icon} {region.name}
+                      </span>
+                    )}
+                    {isCustom && (
+                      <span className="badge" style={{ marginBottom: 10, display: 'inline-block', background: '#16a34a22', color: '#16a34a', border: '1px solid #16a34a44' }}>
+                        📂 {post.category}
                       </span>
                     )}
                     <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, lineHeight: 1.4 }}>{post.title}</h2>
