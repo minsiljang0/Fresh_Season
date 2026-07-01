@@ -3,10 +3,12 @@ import { S } from './AdminUI'
 import { DEFAULT_CATEGORIES, categoryLabel } from '../../lib/blogCategories'
 
 const DEFAULT_CATS = DEFAULT_CATEGORIES
+const ICON_CHOICES = ['📁','🍳','🔪','💡','🌍','📝','🍽️','⭐','🎥','📖','🛒','🥗','❄️','🔥','🎉']
 
 export default function BlogMenuPanel({ adminToken }) {
   const [categories, setCategories] = useState([])
   const [newCat, setNewCat] = useState('')
+  const [newIcon, setNewIcon] = useState(ICON_CHOICES[0])
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -31,13 +33,14 @@ export default function BlogMenuPanel({ adminToken }) {
       const res = await fetch('/api/blog/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-        body: JSON.stringify({ label }),
+        body: JSON.stringify({ label, icon: newIcon }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `HTTP ${res.status}`)
       }
       setNewCat('')
+      setNewIcon(ICON_CHOICES[0])
       setMsg('✅ 추가되었습니다')
       setTimeout(() => setMsg(''), 2500)
       loadCategories()
@@ -74,6 +77,16 @@ export default function BlogMenuPanel({ adminToken }) {
         <div style={S.cardTitle}>📂 커스텀 카테고리</div>
         <p style={{ color: '#666', fontSize: 13, marginBottom: 16 }}>블로그 글에서 사용할 카테고리를 추가/삭제할 수 있어요.</p>
 
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {ICON_CHOICES.map(ic => (
+            <button key={ic} type="button" onClick={() => setNewIcon(ic)} style={{
+              width: 34, height: 34, borderRadius: 8, fontSize: 16, cursor: 'pointer',
+              background: newIcon === ic ? '#dcfce7' : '#f5f9f5',
+              border: newIcon === ic ? '1.5px solid #16a34a' : '1.5px solid #d1e8d1',
+            }}>{ic}</button>
+          ))}
+        </div>
+
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           <input
             value={newCat}
@@ -83,7 +96,7 @@ export default function BlogMenuPanel({ adminToken }) {
             style={{ ...S.input, flex: 1 }}
           />
           <button onClick={addCategory} disabled={loading || !newCat.trim()} style={{ ...S.btn(), opacity: !newCat.trim() ? 0.4 : 1 }}>
-            + 추가
+            {newIcon} 추가
           </button>
         </div>
 
@@ -107,7 +120,7 @@ export default function BlogMenuPanel({ adminToken }) {
                 padding: '7px 10px 7px 16px', borderRadius: 999,
                 background: '#f5f9f5', border: '1.5px solid #d1e8d1',
               }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#0f1f0f' }}>{cat.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0f1f0f' }}>{cat.icon || '📁'} {cat.label}</span>
                 <button onClick={() => deleteCategory(cat.id, cat.label)} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
                   color: '#666', fontSize: 16, lineHeight: 1, padding: '0 2px',

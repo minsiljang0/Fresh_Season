@@ -53,7 +53,7 @@ export default function BlogIndex() {
             {customCategories.map(c => (
               <button key={c.id} onClick={() => setCategory(c.label === category ? '' : c.label)} className="month-pill"
                 style={{ borderColor: category === c.label ? '#16a34a' : undefined, background: category === c.label ? '#16a34a22' : undefined, color: category === c.label ? '#16a34a' : undefined, fontWeight: 600 }}>
-                📂 {c.label}
+                {c.icon || '📁'} {c.label}
               </button>
             ))}
           </div>
@@ -69,6 +69,7 @@ export default function BlogIndex() {
           <div className="grid-auto">
             {posts.map(post => {
               const region = REGIONS.find(r => r.id === post.category)
+              const customCat = !region ? customCategories.find(c => c.label === post.category) : null
               const isCustom = !region && post.category
               return (
                 <Link key={post.id} href={`/blog/${post.slug}`} className="card"
@@ -83,7 +84,7 @@ export default function BlogIndex() {
                       width: '100%', height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 36, background: region ? `${region.color}14` : 'var(--card, #f3f4f6)',
                     }}>
-                      {region?.icon || '🥬'}
+                      {region?.icon || (isCustom ? (customCat?.icon || '📁') : '🥬')}
                     </div>
                   )}
                   <div style={{ padding: 20 }}>
@@ -94,7 +95,7 @@ export default function BlogIndex() {
                     )}
                     {isCustom && (
                       <span className="badge" style={{ marginBottom: 10, display: 'inline-block', background: '#16a34a22', color: '#16a34a', border: '1px solid #16a34a44' }}>
-                        📂 {post.category}
+                        {customCat?.icon || '📁'} {post.category}
                       </span>
                     )}
                     <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, lineHeight: 1.4 }}>{post.title}</h2>
