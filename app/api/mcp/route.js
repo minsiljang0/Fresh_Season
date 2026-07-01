@@ -125,6 +125,26 @@ const REGION_LABELS = {
 
 function fmt(n) { return (n || 0).toLocaleString('ko-KR') }
 
+// ── 블로그 글 category 값 검증 ──────────────────────────────────────
+// category는 17개 시도 코드(REGION_CODES) 뿐 아니라, admin(블로그 메뉴관리)에서
+// 등록한 커스텀 카테고리(예: 레시피, 식재료손질, 팁, 해외)도 값으로 들어올 수 있다.
+// 커스텀 카테고리는 운영 중 admin에서 자유롭게 추가/삭제되므로 정적 enum으로 고정하지 않고,
+// 매 호출 시 blog_categories 테이블을 조회해 실제 등록된 라벨과 대조한다.
+async function validateCategory(category) {
+  if (!category || typeof category !== 'string') {
+    return { valid: false, validLabels: [] }
+  }
+  if (REGION_CODES.includes(category)) return { valid: true }
+  const { data, error } = await supabase.from('blog_categories').select('label')
+  if (error) {
+    // 커스텀 카테고리 조회 자체가 실패하면, 시도 코드 불일치라는 사실만이라도 알려준다
+    return { valid: false, validLabels: REGION_CODES, fetchError: error.message }
+  }
+  const customLabels = (data || []).map(r => r.label)
+  const valid = customLabels.includes(category)
+  return { valid, validLabels: [...REGION_CODES, ...customLabels] }
+}
+
 // ── 네이버 검색광고 키워드도구 (기존 로직 그대로 유지) ──────────────────
 const NAVER_BASE_URL = 'https://api.naver.com'
 const NAVER_URI = '/keywordstool'
@@ -472,7 +492,10 @@ const baseHandler = createMcpHandler(
           '날짜를 남기기 때문에, 이렇게 하면 "그 키워드를 며칠에 어느 글에 썼는지"가 ' +
           'get_publish_log 조회만으로 그대로 추적된다.',
         inputSchema: {
-          category: z.enum(REGION_CODES).describe('시도 코드. 예: gangwon'),
+          category: z.string().describe(
+            '카테고리. 17개 시도 코드(예: gangwon) 또는 admin에 등록된 커스텀 카테고리 라벨(예: 식재료손질) — ' +
+            'create_blog_post에 실제로 사용한 category 값과 동일하게 넘긴다.'
+          ),
           angle: z.string().describe('키워드 각도, 예: "제철 소개"'),
           title: z.string(),
           slug: z.string(),
@@ -523,7 +546,11 @@ const baseHandler = createMcpHandler(
           slug: z.string().describe('URL 슬러그, 영문 소문자+하이픈'),
           summary: z.string().optional().describe('SEO 요약, 80~120자'),
           content: z.string().describe('본문 마크다운 전체 (표·SVG·FAQ·CTA 포함)'),
-          category: z.enum(REGION_CODES).describe('카테고리(=시도 코드). 예: gangwon'),
+          category: z.string().describe(
+            '카테고리. 17개 시도 코드(seoul, busan, ... jeju) 중 하나이거나, admin 블로그 메뉴관리에서 ' +
+            '등록한 커스텀 카테고리 라벨(예: 레시피, 식재료손질, 팁, 해외)을 정확한 표기 그대로(띄어쓰기 ' +
+            '임의 추가 금지) 입력한다. 등록되지 않은 값이면 오류를 반환한다.'
+          ),
           tags: z.array(z.string()).optional().describe('태그 5~8개 권장'),
           cover_image: z.string().optional().describe('커버 이미지 URL'),
           author: z.string().optional().describe('작성자 표시명. 비우면 기본값(Fresh Season 편집팀) 사용'),
@@ -534,6 +561,17 @@ const baseHandler = createMcpHandler(
         annotations: { destructiveHint: false, idempotentHint: false },
       },
       async ({ title, slug, summary, content, category, tags, cover_image, author, status, scheduled_at }) => {
+        const catCheck = await validateCategory(category)
+        if (!catCheck.valid) {
+          return {
+            content: [{
+              type: 'text',
+              text: `오류: category "${category}"는 등록된 값이 아닙니다. 사용 가능한 값: ${catCheck.validLabels.join(', ')}` +
+                (catCheck.fetchError ? ` (커스텀 카테고리 조회 실패: ${catCheck.fetchError})` : ''),
+            }],
+            isError: true,
+          }
+        }
         const finalStatus = status || 'published'
         const nowIso = nowKST()
         const row = {
