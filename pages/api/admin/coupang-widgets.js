@@ -1,7 +1,7 @@
 import { supabase, genId } from '../../../lib/supabase'
 
-// 쿠팡 "링크 목록" — 링크(URL)만 다룬다. 위젯은 coupang-widgets.js에서 별도 관리.
-// 각 항목: { id, label, url, enabled }
+// 쿠팡 "위젯 목록" — 위젯(iframe) 코드만 다룬다. 링크는 coupang-links.js에서 별도 관리.
+// 각 항목: { id, label, widget_html, enabled }
 
 function isAdmin(req) {
   return req.headers['x-admin-token'] === process.env.ADMIN_SECRET_TOKEN
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const { data, error } = await supabase
-        .from('coupang_links')
+        .from('coupang_widgets')
         .select('*')
         .order('created_at', { ascending: true })
       if (error) throw error
@@ -23,19 +23,19 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     if (!isAdmin(req)) return res.status(401).json({ error: '인증 실패' })
-    const { label, url, enabled } = req.body || {}
+    const { label, widget_html, enabled } = req.body || {}
 
     const now = new Date().toISOString()
     const row = {
       id: genId(),
       label: label ?? '',
-      url: url ?? '',
+      widget_html: widget_html ?? '',
       enabled: enabled === undefined ? true : !!enabled,
       created_at: now,
       updated_at: now,
     }
 
-    const { error } = await supabase.from('coupang_links').insert(row)
+    const { error } = await supabase.from('coupang_widgets').insert(row)
     if (error) return res.status(500).json({ error: error.message })
     return res.status(200).json(row)
   }
@@ -47,12 +47,12 @@ export default async function handler(req, res) {
 
     const row = {
       label: rest.label ?? '',
-      url: rest.url ?? '',
+      widget_html: rest.widget_html ?? '',
       enabled: rest.enabled === undefined ? true : !!rest.enabled,
       updated_at: new Date().toISOString(),
     }
 
-    const { error } = await supabase.from('coupang_links').update(row).eq('id', id)
+    const { error } = await supabase.from('coupang_widgets').update(row).eq('id', id)
     if (error) return res.status(500).json({ error: error.message })
     return res.status(200).json({ ok: true })
   }
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     if (!isAdmin(req)) return res.status(401).json({ error: '인증 실패' })
     const { id } = req.query || {}
     if (!id) return res.status(400).json({ error: 'id 필요' })
-    const { error } = await supabase.from('coupang_links').delete().eq('id', id)
+    const { error } = await supabase.from('coupang_widgets').delete().eq('id', id)
     if (error) return res.status(500).json({ error: error.message })
     return res.status(200).json({ ok: true })
   }

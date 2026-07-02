@@ -43,23 +43,26 @@ export default function GlobalPage() {
   const [selBenefit, setSelBenefit]   = useState('all')
   const [query, setQuery]             = useState('')
   const [allBenefits, setAllBenefits] = useState([])
-  const [coupangBase, setCoupangBase]   = useState(null)
-  const [coupangLinks, setCoupangLinks] = useState([])
+  const [coupangBase, setCoupangBase]     = useState(null)
+  const [coupangLinks, setCoupangLinks]   = useState([])
+  const [coupangWidgets, setCoupangWidgets] = useState([])
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        const [ingRes, benefitRes, coupangRes, coupangLinksRes] = await Promise.all([
+        const [ingRes, benefitRes, coupangRes, coupangLinksRes, coupangWidgetsRes] = await Promise.all([
           fetch('/api/admin/map-data?type=ingredients'),
           fetch('/api/admin/map-data?type=health_benefits'),
           fetch('/api/admin/coupang'),
           fetch('/api/admin/coupang-links'),
+          fetch('/api/admin/coupang-widgets'),
         ])
         const allIng      = ingRes.ok  ? await ingRes.json()     : []
         const allBenefits = benefitRes.ok ? await benefitRes.json() : []
         if (coupangRes.ok) setCoupangBase(await coupangRes.json())
         if (coupangLinksRes.ok) setCoupangLinks(await coupangLinksRes.json())
+        if (coupangWidgetsRes.ok) setCoupangWidgets(await coupangWidgetsRes.json())
 
         // is_global 식재료만 필터
         const globalIng = allIng.filter(i => i.is_global)
@@ -314,7 +317,7 @@ export default function GlobalPage() {
 
                     {/* 쿠팡 링크 (개별 등록이 없으면 관리자 설정값으로 대체 노출) */}
                     {(() => {
-                      const cp = resolveCoupangDisplay(coupangBase, coupangLinks, ing, ing.name)
+                      const cp = resolveCoupangDisplay(coupangBase, coupangLinks, coupangWidgets, ing, ing.name)
                       if (cp.links.length === 0 && cp.widgets.length === 0) return null
                       return (
                         <div style={{ marginTop:12 }}>
