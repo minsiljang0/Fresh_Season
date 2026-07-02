@@ -225,7 +225,7 @@ export default async function handler(req, res) {
       }
       if (type === 'ingredients') {
         const { data, error } = await supabase.from('ingredients')
-          .insert([{ id: genId(), name: body.name, category: body.category || 'veg', description: body.description || '', coupang_url: body.coupang_url || '', caution: body.caution || '', is_special: body.is_special || false, is_limited: body.is_limited || false, limited_days: body.limited_days || null, is_global: body.is_global || false }])
+          .insert([{ id: genId(), name: body.name, category: body.category || 'veg', description: body.description || '', coupang_url: body.coupang_url || '', coupang_banner_html: body.coupang_banner_html || '', caution: body.caution || '', is_special: body.is_special || false, is_limited: body.is_limited || false, limited_days: body.limited_days || null, is_global: body.is_global || false }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)
