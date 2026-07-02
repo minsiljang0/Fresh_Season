@@ -7,6 +7,8 @@ import Footer from '../components/Footer'
 import { REGIONS } from '../lib/regions'
 import { CATEGORIES, CATEGORY_GROUPS } from '../lib/seasonalFoods'
 import { KOREA_PATHS } from '../lib/koreaPaths'
+import { AdSlot } from '../components/AdSlot'
+import { useAdSlot } from '../lib/AdSlotsContext'
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 
@@ -149,6 +151,7 @@ function KoreaMap({ filtered, selRegion, setSelRegion, selMonth }) {
 }
 
 export default function MapPage() {
+  const middleSlot = useAdSlot('home_middle')
   const [selMonth, setSelMonth]       = useState(new Date().getMonth() + 1)
   const [selCategory, setSelCategory] = useState('all')
   const [selRegion, setSelRegion]     = useState('all')
@@ -545,6 +548,11 @@ export default function MapPage() {
       <Header />
 
       <main className="wrap" style={{ paddingBottom: 80 }}>
+
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ padding: 0, margin: '20px 0 0' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
 
         {/* 헤더 */}
         <section style={{ padding: isMobile ? '20px 0 14px' : '40px 0 24px', textAlign: 'center' }}>

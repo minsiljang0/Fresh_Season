@@ -5,6 +5,8 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { REGIONS } from '../../lib/regions'
 import { SEASONAL_FOODS_SEED } from '../../lib/seasonalFoods'
+import { AdSlot } from '../../components/AdSlot'
+import { useAdSlot } from '../../lib/AdSlotsContext'
 
 // getStaticPaths — 빌드 시 DB에서 전체 식재료 이름 가져와 정적 경로 생성
 export async function getStaticPaths() {
@@ -37,6 +39,7 @@ export default function IngredientPage({ ingredientName }) {
   const [food, setFood] = useState(null)
   const [loading, setLoading] = useState(true)
   const [posts, setPosts] = useState([])
+  const middleSlot = useAdSlot('home_middle')
 
   // DB에서만 데이터 로드 — SEED 폴백 없음
   useEffect(() => {
@@ -128,6 +131,11 @@ export default function IngredientPage({ ingredientName }) {
       </Head>
       <Header />
       <main className="wrap" style={{ maxWidth: 860 }}>
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ maxWidth: 860, padding: 0, margin: '20px auto' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
+
         <section className="detail-header">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 24 }}>
             <h1 style={{ fontSize: 32, fontWeight: 900 }}>{ingredientName}</h1>

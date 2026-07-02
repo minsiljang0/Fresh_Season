@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { REGIONS } from '../lib/regions'
 import { useState, useEffect, useRef } from 'react'
+import { AdSlot } from './AdSlot'
+import { useAdSlot } from '../lib/AdSlotsContext'
 
 export default function Header() {
   const router = useRouter()
@@ -10,6 +12,7 @@ export default function Header() {
   const [isMobile, setIsMobile] = useState(false)
   const [regionCounts, setRegionCounts] = useState({})
   const headerRef = useRef(null)
+  const topSlot = useAdSlot('home_top')
 
   useEffect(() => {
     setMounted(true)
@@ -46,6 +49,11 @@ export default function Header() {
 
   return (
     <>
+      {/* 전체 페이지 상단 배너 */}
+      <div className="ad-banner-slot">
+        <AdSlot slot="home_top" label="상단 배너 광고" slotData={topSlot} />
+      </div>
+
       <header ref={headerRef} className="header" style={{ position:'sticky', top:0, zIndex:200 }}>
         <div className="header-inner">
           <Link href="/" className="logo">

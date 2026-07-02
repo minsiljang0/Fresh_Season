@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
+import { AdSlot } from '../../../components/AdSlot'
+import { useAdSlot } from '../../../lib/AdSlotsContext'
 
 const LABEL = { free: '자유게시판', request: '부탁해요' }
 const DESC = {
@@ -16,6 +18,7 @@ export default function BoardIndex() {
   const { type } = router.query
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const middleSlot = useAdSlot('home_middle')
 
   useEffect(() => {
     if (!type || !LABEL[type]) return
@@ -50,6 +53,11 @@ export default function BoardIndex() {
           <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>{LABEL[type]}</h1>
           <p style={{ fontSize: 13, color: 'var(--text2)' }}>{DESC[type]}</p>
         </section>
+
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ padding: 0, margin: '0 0 24px' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
 
         <section style={{ margin: '20px 0 28px', display: 'flex', justifyContent: 'flex-end' }}>
           <Link href={`/board/${type}/write`} className="month-pill"

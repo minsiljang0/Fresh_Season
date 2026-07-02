@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
+import { AdSlot } from '../../../components/AdSlot'
+import { useAdSlot } from '../../../lib/AdSlotsContext'
 
 const LABEL = { free: '자유게시판', request: '부탁해요' }
 
@@ -15,6 +17,7 @@ export default function BoardDetail() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const middleSlot = useAdSlot('home_middle')
 
   const fetchPost = async (pw) => {
     setError('')
@@ -80,6 +83,11 @@ export default function BoardDetail() {
       <Head><title>{post?.title || LABEL[type]} — Fresh Season</title></Head>
       <Header />
       <main className="wrap" style={{ maxWidth: 720 }}>
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ maxWidth: 720, padding: 0, margin: '24px auto' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
+
         {loading ? (
           <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text2)' }}>불러오는 중...</div>
         ) : needPassword ? (

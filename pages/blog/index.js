@@ -6,6 +6,8 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { REGIONS } from '../../lib/regions'
 import { HEALTH_CATEGORIES } from '../../lib/blogCategories'
+import { AdSlot } from '../../components/AdSlot'
+import { useAdSlot } from '../../lib/AdSlotsContext'
 
 export default function BlogIndex() {
   const [posts, setPosts] = useState([])
@@ -15,6 +17,7 @@ export default function BlogIndex() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [healthCat, setHealthCat] = useState('') // 건강효능 드롭다운은 검색어로 매핑된다
+  const middleSlot = useAdSlot('home_middle')
 
   useEffect(() => {
     fetch('/api/blog/categories').then(r => r.json())
@@ -55,6 +58,11 @@ export default function BlogIndex() {
           <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>블로그</h1>
           <p style={{ fontSize: 13, color: 'var(--text2)' }}>제철 식재료 × 건강 정보 × TV 레시피</p>
         </section>
+
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ padding: 0, margin: '0 0 24px' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
 
         {/* 필터: 전체 / 지역 드롭다운 / 건강효능 드롭다운 / 검색 / 커스텀 카테고리 칩 */}
         <section style={{ marginBottom: 28 }}>

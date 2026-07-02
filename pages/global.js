@@ -4,6 +4,8 @@ import { SkeletonGrid } from '../components/SkeletonCard'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { resolveCoupangDisplay } from '../lib/coupang'
+import { AdSlot } from '../components/AdSlot'
+import { useAdSlot } from '../lib/AdSlotsContext'
 
 // 카테고리별 색상/아이콘
 const CAT_META = {
@@ -36,6 +38,7 @@ function getBenefitColor(cat) {
 }
 
 export default function GlobalPage() {
+  const middleSlot = useAdSlot('home_middle')
   const [ingredients, setIngredients] = useState([])
   const [healthMap, setHealthMap]     = useState({})   // ingredient_id → [benefit]
   const [loading, setLoading]         = useState(true)
@@ -127,6 +130,11 @@ export default function GlobalPage() {
       </Head>
       <Header />
       <main style={{ maxWidth:1100, margin:'0 auto', padding:'32px 16px 80px' }}>
+
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ maxWidth: '100%', padding: 0, margin: '0 0 20px' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
 
         {/* 히어로 */}
         <div style={{

@@ -6,6 +6,8 @@ import Footer from '../../components/Footer'
 import { REGIONS, getRegion } from '../../lib/regions'
 import { SkeletonGrid } from '../../components/SkeletonCard'
 import { SEASONS } from '../../lib/seasons'
+import { AdSlot } from '../../components/AdSlot'
+import { useAdSlot } from '../../lib/AdSlotsContext'
 
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12]
 
@@ -18,6 +20,7 @@ export async function getStaticProps({ params }) {
 
 export default function RegionPage({ regionId }) {
   const region = getRegion(regionId)
+  const middleSlot = useAdSlot('home_middle')
   const [activeSeason, setActiveSeason] = useState(null)
   const [activeMonth, setActiveMonth]   = useState(null)
   const [showCities, setShowCities]     = useState(false)
@@ -94,6 +97,11 @@ export default function RegionPage({ regionId }) {
       </Head>
       <Header />
       <main className="wrap">
+
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ padding: 0, margin: '20px 0 0' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
 
         {/* 지역 헤더 */}
         <section className="detail-header">

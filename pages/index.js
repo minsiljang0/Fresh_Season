@@ -6,6 +6,8 @@ import Footer from '../components/Footer'
 import { REGIONS } from '../lib/regions'
 import { SEASONS, getCurrentSeason, getSeasonByMonth } from '../lib/seasons'
 import { SkeletonGrid } from '../components/SkeletonCard'
+import { AdSlot } from '../components/AdSlot'
+import { useAdSlot } from '../lib/AdSlotsContext'
 
 export default function Home() {
   const [activeMonth, setActiveMonth] = useState(new Date().getMonth() + 1)
@@ -14,6 +16,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
 
   const currentSeason = getCurrentSeason()
+  const middleSlot = useAdSlot('home_middle')
 
   // DB 데이터만 로드
   useEffect(() => {
@@ -115,6 +118,11 @@ export default function Home() {
           </h1>
           <p className="hero-sub">전국 제철 식재료 × 건강 효능 × TV 방영 레시피</p>
         </section>
+
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ padding: 0, margin: '0 0 32px' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
 
         {/* 월 선택 */}
         <section style={{ marginBottom: 28 }}>

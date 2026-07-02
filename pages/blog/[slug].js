@@ -6,6 +6,8 @@ import { REGIONS } from '../../lib/regions'
 import { parseMarkdown } from '../../lib/parseMarkdown'
 import { isStepCategory } from '../../lib/blogCategories'
 import { extractStepImages, splitStepsHtml } from '../../lib/stepContent'
+import { AdSlot } from '../../components/AdSlot'
+import { useAdSlot } from '../../lib/AdSlotsContext'
 
 // ── 관련도 점수 계산: 같은 지역 카테고리(+3), 태그(+2/개), 제목 키워드 겹침(+1/개)
 // 기존 글처럼 category/tags가 비어있어 점수가 전부 0이 되더라도
@@ -234,6 +236,7 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
   const inlineUsedIds = new Set(relatedPool.map(p => p.id))
   const stepMode = post ? isStepCategory(post.category) : false
   const { introHtml, steps } = stepMode ? splitStepsHtml(html) : { introHtml: '', steps: [] }
+  const middleSlot = useAdSlot('home_middle')
 
   return (
     <>
@@ -296,6 +299,11 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
 
       <Header />
       <main className="wrap" style={{ maxWidth: 780 }}>
+        {/* 전체 페이지 중단 배너 */}
+        <div className="ad-banner-slot" style={{ maxWidth: 780, padding: 0, margin: '20px auto' }}>
+          <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
+        </div>
+
         {!post ? (
           <div style={{ padding: '60px 0', textAlign: 'center' }}>
             <p style={{ color: 'var(--text2)', marginBottom: 16 }}>글을 찾을 수 없어요.</p>
