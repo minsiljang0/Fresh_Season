@@ -49,17 +49,14 @@ export default function GlobalPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const [ingRes, benefitRes, settingsRes] = await Promise.all([
+        const [ingRes, benefitRes, coupangRes] = await Promise.all([
           fetch('/api/admin/map-data?type=ingredients'),
           fetch('/api/admin/map-data?type=health_benefits'),
-          fetch('/api/settings/get'),
+          fetch('/api/admin/coupang'),
         ])
         const allIng      = ingRes.ok  ? await ingRes.json()     : []
         const allBenefits = benefitRes.ok ? await benefitRes.json() : []
-        if (settingsRes.ok) {
-          const s = await settingsRes.json()
-          if (s.coupang) setCoupangSettings(s.coupang)
-        }
+        if (coupangRes.ok) setCoupangSettings(await coupangRes.json())
 
         // is_global 식재료만 필터
         const globalIng = allIng.filter(i => i.is_global)
