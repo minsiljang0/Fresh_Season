@@ -7,6 +7,7 @@ import { REGIONS } from '../../lib/regions'
 import { SEASONAL_FOODS_SEED } from '../../lib/seasonalFoods'
 import { AdSlot } from '../../components/AdSlot'
 import { useAdSlot } from '../../lib/AdSlotsContext'
+import { resolveCoupangDisplay } from '../../lib/coupang'
 
 // getStaticPaths — 빌드 시 DB에서 전체 식재료 이름 가져와 정적 경로 생성
 export async function getStaticPaths() {
@@ -40,6 +41,22 @@ export default function IngredientPage({ ingredientName }) {
   const [loading, setLoading] = useState(true)
   const [posts, setPosts] = useState([])
   const middleSlot = useAdSlot('home_middle')
+  const [coupangBase, setCoupangBase] = useState(null)
+  const [coupangLinks, setCoupangLinks] = useState([])
+  const [coupangWidgets, setCoupangWidgets] = useState([])
+
+  // 쿠팡 파트너스 기본 설정(전체 폴백 링크/위젯) 로드 — 재료별 개별 링크가 없을 때 대체 노출용
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/coupang').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/admin/coupang-links').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/admin/coupang-widgets').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([base, links, widgets]) => {
+      setCoupangBase(base)
+      setCoupangLinks(Array.isArray(links) ? links : [])
+      setCoupangWidgets(Array.isArray(widgets) ? widgets : [])
+    })
+  }, [])
 
   // DB에서만 데이터 로드 — SEED 폴백 없음
   useEffect(() => {
@@ -179,6 +196,38 @@ export default function IngredientPage({ ingredientName }) {
             <p className="detail-label" style={{ color: '#16a34a' }}>💚 건강 효능</p>
             <p style={{ fontSize: 14, lineHeight: 1.7 }}>{food.health}</p>
           </div>
+
+          {/* 쿠팡에서 구매하기 */}
+          {(() => {
+            const cp = resolveCoupangDisplay(coupangBase, coupangLinks, coupangWidgets, food, ingredientName)
+            if (cp.links.length === 0 && cp.widgets.length === 0) return null
+            return (
+              <div className="detail-box">
+                <p className="detail-label">🛒 {ingredientName} 구매하기</p>
+                {cp.links.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {cp.links.map((l, i) => (
+                      <a key={i} href={l.url} target="_blank" rel="noopener noreferrer sponsored"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          fontSize: 13, fontWeight: 700, color: '#fff',
+                          background: '#ea580c', borderRadius: 10, padding: '9px 16px',
+                          textDecoration: 'none',
+                        }}>
+                        🛒 {l.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {cp.widgets.map((html, i) => (
+                  <div key={i} style={{ marginTop: 8 }} dangerouslySetInnerHTML={{ __html: html }} />
+                ))}
+                <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 8 }}>
+                  이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.
+                </p>
+              </div>
+            )
+          })()}
 
           {/* 주의사항 */}
           {food.caution && (

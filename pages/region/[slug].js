@@ -8,6 +8,7 @@ import { SkeletonGrid } from '../../components/SkeletonCard'
 import { SEASONS } from '../../lib/seasons'
 import { AdSlot } from '../../components/AdSlot'
 import { useAdSlot } from '../../lib/AdSlotsContext'
+import { resolveCoupangDisplay } from '../../lib/coupang'
 
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12]
 
@@ -27,6 +28,22 @@ export default function RegionPage({ regionId }) {
   const [allFoods, setAllFoods]         = useState([])
   const [loading, setLoading]           = useState(true)
   const [isMobile, setIsMobile]         = useState(false)
+  const [coupangBase, setCoupangBase] = useState(null)
+  const [coupangLinks, setCoupangLinks] = useState([])
+  const [coupangWidgets, setCoupangWidgets] = useState([])
+
+  // 쿠팡 파트너스 기본 설정(전체 폴백 링크/위젯) 로드
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/coupang').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/admin/coupang-links').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/admin/coupang-widgets').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([base, links, widgets]) => {
+      setCoupangBase(base)
+      setCoupangLinks(Array.isArray(links) ? links : [])
+      setCoupangWidgets(Array.isArray(widgets) ? widgets : [])
+    })
+  }, [])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -126,6 +143,38 @@ export default function RegionPage({ regionId }) {
             </div>
           )}
         </section>
+
+        {/* 지역 특산물 쇼핑하기 */}
+        {(() => {
+          const cp = resolveCoupangDisplay(coupangBase, coupangLinks, coupangWidgets, {}, region.name)
+          if (cp.links.length === 0 && cp.widgets.length === 0) return null
+          return (
+            <section className="detail-box" style={{ marginBottom: 24 }}>
+              <p className="detail-label">🛒 {region.name} 특산물 쇼핑하기</p>
+              {cp.links.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {cp.links.map((l, i) => (
+                    <a key={i} href={l.url} target="_blank" rel="noopener noreferrer sponsored"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        fontSize: 13, fontWeight: 700, color: '#fff',
+                        background: '#ea580c', borderRadius: 10, padding: '9px 16px',
+                        textDecoration: 'none',
+                      }}>
+                      🛒 {l.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+              {cp.widgets.map((html, i) => (
+                <div key={i} style={{ marginTop: 8 }} dangerouslySetInnerHTML={{ __html: html }} />
+              ))}
+              <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 8 }}>
+                이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.
+              </p>
+            </section>
+          )
+        })()}
 
         {/* 계절 필터 */}
         <section style={{ marginBottom:10 }}>
