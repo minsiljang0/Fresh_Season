@@ -63,7 +63,7 @@ export default function AdsensePanel({ adminToken, adSlots, setAdSlots, onSaved 
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {adSlots.map(slot => {
+          {(Array.isArray(adSlots) ? adSlots : []).map(slot => {
             const isPending = slot.id in pendingActive
             const activeVal = isPending ? pendingActive[slot.id] : slot.active
             const isSaving = savingId === slot.id

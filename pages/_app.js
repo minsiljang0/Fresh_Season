@@ -26,6 +26,8 @@ function SideRailAds() {
 export default function App({ Component, pageProps }) {
   const router = useRouter()
   const canonical = `${BASE_URL}${router.asPath.split('?')[0]}`
+  // 관리자 페이지·대기 화면에는 사이트 광고 레일을 노출하지 않는다
+  const showSiteAds = !router.pathname.startsWith('/admin') && router.pathname !== '/redirect'
 
   return (
     <AdSlotsProvider>
@@ -52,7 +54,7 @@ export default function App({ Component, pageProps }) {
         }} />
       </Head>
       <CoupangRedirectGuard />
-      <SideRailAds />
+      {showSiteAds && <SideRailAds />}
       <Component {...pageProps} />
     </AdSlotsProvider>
   )

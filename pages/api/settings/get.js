@@ -45,6 +45,19 @@ const DEFAULTS = {
   adSlots: DEFAULT_AD_SLOTS,
 }
 
+// DB에 저장된 값이 배열이 아니라(예: JSON 문자열로 저장된 경우 등) 내려와도
+// 항상 배열을 반환하도록 방어 — 그렇지 않으면 관리자 페이지의 .map()에서 크래시 발생
+function normalizeAdSlots(raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    } catch {}
+  }
+  return DEFAULTS.adSlots
+}
+
 // Supabase 없이도 기본값 반환
 function getSupabaseClient() {
   const url = process.env.SUPABASE_URL
@@ -77,7 +90,7 @@ export default async function handler(req, res) {
       privacy:   map['site:privacy']     ?? DEFAULTS.privacy,
       termsEn:   map['site:terms_en']    ?? null,
       privacyEn: map['site:privacy_en']  ?? null,
-      adSlots:   map['site:ad_slots']    ?? DEFAULTS.adSlots,
+      adSlots:   normalizeAdSlots(map['site:ad_slots']),
     })
   } catch {
     res.status(200).json(DEFAULTS)

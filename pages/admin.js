@@ -121,7 +121,7 @@ export default function Admin() {
       const data = await res.json()
       if (data.cooldown !== undefined) setCooldownDur(data.cooldown)
       if (data.adsOn !== undefined) setAdsOn(data.adsOn)
-      if (data.adSlots) setAdSlots(data.adSlots)
+      if (Array.isArray(data.adSlots)) setAdSlots(data.adSlots)
       if (data.terms) setTerms(data.terms)
       if (data.privacy) setPrivacy(data.privacy)
       if (data.termsEn) setTermsEn(data.termsEn)
