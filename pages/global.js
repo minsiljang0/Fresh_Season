@@ -43,20 +43,23 @@ export default function GlobalPage() {
   const [selBenefit, setSelBenefit]   = useState('all')
   const [query, setQuery]             = useState('')
   const [allBenefits, setAllBenefits] = useState([])
-  const [coupangSettings, setCoupangSettings] = useState(null)
+  const [coupangBase, setCoupangBase]   = useState(null)
+  const [coupangLinks, setCoupangLinks] = useState([])
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        const [ingRes, benefitRes, coupangRes] = await Promise.all([
+        const [ingRes, benefitRes, coupangRes, coupangLinksRes] = await Promise.all([
           fetch('/api/admin/map-data?type=ingredients'),
           fetch('/api/admin/map-data?type=health_benefits'),
           fetch('/api/admin/coupang'),
+          fetch('/api/admin/coupang-links'),
         ])
         const allIng      = ingRes.ok  ? await ingRes.json()     : []
         const allBenefits = benefitRes.ok ? await benefitRes.json() : []
-        if (coupangRes.ok) setCoupangSettings(await coupangRes.json())
+        if (coupangRes.ok) setCoupangBase(await coupangRes.json())
+        if (coupangLinksRes.ok) setCoupangLinks(await coupangLinksRes.json())
 
         // is_global 식재료만 필터
         const globalIng = allIng.filter(i => i.is_global)
@@ -311,24 +314,28 @@ export default function GlobalPage() {
 
                     {/* 쿠팡 링크 (개별 등록이 없으면 관리자 설정값으로 대체 노출) */}
                     {(() => {
-                      const cp = resolveCoupangDisplay(coupangSettings, ing, ing.name)
-                      if (!cp.url && !cp.widgetHtml) return null
+                      const cp = resolveCoupangDisplay(coupangBase, coupangLinks, ing, ing.name)
+                      if (cp.links.length === 0 && cp.widgets.length === 0) return null
                       return (
                         <div style={{ marginTop:12 }}>
-                          {cp.url && (
-                            <a href={cp.url} target="_blank" rel="noopener noreferrer sponsored"
-                              style={{
-                                display:'inline-flex', alignItems:'center', gap:5,
-                                fontSize:12, fontWeight:700, color:'#fff',
-                                background:'#ea580c', borderRadius:8, padding:'6px 12px',
-                                textDecoration:'none',
-                              }}>
-                              🛒 {cp.isFallback ? '쿠팡에서 관련 상품 보기' : '쿠팡에서 구매하기'}
-                            </a>
+                          {cp.links.length > 0 && (
+                            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                              {cp.links.map((l, i) => (
+                                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer sponsored"
+                                  style={{
+                                    display:'inline-flex', alignItems:'center', gap:5,
+                                    fontSize:12, fontWeight:700, color:'#fff',
+                                    background:'#ea580c', borderRadius:8, padding:'6px 12px',
+                                    textDecoration:'none',
+                                  }}>
+                                  🛒 {l.label}
+                                </a>
+                              ))}
+                            </div>
                           )}
-                          {cp.widgetHtml && (
-                            <div style={{ marginTop:6 }} dangerouslySetInnerHTML={{ __html: cp.widgetHtml }} />
-                          )}
+                          {cp.widgets.map((html, i) => (
+                            <div key={i} style={{ marginTop:6 }} dangerouslySetInnerHTML={{ __html: html }} />
+                          ))}
                           <div style={{ fontSize:10, color:'#9ca3af', marginTop:4 }}>
                             이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
                           </div>
