@@ -103,9 +103,9 @@ export function AdSlot({ slot, format = 'auto', tall = false, label = '광고', 
   if (isOff) return null
 
   if (injectHtml) return (
-    <div style={extraStyle}>
+    <div style={{ ...extraStyle, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       {number && <AdBadge number={number} label={label} />}
-      <div ref={codeRef} />
+      <div ref={codeRef} style={{ maxWidth: '100%' }} />
     </div>
   )
 
@@ -155,7 +155,7 @@ export function SidebarAd({ slot, label = '광고', number, slotData = null }) {
   if (isOff) return null
 
   if (injectHtml) return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       {number && (
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -164,7 +164,7 @@ export function SidebarAd({ slot, label = '광고', number, slotData = null }) {
           fontSize: 11, fontWeight: 800, marginBottom: 6,
         }}>{number}</span>
       )}
-      <div ref={codeRef} />
+      <div ref={codeRef} style={{ maxWidth: '100%' }} />
     </div>
   )
 
