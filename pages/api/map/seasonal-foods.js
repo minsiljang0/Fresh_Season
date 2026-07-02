@@ -15,6 +15,7 @@ export default async function handler(req, res) {
             is_special, is_limited, is_superfood, is_global, is_brand,
             season_badge, jeolgi_badge, special_badge, habitat_badge, farming_badge,
             gender, age_groups, limited_days,
+            coupang_url, coupang_banner_html,
             ingredient_health ( health_benefits ( id, name, category ) )
           )
         `)
@@ -62,6 +63,8 @@ export default async function handler(req, res) {
           gender:        row.ingredients.gender || 'all',
           age_groups:    row.ingredients.age_groups || [],
           limited_days:  row.ingredients.limited_days || null,
+          coupang_url:         row.ingredients.coupang_url || '',
+          coupang_banner_html: row.ingredients.coupang_banner_html || '',
           source:        'managed',
         }
       })
