@@ -41,18 +41,15 @@ export default function IngredientPage({ ingredientName }) {
   const [loading, setLoading] = useState(true)
   const [posts, setPosts] = useState([])
   const middleSlot = useAdSlot('home_middle')
-  const [coupangBase, setCoupangBase] = useState(null)
   const [coupangLinks, setCoupangLinks] = useState([])
   const [coupangWidgets, setCoupangWidgets] = useState([])
 
-  // 쿠팡 파트너스 기본 설정(전체 폴백 링크/위젯) 로드 — 재료별 개별 링크가 없을 때 대체 노출용
+  // 쿠팡 파트너스 링크/위젯 목록 로드 — 재료별 개별 링크가 없을 때 대체 노출용
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/coupang').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/admin/coupang-links').then(r => r.ok ? r.json() : []).catch(() => []),
       fetch('/api/admin/coupang-widgets').then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([base, links, widgets]) => {
-      setCoupangBase(base)
+    ]).then(([links, widgets]) => {
       setCoupangLinks(Array.isArray(links) ? links : [])
       setCoupangWidgets(Array.isArray(widgets) ? widgets : [])
     })
@@ -199,7 +196,7 @@ export default function IngredientPage({ ingredientName }) {
 
           {/* 쿠팡에서 구매하기 */}
           {(() => {
-            const cp = resolveCoupangDisplay(coupangBase, coupangLinks, coupangWidgets, food, ingredientName)
+            const cp = resolveCoupangDisplay(coupangLinks, coupangWidgets, food)
             if (cp.links.length === 0 && cp.widgets.length === 0) return null
             return (
               <div className="detail-box">

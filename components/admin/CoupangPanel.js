@@ -2,137 +2,34 @@ import { useState, useEffect, useCallback } from 'react'
 import { S, Toggle } from './AdminUI'
 
 const ACCENT = '#ea580c'
-const DEFAULT_TEMPLATE = 'https://www.coupang.com/np/search?component=&q={query}&channel={channel}'
 
-const EMPTY_BASE = {
-  partner_path: '',
-  partner_id: '',
-  search_template: DEFAULT_TEMPLATE,
-  fallback_enabled: false,
-}
 const EMPTY_LINK   = { label: '', url: '', enabled: true }
 const EMPTY_WIDGET  = { label: '', widget_html: '', enabled: true }
 
-function ResultToast({ ok, message, onClose }) {
-  return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:32, width:360, textAlign:'center', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
-        <div style={{ fontSize:36, marginBottom:12 }}>{ok ? '✅' : '❌'}</div>
-        <div style={{ fontSize:16, fontWeight:700, color:'#0f1f0f', marginBottom:8 }}>
-          {ok ? '저장되었습니다' : '저장에 실패했습니다'}
-        </div>
-        {message && <div style={{ fontSize:13, color:'#6b7280', marginBottom:20, wordBreak:'break-all' }}>{message}</div>}
-        <button onClick={onClose} style={{ ...S.btn(ok ? '#16a34a' : '#ef4444'), width:'100%' }}>확인</button>
-      </div>
-    </div>
-  )
-}
-
-// ── 1) 기본 정보 카드 (하나) ────────────────────────────────
-function BaseInfoCard({ adminToken }) {
-  const [form, setForm] = useState(EMPTY_BASE)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [result, setResult] = useState(null)
-  const [previewQuery, setPreviewQuery] = useState('제철 딸기')
-
-  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/admin/coupang')
-      const data = await res.json()
-      setForm(p => ({ ...p, ...data }))
-    } catch {
-      setResult({ ok: false, message: '설정을 불러오지 못했습니다' })
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { load() }, [load])
-
-  const save = async () => {
-    setSaving(true)
-    try {
-      const res = await fetch('/api/admin/coupang', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-        body: JSON.stringify(form),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (res.ok) setResult({ ok: true, message: '' })
-      else setResult({ ok: false, message: data.error || `HTTP ${res.status}` })
-    } catch (e) {
-      setResult({ ok: false, message: e.message || '서버 연결 오류' })
-    }
-    setSaving(false)
-  }
-
-  const previewUrl = form.search_template
-    ? form.search_template
-        .replace('{query}', encodeURIComponent(previewQuery))
-        .replace('{channel}', encodeURIComponent(form.partner_id || ''))
-    : form.partner_path
-
-  if (loading) return <div style={{ ...S.card, color:'#888', textAlign:'center' }}>불러오는 중...</div>
-
+// ── 1) 쿠팡파트너스 바로가기 카드 ────────────────────────────
+// 예전에는 여기서 "기본 경로 / 검색 템플릿 / 자동 검색 링크 생성" 설정을 했지만,
+// 쿠팡 파트너스 공식 링크 생성 도구를 거치지 않은 URL은 실적으로 집계되지 않아
+// 기능 자체를 제거했다. 링크는 반드시 쿠팡 파트너스 사이트에서
+// "간편 링크 만들기" 등으로 직접 생성한 뒤 아래 "링크 목록"에 등록해야 한다.
+function ShortcutCard() {
   return (
     <div style={S.card}>
-      <div style={S.cardTitle}>🔗 파트너스 기본 정보</div>
-      <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-        <div>
-          <label style={S.label}>쿠팡 파트너스로 가는 링크 (기본 경로)</label>
-          <input value={form.partner_path} onChange={e => set('partner_path', e.target.value)}
-            placeholder="https://link.coupang.com/a/xxxxxxx" style={S.input} />
-          <div style={{ fontSize:11, color:'#9ca3af', marginTop:4 }}>
-            검색 템플릿을 쓰지 않을 경우, 상품에 링크가 없을 때 이 경로로 대체 연결됩니다.
-          </div>
-        </div>
-        <div>
-          <label style={S.label}>내 파트너스 번호 (채널 ID / SubID)</label>
-          <input value={form.partner_id} onChange={e => set('partner_id', e.target.value)}
-            placeholder="예: AF1234567" style={S.input} />
-        </div>
-        <div>
-          <label style={S.label}>검색 링크 템플릿 (선택)</label>
-          <input value={form.search_template} onChange={e => set('search_template', e.target.value)}
-            placeholder={DEFAULT_TEMPLATE} style={{ ...S.input, fontFamily:'monospace', fontSize:12 }} />
-          <div style={{ fontSize:11, color:'#9ca3af', marginTop:4 }}>
-            {'{query}'}는 상품명, {'{channel}'}은 위 파트너스 번호로 자동 치환됩니다.
-          </div>
-        </div>
-
-        <div style={{ background:'#fafaf9', border:'1px dashed #d1e8d1', borderRadius:8, padding:'10px 14px' }}>
-          <div style={{ fontSize:11, color:'#9ca3af', marginBottom:6 }}>미리보기 (예시 상품명)</div>
-          <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:6 }}>
-            <input value={previewQuery} onChange={e => setPreviewQuery(e.target.value)}
-              style={{ ...S.input, flex:1, padding:'6px 10px', fontSize:12 }} />
-          </div>
-          <div style={{ fontSize:12, color:ACCENT, wordBreak:'break-all' }}>{previewUrl || '(경로 미설정)'}</div>
-        </div>
-
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div>
-            <div style={{ fontSize:14, fontWeight:600, marginBottom:2 }}>이 기본 정보로 자동 검색 링크 생성</div>
-            <div style={{ fontSize:12, color:'#666' }}>OFF면 이 검색 링크는 생성되지 않고, 아래 링크/위젯 목록만 노출됩니다</div>
-          </div>
-          <Toggle value={form.fallback_enabled} onChange={v => set('fallback_enabled', v)} />
-        </div>
-
-        <button onClick={save} disabled={saving} style={{ ...S.btn(ACCENT), opacity: saving ? 0.6 : 1 }}>
-          {saving ? '저장 중...' : '기본 정보 저장'}
-        </button>
+      <div style={S.cardTitle}>🔗 쿠팡 파트너스</div>
+      <div style={{ fontSize:12, color:'#888', marginBottom:14, lineHeight:1.6 }}>
+        링크/배너는 반드시 쿠팡 파트너스 사이트에서 직접 생성해야 실적(수익)으로 집계됩니다.
+        생성한 링크는 아래 "링크 목록"에, 위젯 코드는 "위젯 목록"에 등록하세요.
       </div>
-
-      {result && <ResultToast ok={result.ok} message={result.message} onClose={() => setResult(null)} />}
+      <a href="https://partners.coupang.com/" target="_blank" rel="noopener noreferrer"
+        style={{ ...S.btn(ACCENT), display:'inline-flex', alignItems:'center', justifyContent:'center', textDecoration:'none' }}>
+        🔗 쿠팡파트너스 바로가기
+      </a>
     </div>
   )
 }
 
 // ── 공용: 여러 개 추가되는 목록 카드 ─────────────────────────
 // fields: [{ key, label, placeholder, multiline }]
-function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDeleted, onCancelNew }) {
+function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDeleted, onCancelNew, renderPreview }) {
   const [form, setForm] = useState(item)
   const [saving, setSaving] = useState(false)
   const [open, setOpen] = useState(isNew)
@@ -182,6 +79,15 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
         <span style={{ fontSize:13, color:'#9ca3af' }}>{open ? '▲' : '▼'}</span>
       </div>
 
+      {renderPreview && (form.widget_html || form.url) && (
+        <div style={{
+          marginTop:10, padding:'10px 12px', background:'#fafaf9',
+          border:'1px dashed #d1e8d1', borderRadius:8, overflow:'auto',
+        }}>
+          {renderPreview(form)}
+        </div>
+      )}
+
       {open && (
         <div style={{ marginTop:14, display:'flex', flexDirection:'column', gap:12 }}>
           {fields.map(f => (
@@ -219,7 +125,7 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
   )
 }
 
-function RepeatableListCard({ adminToken, title, description, apiPath, empty, fields, addLabel }) {
+function RepeatableListCard({ adminToken, title, description, apiPath, empty, fields, addLabel, renderPreview }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [newDraft, setNewDraft] = useState(null)
@@ -254,12 +160,12 @@ function RepeatableListCard({ adminToken, title, description, apiPath, empty, fi
         <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:14 }}>
           {items.map(it => (
             <RepeatableRow key={it.id} adminToken={adminToken} item={it} isNew={false}
-              apiPath={apiPath} fields={fields}
+              apiPath={apiPath} fields={fields} renderPreview={renderPreview}
               onSaved={onSavedExisting} onDeleted={onDeleted} />
           ))}
           {newDraft && (
             <RepeatableRow adminToken={adminToken} item={newDraft} isNew={true}
-              apiPath={apiPath} fields={fields}
+              apiPath={apiPath} fields={fields} renderPreview={renderPreview}
               onSaved={onSavedNew} onDeleted={() => {}} onCancelNew={() => setNewDraft(null)} />
           )}
           {items.length === 0 && !newDraft && (
@@ -283,11 +189,11 @@ export default function CoupangPanel({ adminToken }) {
       <div style={{ marginBottom:20 }}>
         <div style={{ fontSize:17, fontWeight:700, color:'#0f1f0f' }}>🛒 쿠팡 관리</div>
         <div style={{ fontSize:12, color:'#888', marginTop:3 }}>
-          기본 정보를 설정하고, 링크와 위젯을 각각 원하는 만큼 따로 추가하세요.
+          쿠팡 파트너스 사이트에서 만든 링크/위젯을 등록하세요.
         </div>
       </div>
 
-      <BaseInfoCard adminToken={adminToken} />
+      <ShortcutCard />
 
       <RepeatableListCard
         adminToken={adminToken}
@@ -313,6 +219,9 @@ export default function CoupangPanel({ adminToken }) {
           { key:'label', label:'이름 (구분용)', placeholder:'예: 딸기 배너, 냄비 배너' },
           { key:'widget_html', label:'위젯 코드', placeholder:'<iframe src="https://ads-partners.coupang.com/widgets.html?..." ...></iframe>', multiline:true },
         ]}
+        renderPreview={(item) => (
+          <div dangerouslySetInnerHTML={{ __html: item.widget_html || '' }} />
+        )}
       />
     </div>
   )

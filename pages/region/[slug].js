@@ -28,18 +28,15 @@ export default function RegionPage({ regionId }) {
   const [allFoods, setAllFoods]         = useState([])
   const [loading, setLoading]           = useState(true)
   const [isMobile, setIsMobile]         = useState(false)
-  const [coupangBase, setCoupangBase] = useState(null)
   const [coupangLinks, setCoupangLinks] = useState([])
   const [coupangWidgets, setCoupangWidgets] = useState([])
 
-  // 쿠팡 파트너스 기본 설정(전체 폴백 링크/위젯) 로드
+  // 쿠팡 파트너스 링크/위젯 목록 로드
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/coupang').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/admin/coupang-links').then(r => r.ok ? r.json() : []).catch(() => []),
       fetch('/api/admin/coupang-widgets').then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([base, links, widgets]) => {
-      setCoupangBase(base)
+    ]).then(([links, widgets]) => {
       setCoupangLinks(Array.isArray(links) ? links : [])
       setCoupangWidgets(Array.isArray(widgets) ? widgets : [])
     })
@@ -146,7 +143,7 @@ export default function RegionPage({ regionId }) {
 
         {/* 지역 특산물 쇼핑하기 */}
         {(() => {
-          const cp = resolveCoupangDisplay(coupangBase, coupangLinks, coupangWidgets, {}, region.name)
+          const cp = resolveCoupangDisplay(coupangLinks, coupangWidgets, {})
           if (cp.links.length === 0 && cp.widgets.length === 0) return null
           return (
             <section className="detail-box" style={{ marginBottom: 24 }}>
