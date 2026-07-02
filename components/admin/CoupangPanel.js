@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { S, Toggle, Toast } from './AdminUI'
+import { S, Toggle } from './AdminUI'
 
 const ACCENT = '#ea580c'
 
@@ -14,14 +14,28 @@ const EMPTY = {
   fallback_mode: 'link',
 }
 
+function ResultModal({ ok, message, onClose }) {
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ background:'#fff', border:'1px solid #d1e8d1', borderRadius:14, padding:32, width:360, textAlign:'center', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div style={{ fontSize:36, marginBottom:12 }}>{ok ? '✅' : '❌'}</div>
+        <div style={{ fontSize:16, fontWeight:700, color:'#0f1f0f', marginBottom:8 }}>
+          {ok ? '저장되었습니다' : '저장에 실패했습니다'}
+        </div>
+        {message && <div style={{ fontSize:13, color:'#6b7280', marginBottom:20, wordBreak:'break-all' }}>{message}</div>}
+        <button onClick={onClose} style={{ ...S.btn(ok ? '#16a34a' : '#ef4444'), width:'100%' }}>확인</button>
+      </div>
+    </div>
+  )
+}
+
 export default function CoupangPanel({ adminToken }) {
   const [form, setForm] = useState(EMPTY)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState('')
+  const [result, setResult] = useState(null) // { ok, message } | null
   const [previewQuery, setPreviewQuery] = useState('제철 딸기')
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
   const load = useCallback(async () => {
@@ -31,7 +45,7 @@ export default function CoupangPanel({ adminToken }) {
       const data = await res.json()
       setForm(p => ({ ...p, ...data }))
     } catch {
-      showToast('❌ 불러오기 실패')
+      setResult({ ok: false, message: '설정을 불러오지 못했습니다' })
     }
     setLoading(false)
   }, [])
@@ -48,12 +62,12 @@ export default function CoupangPanel({ adminToken }) {
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
-        showToast('✅ 저장되었습니다')
+        setResult({ ok: true, message: '' })
       } else {
-        showToast(`❌ 저장 실패${data.error ? `: ${data.error}` : ''}`)
+        setResult({ ok: false, message: data.error || `HTTP ${res.status}` })
       }
-    } catch {
-      showToast('❌ 저장 실패: 서버 연결 오류')
+    } catch (e) {
+      setResult({ ok: false, message: e.message || '서버 연결 오류' })
     }
     setSaving(false)
   }
@@ -167,7 +181,7 @@ export default function CoupangPanel({ adminToken }) {
         {saving ? '저장 중...' : '저장하기'}
       </button>
 
-      <Toast msg={toast} />
+      {result && <ResultModal ok={result.ok} message={result.message} onClose={() => setResult(null)} />}
     </div>
   )
 }
