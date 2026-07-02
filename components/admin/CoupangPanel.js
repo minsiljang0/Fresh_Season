@@ -4,7 +4,21 @@ import { S, Toggle } from './AdminUI'
 const ACCENT = '#ea580c'
 
 const EMPTY_LINK   = { label: '', url: '', enabled: true }
-const EMPTY_WIDGET  = { label: '', widget_html: '', enabled: true }
+const EMPTY_WIDGET  = { label: '', size: '728x90', widget_html: '', enabled: true }
+
+// 쿠팡 파트너스 배너 생성 페이지 사이즈 탭 그대로 + 우리 사이트 어느 슬롯에 맞는지 표시
+const BANNER_SIZE_OPTIONS = [
+  { value: '728x90',  label: '728×90  → 상단/중단/하단 배너' },
+  { value: '300x250', label: '300×250 → 쿠팡 이동 대기화면' },
+  { value: '160x600', label: '160×600 → 좌측/우측 사이드' },
+  { value: '600x900', label: '600×900' },
+  { value: '320x480', label: '320×480' },
+  { value: '320x100', label: '320×100' },
+  { value: '320x50',  label: '320×50' },
+  { value: '200x200', label: '200×200' },
+  { value: '150x60',  label: '150×60' },
+  { value: '120x60',  label: '120×60' },
+]
 
 // ── 1) 쿠팡파트너스 바로가기 카드 ────────────────────────────
 // 예전에는 여기서 "기본 경로 / 검색 템플릿 / 자동 검색 링크 생성" 설정을 했지만,
@@ -74,6 +88,11 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
         onClick={() => setOpen(p => !p)}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <span style={{ fontWeight:700, color:'#0f1f0f' }}>{form.label || (isNew ? '(새 항목)' : '(이름없음)')}</span>
+          {form.size && (
+            <span style={{ fontSize:11, color:ACCENT, background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:999, padding:'1px 8px', fontWeight:700 }}>
+              {form.size}
+            </span>
+          )}
           {form.enabled ? <span style={{ fontSize:11, color:'#16a34a' }}>● 사용중</span> : <span style={{ fontSize:11, color:'#9ca3af' }}>○ 꺼짐</span>}
         </div>
         <span style={{ fontSize:13, color:'#9ca3af' }}>{open ? '▲' : '▼'}</span>
@@ -93,7 +112,12 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
           {fields.map(f => (
             <div key={f.key}>
               <label style={S.label}>{f.label}</label>
-              {f.multiline ? (
+              {f.type === 'select' ? (
+                <select value={form[f.key] || (f.options && f.options[0]?.value) || ''} onChange={e => set(f.key, e.target.value)}
+                  style={S.input}>
+                  {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              ) : f.multiline ? (
                 <textarea value={form[f.key] || ''} onChange={e => set(f.key, e.target.value)}
                   rows={3} style={S.textarea} placeholder={f.placeholder} />
               ) : (
@@ -125,7 +149,7 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
   )
 }
 
-function RepeatableListCard({ adminToken, title, description, apiPath, empty, fields, addLabel, renderPreview }) {
+function RepeatableListCard({ adminToken, title, description, apiPath, empty, fields, addLabel, renderPreview, notice }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [newDraft, setNewDraft] = useState(null)
@@ -153,6 +177,15 @@ function RepeatableListCard({ adminToken, title, description, apiPath, empty, fi
     <div style={S.card}>
       <div style={S.cardTitle}>{title}</div>
       <div style={{ fontSize:12, color:'#888', marginTop:-12, marginBottom:16 }}>{description}</div>
+
+      {notice && (
+        <div style={{
+          marginBottom:16, padding:'12px 14px', background:'#fff7ed',
+          border:'1px solid #fed7aa', borderRadius:8, fontSize:12, color:'#9a3412', lineHeight:1.7,
+        }}>
+          {notice}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ color:'#888', textAlign:'center', padding:'20px 0' }}>불러오는 중...</div>
@@ -210,14 +243,24 @@ export default function CoupangPanel({ adminToken }) {
 
       <RepeatableListCard
         adminToken={adminToken}
-        title="🖼️ 위젯 목록 (필요한 만큼 추가)"
-        description="쿠팡 파트너스 위젯/배너 iframe 코드만 추가하는 목록입니다. 링크는 위 링크 목록에서 따로 추가하세요."
+        title="🖼️ 배너/위젯 목록 (사이즈별로 필요한 만큼 추가)"
+        description="쿠팡 파트너스에서 만든 배너/위젯 코드를 등록하는 목록입니다. 링크(URL)만 있는 경우엔 위 링크 목록을 이용하세요."
         apiPath="/api/admin/coupang-widgets"
         empty={EMPTY_WIDGET}
-        addLabel="+ 위젯 추가"
+        addLabel="+ 배너/위젯 추가"
+        notice={
+          <>
+            <strong>⚠️ 쿠팡 파트너스에서 배너 만들 때 꼭 확인하세요</strong><br />
+            배너 생성 페이지 오른쪽 "HTML" 영역에서 <strong>자바스크립트 태그 / iframe 태그가 아니라
+            반드시 "HTML 태그"</strong>를 선택한 뒤 코드를 복사해서 아래에 붙여넣으세요.<br />
+            사이즈는 아래 드롭다운에서 방금 쿠팡 사이트에서 만든 것과 같은 사이즈를 선택하면,
+            어느 슬롯에 넣으면 좋을지 옆에 같이 표시됩니다.
+          </>
+        }
         fields={[
-          { key:'label', label:'이름 (구분용)', placeholder:'예: 딸기 배너, 냄비 배너' },
-          { key:'widget_html', label:'위젯 코드', placeholder:'<iframe src="https://ads-partners.coupang.com/widgets.html?..." ...></iframe>', multiline:true },
+          { key:'label', label:'이름 (구분용)', placeholder:'예: 로켓프레시1, 로켓주방용품1' },
+          { key:'size', label:'사이즈', type:'select', options:BANNER_SIZE_OPTIONS },
+          { key:'widget_html', label:'배너/위젯 코드 (HTML 태그)', placeholder:'<a href="https://link.coupang.com/a/..." target="_blank" ...><img src="..." ...></a>', multiline:true },
         ]}
         renderPreview={(item) => (
           <div dangerouslySetInnerHTML={{ __html: item.widget_html || '' }} />
