@@ -306,16 +306,26 @@ export default function GlobalPage() {
                     )}
 
                     {/* 쿠팡 링크 */}
-                    {ing.coupang_url && (
-                      <a href={ing.coupang_url} target="_blank" rel="noopener noreferrer sponsored"
-                        style={{
-                          display:'inline-flex', alignItems:'center', gap:5, marginTop:12,
-                          fontSize:12, fontWeight:700, color:'#fff',
-                          background:'#ea580c', borderRadius:8, padding:'6px 12px',
-                          textDecoration:'none',
-                        }}>
-                        🛒 쿠팡에서 구매하기
-                      </a>
+                    {(ing.coupang_url || ing.coupang_banner_html) && (
+                      <div style={{ marginTop:12 }}>
+                        {ing.coupang_url && (
+                          <a href={ing.coupang_url} target="_blank" rel="noopener noreferrer sponsored"
+                            style={{
+                              display:'inline-flex', alignItems:'center', gap:5,
+                              fontSize:12, fontWeight:700, color:'#fff',
+                              background:'#ea580c', borderRadius:8, padding:'6px 12px',
+                              textDecoration:'none',
+                            }}>
+                            🛒 쿠팡에서 구매하기
+                          </a>
+                        )}
+                        {ing.coupang_banner_html && (
+                          <div style={{ marginTop:6 }} dangerouslySetInnerHTML={{ __html: ing.coupang_banner_html }} />
+                        )}
+                        <div style={{ fontSize:10, color:'#9ca3af', marginTop:4 }}>
+                          이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
