@@ -3,6 +3,7 @@ import Head from 'next/head'
 import { SkeletonGrid } from '../components/SkeletonCard'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { resolveCoupangDisplay } from '../lib/coupang'
 
 // 카테고리별 색상/아이콘
 const CAT_META = {
@@ -42,17 +43,23 @@ export default function GlobalPage() {
   const [selBenefit, setSelBenefit]   = useState('all')
   const [query, setQuery]             = useState('')
   const [allBenefits, setAllBenefits] = useState([])
+  const [coupangSettings, setCoupangSettings] = useState(null)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        const [ingRes, benefitRes] = await Promise.all([
+        const [ingRes, benefitRes, settingsRes] = await Promise.all([
           fetch('/api/admin/map-data?type=ingredients'),
           fetch('/api/admin/map-data?type=health_benefits'),
+          fetch('/api/settings/get'),
         ])
         const allIng      = ingRes.ok  ? await ingRes.json()     : []
         const allBenefits = benefitRes.ok ? await benefitRes.json() : []
+        if (settingsRes.ok) {
+          const s = await settingsRes.json()
+          if (s.coupang) setCoupangSettings(s.coupang)
+        }
 
         // is_global 식재료만 필터
         const globalIng = allIng.filter(i => i.is_global)
@@ -305,28 +312,32 @@ export default function GlobalPage() {
                       </div>
                     )}
 
-                    {/* 쿠팡 링크 */}
-                    {(ing.coupang_url || ing.coupang_banner_html) && (
-                      <div style={{ marginTop:12 }}>
-                        {ing.coupang_url && (
-                          <a href={ing.coupang_url} target="_blank" rel="noopener noreferrer sponsored"
-                            style={{
-                              display:'inline-flex', alignItems:'center', gap:5,
-                              fontSize:12, fontWeight:700, color:'#fff',
-                              background:'#ea580c', borderRadius:8, padding:'6px 12px',
-                              textDecoration:'none',
-                            }}>
-                            🛒 쿠팡에서 구매하기
-                          </a>
-                        )}
-                        {ing.coupang_banner_html && (
-                          <div style={{ marginTop:6 }} dangerouslySetInnerHTML={{ __html: ing.coupang_banner_html }} />
-                        )}
-                        <div style={{ fontSize:10, color:'#9ca3af', marginTop:4 }}>
-                          이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+                    {/* 쿠팡 링크 (개별 등록이 없으면 관리자 설정값으로 대체 노출) */}
+                    {(() => {
+                      const cp = resolveCoupangDisplay(coupangSettings, ing, ing.name)
+                      if (!cp.url && !cp.widgetHtml) return null
+                      return (
+                        <div style={{ marginTop:12 }}>
+                          {cp.url && (
+                            <a href={cp.url} target="_blank" rel="noopener noreferrer sponsored"
+                              style={{
+                                display:'inline-flex', alignItems:'center', gap:5,
+                                fontSize:12, fontWeight:700, color:'#fff',
+                                background:'#ea580c', borderRadius:8, padding:'6px 12px',
+                                textDecoration:'none',
+                              }}>
+                              🛒 {cp.isFallback ? '쿠팡에서 관련 상품 보기' : '쿠팡에서 구매하기'}
+                            </a>
+                          )}
+                          {cp.widgetHtml && (
+                            <div style={{ marginTop:6 }} dangerouslySetInnerHTML={{ __html: cp.widgetHtml }} />
+                          )}
+                          <div style={{ fontSize:10, color:'#9ca3af', marginTop:4 }}>
+                            이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )
+                    })()}
                   </div>
                 </div>
               )

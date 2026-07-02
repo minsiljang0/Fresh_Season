@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (!process.env.ADMIN_SECRET_TOKEN || token !== process.env.ADMIN_SECRET_TOKEN) {
     return res.status(401).json({ error: '인증 실패' })
   }
-  const { cooldown, adsOn, terms, privacy, termsEn, privacyEn, adSlots } = req.body
+  const { cooldown, adsOn, terms, privacy, termsEn, privacyEn, adSlots, coupang } = req.body
   try {
     const rows = []
     if (cooldown !== undefined)  rows.push({ key: 'site:cooldown',    value: cooldown })
@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     if (termsEn !== undefined)   rows.push({ key: 'site:terms_en',    value: termsEn })
     if (privacyEn !== undefined) rows.push({ key: 'site:privacy_en',  value: privacyEn })
     if (adSlots !== undefined)   rows.push({ key: 'site:ad_slots',    value: adSlots })
+    if (coupang !== undefined)   rows.push({ key: 'site:coupang',     value: coupang })
     if (rows.length === 0) return res.status(400).json({ error: '저장할 데이터 없음' })
     const { error } = await supabase.from('settings').upsert(rows, { onConflict: 'key' })
     if (error) throw error

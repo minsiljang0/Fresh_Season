@@ -13,6 +13,7 @@ import LegalPanel from '../components/admin/LegalPanel'
 import SystemPromptPanel from '../components/admin/SystemPromptPanel'
 import { S, Toast, Toggle } from '../components/admin/AdminUI'
 import PopupPanel from '../components/admin/PopupPanel'
+import CoupangPanel from '../components/admin/CoupangPanel'
 import McpPanel from '../components/admin/McpPanel'
 import BacklinkPanel from '../components/admin/BacklinkPanel'
 
@@ -33,6 +34,7 @@ const TAB_LABELS = {
   legal:         '📜 약관 관리',
   password:      '🔑 비밀번호 변경',
   popup:         '📢 팝업 관리',
+  coupang:       '🛒 쿠팡 관리',
   mcp:           '🔌 MCP 관리',
   backlink:      '🔗 백링크 관리',
 }
@@ -258,6 +260,7 @@ export default function Admin() {
                 onSaved={() => showToast('✅ 저장됨')} />
             )}
             {activeTab === 'popup' && <PopupPanel adminToken={adminToken} />}
+            {activeTab === 'coupang' && <CoupangPanel adminToken={adminToken} />}
             {activeTab === 'mcp' && <McpPanel adminToken={adminToken} />}
             {activeTab === 'backlink' && <BacklinkPanel adminToken={adminToken} />}
             {activeTab === 'password' && (

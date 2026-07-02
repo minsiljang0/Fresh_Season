@@ -37,12 +37,22 @@ const DEFAULT_AD_SLOTS = [
   { id: 'footer',        name: '전체 페이지 하단 푸터 배너', w: '100%', h: 90,  active: false, code: '' },
 ]
 
+const DEFAULT_COUPANG = {
+  partnerPath: '',      // 쿠팡 파트너스 기본 경로 (예: https://link.coupang.com/a/xxxxxxx)
+  partnerId: '',        // 내 파트너스 채널ID / 트래킹 번호 (예: AF1234567)
+  searchTemplate: 'https://www.coupang.com/np/search?component=&q={query}&channel={channel}',
+  widgetHtml: '',        // 검색위젯/배너 등 대체 노출용 iframe 코드
+  fallbackEnabled: false, // 상품별 쿠팡링크가 없을 때 위 정보로 대체 노출할지 여부
+  fallbackMode: 'link',   // 'link' | 'widget' | 'both'
+}
+
 const DEFAULTS = {
   cooldown: 12,
   adsOn: true,
   terms: DEFAULT_TERMS,
   privacy: DEFAULT_PRIVACY,
   adSlots: DEFAULT_AD_SLOTS,
+  coupang: DEFAULT_COUPANG,
 }
 
 // Supabase 없이도 기본값 반환
@@ -78,6 +88,7 @@ export default async function handler(req, res) {
       termsEn:   map['site:terms_en']    ?? null,
       privacyEn: map['site:privacy_en']  ?? null,
       adSlots:   map['site:ad_slots']    ?? DEFAULTS.adSlots,
+      coupang:   { ...DEFAULT_COUPANG, ...(map['site:coupang'] || {}) },
     })
   } catch {
     res.status(200).json(DEFAULTS)
