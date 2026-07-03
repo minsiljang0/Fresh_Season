@@ -141,8 +141,49 @@ export default function RegionPage({ regionId }) {
           )}
         </section>
 
-        {/* 지역 특산물 쇼핑하기 */}
+        {/* 지역 특산물 쇼핑하기 — 이 지역 특산품 중 쿠팡 정보가 등록된 재료만 개별 카드로 노출 */}
         {(() => {
+          // 1순위: 이 지역 특산품(is_special)이면서 재료 자체에 쿠팡 URL/배너가 등록된 것들
+          const specialFoods = allFoods.filter(f => f.is_special && (f.coupang_url || f.coupang_banner_html))
+
+          if (specialFoods.length > 0) {
+            return (
+              <section className="detail-box" style={{ marginBottom: 24 }}>
+                <p className="detail-label">🛒 {region.name} 특산물 쇼핑하기</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                  {specialFoods.map((food, i) => {
+                    const cp = resolveCoupangDisplay(coupangLinks, coupangWidgets, food)
+                    if (cp.links.length === 0 && cp.widgets.length === 0) return null
+                    return (
+                      <div key={i} style={{ maxWidth: 180 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>{food.ingredient}</div>
+                        {cp.widgets.map((html, j) => (
+                          <div key={j} dangerouslySetInnerHTML={{ __html: html }} />
+                        ))}
+                        {cp.links.map((l, j) => (
+                          <a key={j} href={l.url} target="_blank" rel="noopener noreferrer sponsored"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6,
+                              fontSize: 12, fontWeight: 700, color: '#fff',
+                              background: '#ea580c', borderRadius: 10, padding: '7px 14px',
+                              textDecoration: 'none',
+                            }}>
+                            🛒 {l.label}
+                          </a>
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+                <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 12 }}>
+                  이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.
+                </p>
+              </section>
+            )
+          }
+
+          // 2순위(폴백): 이 지역 특산품 중 쿠팡 정보가 등록된 재료가 하나도 없으면
+          // 전체 공통 링크/위젯 목록(사이즈 없는 것만)으로 대체
           const cp = resolveCoupangDisplay(coupangLinks, coupangWidgets, {})
           if (cp.links.length === 0 && cp.widgets.length === 0) return null
           return (
