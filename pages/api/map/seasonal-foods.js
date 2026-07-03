@@ -40,6 +40,7 @@ export default async function handler(req, res) {
         const healthBenefitsList = (row.ingredients.ingredient_health || [])
           .map(ih => ih.health_benefits).filter(Boolean)
         return {
+          id:            row.ingredients.id,
           ingredient:    row.ingredients.name,
           category:      row.ingredients.category || 'veg',
           region:        row.region,

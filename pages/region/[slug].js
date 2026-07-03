@@ -31,6 +31,53 @@ export default function RegionPage({ regionId }) {
   const [coupangLinks, setCoupangLinks] = useState([])
   const [coupangWidgets, setCoupangWidgets] = useState([])
 
+  // 관리자 로그인 여부 (admin.js에서 로그인 시 sessionStorage에 저장되는 토큰을 그대로 사용)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [adminToken, setAdminToken] = useState('')
+  const [editingFood, setEditingFood] = useState(null) // 쿠팡 정보 수정 중인 식재료
+  const [editUrl, setEditUrl] = useState('')
+  const [editHtml, setEditHtml] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [savedToast, setSavedToast] = useState(false)
+
+  useEffect(() => {
+    try {
+      const t = sessionStorage.getItem('admin_token')
+      if (t) { setAdminToken(t); setIsAdmin(true) }
+    } catch {}
+  }, [])
+
+  const openCoupangEdit = (e, food) => {
+    e.preventDefault(); e.stopPropagation()
+    setEditingFood(food)
+    setEditUrl(food.coupang_url || '')
+    setEditHtml(food.coupang_banner_html || '')
+  }
+  const closeCoupangEdit = () => { if (!savingEdit) setEditingFood(null) }
+
+  const saveCoupangEdit = async () => {
+    if (!editingFood?.id) { alert('식재료 ID를 찾을 수 없어요. 관리자 페이지에서 등록된 식재료인지 확인해주세요.'); return }
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/admin/map-data?type=ingredients&id=${editingFood.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ coupang_url: editUrl.trim(), coupang_banner_html: editHtml.trim() }),
+      })
+      if (!res.ok) throw new Error()
+      setAllFoods(prev => prev.map(f => f.id === editingFood.id
+        ? { ...f, coupang_url: editUrl.trim(), coupang_banner_html: editHtml.trim() }
+        : f))
+      setEditingFood(null)
+      setSavedToast(true)
+      setTimeout(() => setSavedToast(false), 1800)
+    } catch {
+      alert('저장에 실패했어요. 다시 시도해주세요.')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
   // 쿠팡 파트너스 링크/위젯 목록 로드
   useEffect(() => {
     Promise.all([
@@ -278,7 +325,15 @@ export default function RegionPage({ regionId }) {
             /* 모바일: 2열 그리드 소형 카드 */
             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
               {filtered.map((food, i) => (
-                <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
+              <div key={i} style={{ position:'relative' }}>
+                {isAdmin && (
+                  <button onClick={e => openCoupangEdit(e, food)} title="쿠팡 정보 수정"
+                    style={{ position:'absolute', top:-7, right:-7, zIndex:5, width:24, height:24,
+                      borderRadius:'50%', border:'1.5px solid #ea580c', background:'#fff', color:'#ea580c',
+                      fontSize:12, display:'flex', alignItems:'center', justifyContent:'center',
+                      cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.15)' }}>✏️</button>
+                )}
+                <Link href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
                   style={{ padding:'10px 12px' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = region.color}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
@@ -357,13 +412,22 @@ export default function RegionPage({ regionId }) {
                     {(food.tvPrograms||[]).map(tv => <span key={tv} className="tag">📺 {tv}</span>)}
                   </div>
                 </Link>
+              </div>
               ))}
             </div>
           ) : (
             /* 데스크탑: 원래 grid-auto 그대로 */
             <div className="grid-auto">
               {filtered.map((food, i) => (
-                <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
+              <div key={i} style={{ position:'relative' }}>
+                {isAdmin && (
+                  <button onClick={e => openCoupangEdit(e, food)} title="쿠팡 정보 수정"
+                    style={{ position:'absolute', top:-8, right:-8, zIndex:5, width:26, height:26,
+                      borderRadius:'50%', border:'1.5px solid #ea580c', background:'#fff', color:'#ea580c',
+                      fontSize:13, display:'flex', alignItems:'center', justifyContent:'center',
+                      cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.15)' }}>✏️</button>
+                )}
+                <Link href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
                   onMouseEnter={e => e.currentTarget.style.borderColor = region.color}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
@@ -376,6 +440,7 @@ export default function RegionPage({ regionId }) {
                   </div>
                   <p style={{ fontSize:12, color:'var(--text2)', lineHeight:1.6, marginBottom:10 }}>💚 {food.health}</p>
                 </Link>
+              </div>
               ))}
             </div>
           )}
@@ -383,6 +448,58 @@ export default function RegionPage({ regionId }) {
 
         <Link href="/" className="back-link">← 전체 지역 보기</Link>
       </main>
+
+      {/* 관리자 전용: 식재료 쿠팡 정보 수정 모달 */}
+      {editingFood && (
+        <div onClick={closeCoupangEdit} style={{ position:'fixed', inset:0, zIndex:9000, background:'rgba(0,0,0,0.5)',
+          display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:'var(--surface, #fff)', borderRadius:16,
+            width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,0.25)', padding:'22px 22px 18px' }}>
+            <h3 style={{ fontSize:16, fontWeight:800, marginBottom:2 }}>🛒 쿠팡 정보 수정</h3>
+            <p style={{ fontSize:12, color:'var(--text3)', marginBottom:16 }}>{editingFood.ingredient}</p>
+
+            <label style={{ display:'block', fontSize:12, fontWeight:700, color:'var(--text2)', marginBottom:6 }}>쿠팡 URL</label>
+            <input value={editUrl} onChange={e => setEditUrl(e.target.value)}
+              placeholder="https://link.coupang.com/a/..."
+              style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)',
+                fontSize:13, marginBottom:14, boxSizing:'border-box' }} />
+
+            <label style={{ display:'block', fontSize:12, fontWeight:700, color:'var(--text2)', marginBottom:6 }}>쿠팡 배너 iframe 코드</label>
+            <textarea value={editHtml} onChange={e => setEditHtml(e.target.value)}
+              placeholder='<iframe src="https://coupa.ng/..." width="120" height="240" frameborder="0" scrolling="no"></iframe>'
+              rows={4}
+              style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)',
+                fontSize:12, marginBottom:6, boxSizing:'border-box', fontFamily:'monospace', resize:'vertical' }} />
+
+            {editHtml && editHtml.includes('<iframe') && (
+              <div style={{ margin:'10px 0', padding:10, background:'var(--surface2)', border:'1px dashed var(--border)', borderRadius:8, display:'inline-block' }}>
+                <div style={{ fontSize:10, color:'var(--text3)', marginBottom:6 }}>미리보기</div>
+                <div dangerouslySetInnerHTML={{ __html: editHtml }} />
+              </div>
+            )}
+
+            <div style={{ display:'flex', gap:8, marginTop:16 }}>
+              <button onClick={closeCoupangEdit} disabled={savingEdit}
+                style={{ flex:1, padding:'11px 0', borderRadius:8, border:'1px solid var(--border)',
+                  background:'var(--surface2)', color:'var(--text2)', fontSize:14, fontWeight:600, cursor:'pointer' }}>취소</button>
+              <button onClick={saveCoupangEdit} disabled={savingEdit}
+                style={{ flex:1, padding:'11px 0', borderRadius:8, border:'none',
+                  background:'#ea580c', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer',
+                  opacity: savingEdit ? 0.6 : 1 }}>{savingEdit ? '저장 중...' : '저장'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 저장 완료 토스트 */}
+      {savedToast && (
+        <div style={{ position:'fixed', bottom:24, left:'50%', transform:'translateX(-50%)', zIndex:9999,
+          background:'#111', color:'#fff', borderRadius:999, padding:'12px 22px', fontSize:14, fontWeight:600,
+          boxShadow:'0 8px 24px rgba(0,0,0,0.25)' }}>
+          ✅ 저장 완료 — 관리자 페이지에도 바로 반영돼요
+        </div>
+      )}
+
       <Footer />
     </>
   )
