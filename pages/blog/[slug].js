@@ -8,7 +8,6 @@ import { isStepCategory } from '../../lib/blogCategories'
 import { extractStepImages, splitStepsHtml } from '../../lib/stepContent'
 import { AdSlot } from '../../components/AdSlot'
 import { useAdSlot } from '../../lib/AdSlotsContext'
-import { resolveCoupangDisplay } from '../../lib/coupang'
 
 // ── 관련도 점수 계산: 같은 지역 카테고리(+3), 태그(+2/개), 제목 키워드 겹침(+1/개)
 // 기존 글처럼 category/tags가 비어있어 점수가 전부 0이 되더라도
@@ -166,40 +165,6 @@ function CuriosityBlock({ post, allPosts, inlineUsedIds, customCategories }) {
   )
 }
 
-// ── 글에서 언급된 재료의 쿠팡 링크/위젯을 본문 흐름 속에 자연스럽게 노출
-function BlogCoupangCTA({ food }) {
-  if (!food) return null
-  const cp = resolveCoupangDisplay(null, null, food)
-  if (cp.links.length === 0 && cp.widgets.length === 0) return null
-  return (
-    <div style={{
-      margin: '32px 0', padding: 20, background: 'var(--card, #fff7ed)',
-      border: '1px solid #fed7aa', borderRadius: 14,
-    }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#9a3412', marginBottom: 12 }}>
-        🛒 지금 {food.ingredient} 보러가기
-      </div>
-      {cp.widgets.map((wHtml, i) => (
-        <div key={i} dangerouslySetInnerHTML={{ __html: wHtml }} />
-      ))}
-      {cp.links.map((l, i) => (
-        <a key={i} href={l.url} target="_blank" rel="noopener noreferrer sponsored"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            fontSize: 13, fontWeight: 700, color: '#fff',
-            background: '#ea580c', borderRadius: 10, padding: '9px 16px',
-            textDecoration: 'none',
-          }}>
-          🛒 {l.label}
-        </a>
-      ))}
-      <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 10 }}>
-        이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.
-      </p>
-    </div>
-  )
-}
-
 // ── 하단 서비스 유도 CTA 박스
 function ServiceCTABlock({ post }) {
   const region = REGIONS.find(r => r.id === post?.category)
@@ -265,7 +230,7 @@ function StepTimeline({ introHtml, steps, images }) {
   )
 }
 
-export default function BlogPost({ post, html, allPosts, stepImages, customCategories, matchedFood }) {
+export default function BlogPost({ post, html, allPosts, stepImages, customCategories }) {
   const topBadge = post ? resolveCategoryBadge(post.category, customCategories) : null
   const relatedPool = post ? scoreRelated(post, allPosts).slice(0, 3) : []
   const inlineUsedIds = new Set(relatedPool.map(p => p.id))
@@ -374,8 +339,6 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
               )}
             </div>
 
-            <BlogCoupangCTA food={matchedFood} />
-
             <PostTags tags={post.tags} />
 
             <CuriosityBlock post={post} allPosts={allPosts} inlineUsedIds={inlineUsedIds} customCategories={customCategories} />
@@ -411,9 +374,9 @@ export async function getServerSideProps(context) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.fsfood.kr'
     const res = await fetch(`${baseUrl}/api/blog/posts?slug=${slug}`)
-    if (!res.ok) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [], matchedFood: null } }
+    if (!res.ok) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
     const post = await res.json()
-    if (!post) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [], matchedFood: null } }
+    if (!post) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
 
     // 서버에서 마크다운 → HTML 변환 (레시피/식재료손질은 본문 끝에 숨겨진 사진 목록을 먼저 분리)
     const { parseMarkdown } = await import('../../lib/parseMarkdown')
@@ -436,41 +399,9 @@ export async function getServerSideProps(context) {
       if (catRes.ok) customCategories = await catRes.json()
     } catch {}
 
-    // 글 제목/태그에 언급된 재료 중 쿠팡 URL·배너가 등록된 재료가 있으면 찾아서
-    // 본문 안에 자동으로 구매 링크/위젯을 노출한다. (예: 제목에 "성주참외" → 재료 "참외" 매칭)
-    let matchedFood = null
-    try {
-      const foodsRes = await fetch(`${baseUrl}/api/map/seasonal-foods`)
-      if (foodsRes.ok) {
-        const data = await foodsRes.json()
-        const foods = Array.isArray(data) ? data : (data.foods || [])
-        // 재료명 기준 중복 제거 (쿠팡 정보가 있는 항목을 우선)
-        const byName = new Map()
-        foods.forEach(f => {
-          if (!f.ingredient) return
-          const existing = byName.get(f.ingredient)
-          if (!existing || f.coupang_url || f.coupang_banner_html) byName.set(f.ingredient, f)
-        })
-        const linkedFoods = [...byName.values()].filter(f => f.coupang_url || f.coupang_banner_html)
-        // 재료명이 2글자 미만이면 오탐(예: "콩"이 다른 단어 속에 우연히 포함) 가능성이 높아 제외
-        const haystack = `${post.title || ''} ${(Array.isArray(post.tags) ? post.tags.join(' ') : '')}`
-        matchedFood = linkedFoods
-          .filter(f => f.ingredient.length >= 2)
-          .find(f => haystack.includes(f.ingredient)) || null
-      }
-    } catch {}
-
-    return {
-      props: {
-        post, html,
-        allPosts: Array.isArray(allPosts) ? allPosts : [],
-        stepImages,
-        customCategories: Array.isArray(customCategories) ? customCategories : [],
-        matchedFood,
-      },
-    }
+    return { props: { post, html, allPosts: Array.isArray(allPosts) ? allPosts : [], stepImages, customCategories: Array.isArray(customCategories) ? customCategories : [] } }
   } catch (error) {
     console.error('블로그 상세 SSR 에러:', error)
-    return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [], matchedFood: null } }
+    return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
   }
 }
