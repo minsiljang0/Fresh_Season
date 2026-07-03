@@ -80,6 +80,7 @@ export default function Header() {
                 </Link>
               ))}
               <Link href="/map" className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}>🗺 제철지도</Link>
+              <Link href="/for-me" className={`nav-link${router.pathname === '/for-me' ? ' active' : ''}`}>🧬 맞춤 추천</Link>
               <Link href="/global" className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}>🌍 글로벌 푸드</Link>
               <Link href="/blog" className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}>📝 블로그</Link>
               <Link href="/board/free" className={`nav-link${router.pathname === '/board/free' ? ' active' : ''}`}>💬 자유게시판</Link>
@@ -126,6 +127,9 @@ export default function Header() {
             <a className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}
               style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
               onClick={() => handleNav('/map')}>🗺️ 제철지도</a>
+            <a className={`nav-link${router.pathname === '/for-me' ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/for-me')}>🧬 맞춤 추천</a>
             <a className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}
               style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
               onClick={() => handleNav('/global')}>🌍 글로벌 푸드</a>
