@@ -193,7 +193,7 @@ export default function RegionPage({ regionId }) {
           // 이 지역 상품 중 재료 자체에 쿠팡 URL/배너가 등록된 것만 노출.
           // (예전엔 매칭되는 게 없으면 전체 공통 링크 목록으로 대체했지만,
           //  그러면 이 지역과 무관한 다른 지역 상품 광고가 뜨게 되어 제거함)
-          const specialFoods = allFoods.filter(f => f.coupang_url || f.coupang_banner_html)
+          const specialFoods = filtered.filter(f => f.coupang_url || f.coupang_banner_html)
 
           if (specialFoods.length === 0) return null
 
@@ -278,13 +278,13 @@ export default function RegionPage({ regionId }) {
         {/* 식재료 카드 */}
         <section style={{ marginBottom:52 }}>
 
-          {/* 특산품 · 기간한정 전용 섹션 — 항상 표시 */}
+          {/* 특산품 · 기간한정 전용 섹션 — 선택된 계절/월(filtered) 기준으로만 노출 */}
           <div style={{ marginBottom:24 }}>
             <div style={{ marginBottom:14 }}>
               <h3 style={{ fontSize:14, fontWeight:800, marginBottom:8, color:'#b45309' }}>🏆 특산품</h3>
               <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                {allFoods.filter(f => f.is_special).length > 0
-                  ? allFoods.filter(f => f.is_special).map((food, i) => (
+                {filtered.filter(f => f.is_special).length > 0
+                  ? filtered.filter(f => f.is_special).map((food, i) => (
                       <a key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
                         style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px',
                           borderRadius:20, background:'#fef3c7', border:'1.5px solid #f59e0b',
@@ -292,15 +292,15 @@ export default function RegionPage({ regionId }) {
                         🏆 {food.ingredient}
                       </a>
                     ))
-                  : <span style={{ fontSize:13, color:'var(--text3)' }}>등록된 특산품이 없습니다</span>
+                  : <span style={{ fontSize:13, color:'var(--text3)' }}>해당 기간에 특산품이 없습니다</span>
                 }
               </div>
             </div>
             <div>
               <h3 style={{ fontSize:14, fontWeight:800, marginBottom:8, color:'#059669' }}>⏰ 기간한정</h3>
               <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                {allFoods.filter(f => f.is_limited && f.limited_days).length > 0
-                  ? allFoods.filter(f => f.is_limited && f.limited_days).map((food, i) => (
+                {filtered.filter(f => f.is_limited && f.limited_days).length > 0
+                  ? filtered.filter(f => f.is_limited && f.limited_days).map((food, i) => (
                       <a key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`}
                         style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px',
                           borderRadius:20, background:'#d1fae5', border:'1.5px solid #10b981',
@@ -308,7 +308,7 @@ export default function RegionPage({ regionId }) {
                         ⏰ {food.ingredient} · {food.limited_days}간 한정
                       </a>
                     ))
-                  : <span style={{ fontSize:13, color:'var(--text3)' }}>등록된 기간한정 상품이 없습니다</span>
+                  : <span style={{ fontSize:13, color:'var(--text3)' }}>해당 기간에 기간한정 상품이 없습니다</span>
                 }
               </div>
             </div>
@@ -340,7 +340,7 @@ export default function RegionPage({ regionId }) {
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                     <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
                     <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                      {food.months.slice(0,5).map(m => (
+                      {[...food.months].sort((a,b)=>a-b).map(m => (
                         <span key={m} style={{ fontSize:9, padding:'1px 5px', borderRadius:4, background:'var(--surface2)', color:'var(--text3)' }}>{m}월</span>
                       ))}
                     </div>
@@ -433,7 +433,7 @@ export default function RegionPage({ regionId }) {
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                     <span style={{ fontSize:19, fontWeight:900 }}>{food.ingredient}</span>
                     <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                      {food.months.slice(0,5).map(m => (
+                      {[...food.months].sort((a,b)=>a-b).map(m => (
                         <span key={m} style={{ fontSize:9, padding:'1px 5px', borderRadius:4, background:'var(--surface2)', color:'var(--text3)' }}>{m}월</span>
                       ))}
                     </div>
