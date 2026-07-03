@@ -2058,17 +2058,28 @@ const baseHandler = createMcpHandler(
   { basePath: '/api', maxDuration: 30, verboseLogs: true }
 )
 
-// ── (202607031530 수정) 쿼리파라미터 키 인증 제거 ──────────────────────
-// Anthropic 커넥터 인증 스펙(MCP Authorization spec)은 액세스 토큰/키를
-// URL 쿼리스트링(?key=, ?token=, ?apiKey= 등)으로 전달하는 방식을 명시적으로
-// 지원하지 않는다. 이 서버가 그 방식을 쓰고 있었던 것이, 세션마다 도구가
-// 로드됐다 안 됐다 하던 원인이었을 가능성이 크다 (재연결/재인덱싱 시
-// 쿼리스트링이 유지된다는 보장이 없음).
+// ── (202607031530 → 202607031545 재수정) ?key= 쿼리파라미터 인증 복원 ──
+// 한 차례 인증을 완전히 제거해봤으나, claude.ai 커스텀 커넥터가 "인증 없는"
+// MCP 서버에 연결할 때 강제로 OAuth 클라이언트 등록(DCR)을 시도했다가 실패하는
+// 별도 버그가 있다는 게 확인됨 ("Couldn't register with ...'s sign-in service",
+// ofid_ 참조번호 에러 — Anthropic 이슈 #402, #413, #457 다수 보고, 심지어
+// 완전한 OAuth 서버를 구현해도 같은 에러로 실패하는 사례까지 있음).
 //
-// 대신 이 엔드포인트 경로 자체(/api/mcp)는 URL을 아는 사람만 접근 가능하다는
-// 점 외에는 별도 인증이 없다. 개인/소규모 운영 기준으로는 실용적인 선택이지만,
-// create_blog_post / update_blog_post / delete_row / run_sql 같은 쓰기·파괴적
-// 툴이 있으므로 이 URL이 외부에 노출되지 않도록 각별히 주의할 것.
-// (진짜 OAuth 2.1 인증으로 넘어가고 싶다면 Anthropic 커넥터 인증 문서의
-// oauth_anthropic_creds 방식을 참고 — 추후 필요해지면 별도로 작업)
-export { baseHandler as GET, baseHandler as POST }
+// 즉 "인증 없음"은 지금 claude.ai 쪽에서 아예 연결 자체가 안 되는 케이스라,
+// 스펙에 어긋나더라도 연결 자체는 되던 ?key= 방식으로 되돌린다.
+// (쿼리파라미터 인증 자체가 세션마다 툴 로딩이 불안정한 원인일 가능성은
+// 여전히 있지만, 그건 "가끔 안 됨" 문제이고 인증 제거는 "항상 연결 자체가
+// 안 됨" 문제라 훨씬 나쁘다 — 차선책으로 원복.)
+async function authedHandler(request) {
+  const url = new URL(request.url)
+  const key = url.searchParams.get('key')
+  if (!process.env.MCP_SHARED_SECRET || key !== process.env.MCP_SHARED_SECRET) {
+    return new Response(JSON.stringify({ error: '인증 필요 (key 파라미터 확인)' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  return baseHandler(request)
+}
+
+export { authedHandler as GET, authedHandler as POST }
