@@ -768,9 +768,12 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
 
   const saveEdit = async (id) => {
     try {
+      // display_name, region_id는 UI 전용 필드로 ingredients 테이블에 실제 컬럼이 없으므로 전송 전 제거
+      const { display_name, region_id, ...rest } = editForm
+      const payload = { ...rest, name: display_name?.trim() || rest.name?.trim() }
       await apiFetch(`${api('ingredients')}&id=${id}`, {
         method:'PATCH', headers:{'Content-Type':'application/json','x-admin-token':adminToken},
-        body:JSON.stringify({ ...editForm, name: editForm.display_name?.trim() || editForm.name?.trim() })
+        body:JSON.stringify(payload)
       })
       setEditId(null); showToast('✅ 저장됨'); loadAll()
     } catch(e) { showToast('❌ '+e.message) }
