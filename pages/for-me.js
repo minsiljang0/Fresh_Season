@@ -3,6 +3,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { REGIONS } from '../lib/regions'
 
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12]
 
@@ -67,6 +68,86 @@ const MODERATION_HINTS = {
   beef:           '지방 함량이 있는 편이라 조리법을 신경 써보세요',
 }
 
+// 지역 페이지 카드와 동일한 뱃지 세트 + 이 재료가 나는 지역들을 함께 보여줌
+function FoodBadges({ food }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+      {(food.regions || []).map(rid => {
+        const r = REGIONS.find(rr => rr.id === rid)
+        if (!r) return null
+        return (
+          <span key={rid} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 700,
+            background: `${r.color}18`, color: r.color, border: `1px solid ${r.color}44` }}>
+            {r.icon} {r.name}
+          </span>
+        )
+      })}
+      {food.is_superfood && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f59e0b18',color:'#d97706',border:'1px solid #f59e0b44'}}>🌟 슈퍼푸드</span>}
+      {food.is_brand     && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#e6394618',color:'#e63946',border:'1px solid #e6394644'}}>🏷️ 지역브랜드</span>}
+      {food.is_special   && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef3c7',color:'#b45309',border:'1px solid #f59e0b'}}>🏆 특산품</span>}
+      {food.is_limited && food.limited_days && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#d1fae5',color:'#059669',border:'1px solid #10b981'}}>⏰ {food.limited_days}간 한정</span>}
+      {food.is_global    && <span style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#3b82f618',color:'#2563eb',border:'1px solid #3b82f644'}}>🌍 해외</span>}
+      {(Array.isArray(food.season_badge)?food.season_badge:[food.season_badge]).filter(Boolean).map(s=>(
+        s==='spring'?<span key="sp" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌸 봄</span>:
+        s==='summer'?<span key="su" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#92400e',border:'1px solid #fde68a'}}>🌞 여름</span>:
+        s==='fall'  ?<span key="fa" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🍂 가을</span>:
+        s==='winter'?<span key="wi" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>❄️ 겨울</span>:null
+      ))}
+      {(Array.isArray(food.jeolgi_badge)?food.jeolgi_badge:[food.jeolgi_badge]).filter(Boolean).map(j=>(
+        j==='sambok'    ?<span key="sambok"     style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 삼복</span>:
+        j==='chopbok'   ?<span key="chopbok"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 초복</span>:
+        j==='jungbok'   ?<span key="jungbok"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 중복</span>:
+        j==='malbok'    ?<span key="malbok"     style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff1f2',color:'#be123c',border:'1px solid #fecdd3'}}>🔥 말복</span>:
+        j==='chuseok'   ?<span key="chuseok"   style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#854d0e',border:'1px solid #fde68a'}}>🌕 추석</span>:
+        j==='gimjang'   ?<span key="gimjang"   style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🥬 김장철</span>:
+        j==='dongji'    ?<span key="dongji"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1e40af',border:'1px solid #bae6fd'}}>☯️ 동지</span>:
+        j==='seollal'   ?<span key="seollal"   style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎍 설날</span>:
+        j==='ipchun'    ?<span key="ipchun"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌱 입춘</span>:
+        j==='daeboreum' ?<span key="daeboreum" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🌕 정월대보름</span>:
+        j==='dano'      ?<span key="dano"      style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🌿 단오</span>:
+        j==='hansik'    ?<span key="hansik"    style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🌸 한식</span>:null
+      ))}
+      {(Array.isArray(food.special_badge)?food.special_badge:[food.special_badge]).filter(Boolean).map(s=>(
+        s==='boyangshik' ?<span key="bo" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa'}}>💪 보양식</span>:
+        s==='jeolgi_food'?<span key="je" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #e9d5ff'}}>🎋 절기음식</span>:
+        s==='hangover'   ?<span key="ha" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fefce8',color:'#854d0e',border:'1px solid #fde68a'}}>🍶 해장</span>:
+        s==='diet'       ?<span key="di" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdf4',color:'#166534',border:'1px solid #86efac'}}>🥗 다이어트</span>:null
+      ))}
+      {(Array.isArray(food.habitat_badge)?food.habitat_badge:[food.habitat_badge]).filter(Boolean).map(h=>(
+        h==='island'    ?<span key="isl" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0369a1',border:'1px solid #7dd3fc'}}>🏝️ 섬</span>:
+        h==='freshwater'?<span key="frw" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #93c5fd'}}>🐟 민물</span>:
+        h==='tidal'     ?<span key="tid" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0fdfa',color:'#0f766e',border:'1px solid #5eead4'}}>🌊 갯벌</span>:
+        h==='mountain'  ?<span key="mtn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f7fee7',color:'#3f6212',border:'1px solid #a3e635'}}>🏔️ 산</span>:
+        h==='ocean'     ?<span key="ocn" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#f0f9ff',color:'#0c4a6e',border:'1px solid #38bdf8'}}>🌊 바다</span>:null
+      ))}
+      {(Array.isArray(food.farming_badge)?food.farming_badge:[food.farming_badge]).filter(Boolean).map(p=>(
+        p==='aquaculture'?<span key="aqu" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fdf4ff',color:'#7e22ce',border:'1px solid #d8b4fe'}}>🤿 양식</span>:
+        p==='wild'       ?<span key="wld" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fff7ed',color:'#c2410c',border:'1px solid #fdba74'}}>🎣 자연산</span>:
+        p==='fermented'  ?<span key="fer" style={{fontSize:10,padding:'2px 7px',borderRadius:999,fontWeight:700,background:'#fef9c3',color:'#713f12',border:'1px solid #fde68a'}}>🥟 발효</span>:null
+      ))}
+    </div>
+  )
+}
+
+// 건강효능 태그 (지역 페이지와 동일한 컬러 매핑)
+function FoodHealthTags({ food }) {
+  if (!(food.healthBenefits || []).length) return null
+  const BENEFIT_COLOR = {'면역':['#16a34a','#dcfce7'],'두뇌':['#6366f1','#ede9fe'],'눈':['#6366f1','#ede9fe'],'혈관':['#ef4444','#fee2e2'],'심장':['#ef4444','#fee2e2'],'혈압':['#ef4444','#fee2e2'],'뼈':['#f59e0b','#fef3c7'],'관절':['#f59e0b','#fef3c7'],'소화':['#10b981','#d1fae5'],'장':['#10b981','#d1fae5'],'피부':['#ec4899','#fce7f3'],'미용':['#ec4899','#fce7f3'],'체중':['#8b5cf6','#ede9fe'],'다이어트':['#8b5cf6','#ede9fe'],'항암':['#dc2626','#fee2e2'],'항산화':['#16a34a','#dcfce7']}
+  const getBenefitStyle = (cat) => {
+    for (const [key,[color,bg]] of Object.entries(BENEFIT_COLOR)) { if (cat && cat.includes(key)) return { color, bg } }
+    return { color: '#6b7280', bg: '#f3f4f6' }
+  }
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+      {(food.healthBenefits || []).slice(0, 5).map(b => {
+        const { color, bg } = getBenefitStyle(b.category)
+        return <span key={b.id} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 600, background: bg, border: `1px solid ${color}44`, color }}>{b.name}</span>
+      })}
+      {(food.healthBenefits || []).length > 5 && <span style={{ fontSize: 10, color: '#9ca3af', padding: '2px 4px' }}>+{(food.healthBenefits || []).length - 5}</span>}
+    </div>
+  )
+}
+
 export default function ForMePage() {
   const [rawFoods, setRawFoods]   = useState([])
   const [loading, setLoading]     = useState(true)
@@ -115,12 +196,17 @@ export default function ForMePage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // 지역과 무관하게 재료명 기준으로 합치고, 월은 지역별 월의 합집합으로 계산
+  // 지역과 무관하게 재료명 기준으로 합치고, 월과 지역은 지역별 데이터의 합집합으로 계산
   const allFoods = useMemo(() => {
     const map = {}
     rawFoods.forEach(f => {
-      if (!map[f.ingredient]) map[f.ingredient] = { ...f, months: [...(f.months || [])] }
-      else (f.months || []).forEach(m => { if (!map[f.ingredient].months.includes(m)) map[f.ingredient].months.push(m) })
+      if (!map[f.ingredient]) {
+        map[f.ingredient] = { ...f, months: [...(f.months || [])], regions: f.region ? [f.region] : [] }
+      } else {
+        const g = map[f.ingredient]
+        ;(f.months || []).forEach(m => { if (!g.months.includes(m)) g.months.push(m) })
+        if (f.region && !g.regions.includes(f.region)) g.regions.push(f.region)
+      }
     })
     return Object.values(map)
   }, [rawFoods])
@@ -417,7 +503,11 @@ export default function ForMePage() {
                     <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card">
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                         <span style={{ fontSize: 18, fontWeight: 900 }}>{food.ingredient}</span>
-                        {food.is_superfood && <span className="tag">🌟 슈퍼푸드</span>}
+                        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {[...food.months].sort((a, b) => a - b).map(m => (
+                            <span key={m} style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'var(--surface2)', color: 'var(--text3)' }}>{m}월</span>
+                          ))}
+                        </div>
                       </div>
                       {food.reasons.length > 0 && (
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -426,7 +516,14 @@ export default function ForMePage() {
                           ))}
                         </div>
                       )}
+                      <FoodBadges food={food} />
+                      <FoodHealthTags food={food} />
                       <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>💚 {food.health}</p>
+                      {(food.tvPrograms || []).length > 0 && (
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 8 }}>
+                          {food.tvPrograms.map(tv => <span key={tv} className="tag">📺 {tv}</span>)}
+                        </div>
+                      )}
                     </Link>
                   ))}
                 </div>
@@ -453,6 +550,7 @@ export default function ForMePage() {
                           {food.matched.map(c => <span key={c.id} className="tag" style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#dc2626' }}>{c.label}</span>)}
                         </div>
                       </div>
+                      <FoodBadges food={food} />
                       <p style={{ fontSize: 12, color: '#b91c1c', lineHeight: 1.6, fontWeight: 600 }}>{food.caution}</p>
                     </Link>
                   ))}
@@ -477,6 +575,7 @@ export default function ForMePage() {
                       <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
                         style={{ borderColor: '#fde68a', background: '#fffbeb' }}>
                         <span style={{ fontSize: 18, fontWeight: 900, display: 'block', marginBottom: 4 }}>{food.ingredient}</span>
+                        <FoodBadges food={food} />
                         <p style={{ fontSize: 12, color: '#92400e', lineHeight: 1.6, fontWeight: 600 }}>💡 {food.hint}</p>
                       </Link>
                     ))}
