@@ -39,9 +39,6 @@ export default function RegionPage({ regionId }) {
   const [editHtml, setEditHtml] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
   const [savedToast, setSavedToast] = useState(false)
-  // 쿠팡 링크 상태: { [foodId]: true(정상) | false(삭제/품절 의심) | 'checking' | null(확인불가) }
-  const [coupangStatus, setCoupangStatus] = useState({})
-  const [modalCheck, setModalCheck] = useState(null) // 수정 모달 내 "지금 확인" 결과
 
   useEffect(() => {
     try {
@@ -55,7 +52,6 @@ export default function RegionPage({ regionId }) {
     setEditingFood(food)
     setEditUrl(food.coupang_url || '')
     setEditHtml(food.coupang_banner_html || '')
-    setModalCheck(null)
   }
   const closeCoupangEdit = () => { if (!savingEdit) setEditingFood(null) }
 
@@ -75,34 +71,10 @@ export default function RegionPage({ regionId }) {
       setEditingFood(null)
       setSavedToast(true)
       setTimeout(() => setSavedToast(false), 1800)
-      // 저장한 URL이 있으면 바로 한 번 상태 확인
-      if (editUrl.trim()) checkCoupangUrl(editingFood.id, editUrl.trim())
     } catch {
       alert('저장에 실패했어요. 다시 시도해주세요.')
     } finally {
       setSavingEdit(false)
-    }
-  }
-
-  // 쿠팡 링크 하나를 서버에 검사 요청 → 결과를 coupangStatus에 반영 (+세션 캐시)
-  const checkCoupangUrl = async (foodId, url, { onResult } = {}) => {
-    if (!url) return
-    setCoupangStatus(prev => ({ ...prev, [foodId]: 'checking' }))
-    try {
-      const res = await fetch(`/api/admin/coupang-check?url=${encodeURIComponent(url)}`, {
-        headers: { 'x-admin-token': adminToken },
-      })
-      const data = await res.json()
-      setCoupangStatus(prev => ({ ...prev, [foodId]: data.ok }))
-      try {
-        const cache = JSON.parse(sessionStorage.getItem('coupang_status_cache') || '{}')
-        cache[url] = { ok: data.ok, checkedAt: Date.now() }
-        sessionStorage.setItem('coupang_status_cache', JSON.stringify(cache))
-      } catch {}
-      onResult?.(data)
-    } catch (e) {
-      setCoupangStatus(prev => ({ ...prev, [foodId]: null }))
-      onResult?.({ ok: null, error: e.message })
     }
   }
 
@@ -137,52 +109,6 @@ export default function RegionPage({ regionId }) {
       .finally(() => setLoading(false))
   }, [regionId])
 
-  // 관리자 로그인 상태에서, 쿠팡 URL이 등록된 재료들을 자동으로 순차 점검 (쿠팡 서버 부담 방지 위해 하나씩, 약간의 텀을 두고 요청)
-  // 같은 URL은 세션 내 6시간 동안 캐시해서 페이지 이동/새로고침마다 매번 다시 확인하지 않는다.
-  useEffect(() => {
-    if (!isAdmin || !adminToken) return
-    const targets = allFoods.filter(f => f.id && f.coupang_url)
-    if (targets.length === 0) return
-
-    let cache = {}
-    try { cache = JSON.parse(sessionStorage.getItem('coupang_status_cache') || '{}') } catch {}
-    const TTL = 1000 * 60 * 60 * 6
-    const now = Date.now()
-
-    const toCheck = []
-    const initial = {}
-    targets.forEach(f => {
-      const cached = cache[f.coupang_url]
-      if (cached && (now - cached.checkedAt) < TTL) initial[f.id] = cached.ok
-      else toCheck.push(f)
-    })
-    if (Object.keys(initial).length) setCoupangStatus(prev => ({ ...prev, ...initial }))
-    if (toCheck.length === 0) return
-
-    let cancelled = false
-    ;(async () => {
-      for (const f of toCheck) {
-        if (cancelled) return
-        setCoupangStatus(prev => ({ ...prev, [f.id]: 'checking' }))
-        try {
-          const res = await fetch(`/api/admin/coupang-check?url=${encodeURIComponent(f.coupang_url)}`, {
-            headers: { 'x-admin-token': adminToken },
-          })
-          const data = await res.json()
-          cache[f.coupang_url] = { ok: data.ok, checkedAt: Date.now() }
-          if (!cancelled) setCoupangStatus(prev => ({ ...prev, [f.id]: data.ok }))
-        } catch {
-          if (!cancelled) setCoupangStatus(prev => ({ ...prev, [f.id]: null }))
-        }
-        await new Promise(r => setTimeout(r, 500)) // 요청 사이 텀
-      }
-      try { sessionStorage.setItem('coupang_status_cache', JSON.stringify(cache)) } catch {}
-    })()
-
-    return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, adminToken, allFoods.length, regionId])
-
   if (!region) return null
 
   // 계절 or 월 필터 (월 우선) + 가나다 정렬
@@ -202,15 +128,10 @@ export default function RegionPage({ regionId }) {
   const handleSeason = (id) => { setActiveMonth(null); setActiveSeason(prev => prev === id ? null : id) }
   const handleMonth  = (m)  => { setActiveSeason(null); setActiveMonth(prev => prev === m ? null : m) }
 
-  // 관리자용 쿠팡 연동 배지 — 링크/배너 등록 여부 + (링크가 있으면) 생존 여부 상태를 함께 보여줌
+  // 관리자용 쿠팡 연동 배지 — 링크/배너가 등록되어 있는지만 표시 (생존여부 자동판정은 하지 않음)
   const coupangBadgeInfo = (food) => {
     if (!food.coupang_url && !food.coupang_banner_html) return null
-    if (!food.coupang_url) return { emoji: '🛒', color: '#3b82f6', bg: '#eff6ff', title: '쿠팡 배너 등록됨' }
-    const st = coupangStatus[food.id]
-    if (st === 'checking' || st === undefined) return { emoji: '🛒', color: '#9ca3af', bg: '#f3f4f6', title: '쿠팡 링크 등록됨 · 상태 확인 중...' }
-    if (st === true)  return { emoji: '✅', color: '#16a34a', bg: '#f0fdf4', title: '쿠팡 링크 정상 확인됨' }
-    if (st === false) return { emoji: '⚠️', color: '#dc2626', bg: '#fef2f2', title: '쿠팡 상품이 삭제되었거나 접속이 안 될 수 있어요 — 확인해주세요' }
-    return { emoji: '❔', color: '#9ca3af', bg: '#f3f4f6', title: '쿠팡 링크 등록됨 · 상태를 자동으로 확인하지 못했어요' }
+    return { emoji: '🛒', color: '#3b82f6', bg: '#eff6ff', title: '쿠팡 링크/배너 등록됨' }
   }
 
   return (
@@ -564,36 +485,10 @@ export default function RegionPage({ regionId }) {
             <p style={{ fontSize:12, color:'var(--text3)', marginBottom:16 }}>{editingFood.ingredient}</p>
 
             <label style={{ display:'block', fontSize:12, fontWeight:700, color:'var(--text2)', marginBottom:6 }}>쿠팡 URL</label>
-            <div style={{ display:'flex', gap:6, marginBottom: modalCheck ? 6 : 14 }}>
-              <input value={editUrl} onChange={e => { setEditUrl(e.target.value); setModalCheck(null) }}
-                placeholder="https://link.coupang.com/a/..."
-                style={{ flex:1, padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)',
-                  fontSize:13, boxSizing:'border-box' }} />
-              <button type="button" disabled={!editUrl.trim() || modalCheck === 'checking'}
-                onClick={async () => {
-                  setModalCheck('checking')
-                  try {
-                    const res = await fetch(`/api/admin/coupang-check?url=${encodeURIComponent(editUrl.trim())}`, {
-                      headers: { 'x-admin-token': adminToken },
-                    })
-                    setModalCheck(await res.json())
-                  } catch (e) { setModalCheck({ ok: null, error: e.message }) }
-                }}
-                style={{ padding:'0 14px', borderRadius:8, border:'1px solid var(--border)',
-                  background:'var(--surface2)', color:'var(--text2)', fontSize:12, fontWeight:700,
-                  cursor: editUrl.trim() ? 'pointer' : 'not-allowed', whiteSpace:'nowrap',
-                  opacity: editUrl.trim() ? 1 : 0.5 }}>
-                {modalCheck === 'checking' ? '확인 중...' : '🔍 지금 확인'}
-              </button>
-            </div>
-            {modalCheck && modalCheck !== 'checking' && (
-              <p style={{ fontSize:12, marginBottom:14, fontWeight:700,
-                color: modalCheck.ok === true ? '#16a34a' : modalCheck.ok === false ? '#dc2626' : '#9ca3af' }}>
-                {modalCheck.ok === true && '✅ 정상적으로 열리는 링크예요'}
-                {modalCheck.ok === false && '⚠️ 상품이 삭제됐거나 접속되지 않는 것 같아요. 링크를 확인해주세요'}
-                {modalCheck.ok === null && '❔ 자동으로 판단하지 못했어요 (직접 링크를 열어 확인해주세요)'}
-              </p>
-            )}
+            <input value={editUrl} onChange={e => setEditUrl(e.target.value)}
+              placeholder="https://link.coupang.com/a/..."
+              style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)',
+                fontSize:13, marginBottom:14, boxSizing:'border-box' }} />
 
             <label style={{ display:'block', fontSize:12, fontWeight:700, color:'var(--text2)', marginBottom:6 }}>쿠팡 배너 iframe 코드</label>
             <textarea value={editHtml} onChange={e => setEditHtml(e.target.value)}
