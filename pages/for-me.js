@@ -76,8 +76,36 @@ export default function ForMePage() {
   const [weightKg, setWeightKg]   = useState('')
   const [conditions, setConditions] = useState([])
   const [month, setMonth]         = useState(null)
+  const [canNativeShare, setCanNativeShare] = useState(false)
+  const [kakaoReady, setKakaoReady] = useState(false)
+  const [copiedMsg, setCopiedMsg] = useState('')
+  const [origin, setOrigin] = useState('https://www.fsfood.kr')
 
-  useEffect(() => { setMonth(new Date().getMonth() + 1) }, [])
+  // 공유된 링크(?by=&g=&h=&w=&c=&m=)로 들어온 경우 입력값 복원, 아니면 이번 달로 기본 설정
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('by')) setBirthYear(params.get('by'))
+    if (params.get('g'))  setGender(params.get('g'))
+    if (params.get('h'))  setHeightCm(params.get('h'))
+    if (params.get('w'))  setWeightKg(params.get('w'))
+    if (params.get('c'))  setConditions(params.get('c').split(',').filter(Boolean))
+    const m = Number(params.get('m'))
+    setMonth(m >= 1 && m <= 12 ? m : new Date().getMonth() + 1)
+    setCanNativeShare(typeof navigator !== 'undefined' && !!navigator.share)
+    setOrigin(window.location.origin)
+  }, [])
+
+  // 카카오톡 공유 SDK — NEXT_PUBLIC_KAKAO_JS_KEY가 설정된 경우에만 로드 (없으면 링크 복사로 대체)
+  useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY
+    if (!key || typeof window === 'undefined') return
+    const init = () => { if (window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init(key); setKakaoReady(true) }
+    if (window.Kakao) { init(); return }
+    const script = document.createElement('script')
+    script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js'
+    script.onload = init
+    document.head.appendChild(script)
+  }, [])
 
   useEffect(() => {
     fetch('/api/map/seasonal-foods')
@@ -161,6 +189,89 @@ export default function ForMePage() {
 
   const ageGroupInfo = AGE_GROUPS.find(g => g.id === userAgeGroup)
 
+  // ── 공유 기능 ──────────────────────────────────────────
+  const SITE_ORIGIN = origin
+  const SOIL_MESSAGE = '🇰🇷 신토불이! 한국 사람은 한국 땅에서, 그 계절에 나는 음식을 먹을 때 가장 건강한 에너지를 얻을 수 있어요.'
+
+  // 내 입력값을 쿼리로 담은 "내 결과 그대로 보여주는" 링크
+  const buildResultUrl = () => {
+    const params = new URLSearchParams()
+    if (birthYear) params.set('by', birthYear)
+    if (gender !== 'all') params.set('g', gender)
+    if (heightCm) params.set('h', heightCm)
+    if (weightKg) params.set('w', weightKg)
+    if (conditions.length) params.set('c', conditions.join(','))
+    if (month) params.set('m', String(month))
+    const qs = params.toString()
+    return `${SITE_ORIGIN}/for-me${qs ? '?' + qs : ''}`
+  }
+  const inviteUrl = `${SITE_ORIGIN}/for-me`
+
+  const buildResultShareText = () => {
+    const topRec   = recommendList.slice(0, 3).map(f => f.ingredient)
+    const topAvoid = avoidList.slice(0, 3).map(f => f.ingredient)
+    let text = `🥕 ${month}월, 나에게 맞는 제철 먹거리 추천 결과!\n\n`
+    text += `😋 추천: ${topRec.length ? topRec.join(', ') + (recommendList.length > topRec.length ? ` 외 ${recommendList.length - topRec.length}가지` : '') : '없음'}\n`
+    if (avoidList.length) text += `⚠️ 주의: ${topAvoid.join(', ')}${avoidList.length > topAvoid.length ? ` 외 ${avoidList.length - topAvoid.length}가지` : ''}\n`
+    text += `\n${SOIL_MESSAGE}`
+    return text
+  }
+  const inviteShareText = `${SOIL_MESSAGE}\n\n나에게 맞는 이달의 제철 먹거리, 너도 한번 확인해봐 🥬`
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedMsg('복사했어요! 원하는 곳에 붙여넣어 공유해보세요 🙌')
+    } catch {
+      setCopiedMsg('복사에 실패했어요. 직접 선택해서 복사해주세요.')
+    }
+    setTimeout(() => setCopiedMsg(''), 2500)
+  }
+
+  const nativeShare = async (title, text, url) => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try { await navigator.share({ title, text, url }) } catch {}
+    } else {
+      copyToClipboard(`${text}\n\n${url}`)
+    }
+  }
+
+  const shareKakao = (title, description, url) => {
+    if (kakaoReady && window.Kakao) {
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title, description,
+          imageUrl: `${SITE_ORIGIN}/og-image.png`,
+          link: { mobileWebUrl: url, webUrl: url },
+        },
+        buttons: [{ title: '확인하러 가기', link: { mobileWebUrl: url, webUrl: url } }],
+      })
+    } else {
+      copyToClipboard(`${title}\n${description}\n\n${url}`)
+    }
+  }
+
+  const shareBtnStyle = (bg, color = '#fff') => ({
+    padding: '8px 13px', borderRadius: 8, border: 'none', background: bg, color,
+    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+    display: 'inline-flex', alignItems: 'center', gap: 5, textDecoration: 'none',
+  })
+
+  const ShareRow = ({ title, text, url }) => (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      {canNativeShare && (
+        <button onClick={() => nativeShare(title, text, url)} style={shareBtnStyle('#111827')}>📤 공유하기</button>
+      )}
+      <button onClick={() => shareKakao(title, text, url)} style={shareBtnStyle('#FEE500', '#3c1e1e')}>💬 카카오톡</button>
+      <a href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text + '\n\n' + url)}`} style={shareBtnStyle('#6b7280')}>✉️ 이메일</a>
+      <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" style={shareBtnStyle('#000')}>𝕏 트위터</a>
+      <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" style={shareBtnStyle('#1877f2')}>📘 페이스북</a>
+      <button onClick={() => copyToClipboard(`${text}\n\n${url}`)} style={shareBtnStyle('#16a34a')}>🔗 복사</button>
+      <span style={{ fontSize: 11, color: 'var(--text3)' }}>· 인스타그램은 복사한 내용을 스토리/DM에 붙여넣어 공유해보세요</span>
+    </div>
+  )
+
   return (
     <>
       <Head>
@@ -175,6 +286,24 @@ export default function ForMePage() {
           <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
             출생연도·성별·키/몸무게·지병(주의사항)을 알려주시면, 이번 달 제철 식재료 중 <b>추천할 것</b>과 <b>피하는(또는 적당히 조절하는) 게 좋은 것</b>을 정리해드려요.
           </p>
+        </section>
+
+        {/* 신토불이 메시지 */}
+        <section style={{
+          marginBottom: 24, padding: '16px 20px', borderRadius: 12,
+          background: 'linear-gradient(135deg, #f0fdf4, #eff6ff)', border: '1px solid #bbf7d0',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <span style={{ fontSize: 26 }}>🇰🇷</span>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#166534', lineHeight: 1.6, margin: 0 }}>
+            신토불이 — 한국 사람은 한국 땅에서, 그 계절에 나는 음식을 먹을 때 가장 건강한 에너지를 얻을 수 있어요.
+          </p>
+        </section>
+
+        {/* 친구에게 추천하기 */}
+        <section style={{ marginBottom: 28 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>👥 이 테스트, 친구에게도 추천해보세요</p>
+          <ShareRow title="Fresh Season 맞춤 제철 추천" text={inviteShareText} url={inviteUrl} />
         </section>
 
         {/* 입력 폼 */}
@@ -355,6 +484,12 @@ export default function ForMePage() {
                 )}
               </section>
             )}
+
+            {/* 내 결과 공유하기 */}
+            <section style={{ marginBottom: 28, padding: '16px 20px', borderRadius: 12, background: 'var(--surface2)' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📤 내 결과 공유하기</p>
+              <ShareRow title="내 맞춤 제철 추천 결과" text={buildResultShareText()} url={buildResultUrl()} />
+            </section>
           </>
         )}
 
@@ -364,6 +499,15 @@ export default function ForMePage() {
 
         <Link href="/" className="back-link">← 홈으로</Link>
       </main>
+
+      {copiedMsg && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 9999,
+          background: '#111', color: '#fff', borderRadius: 999, padding: '12px 22px', fontSize: 13, fontWeight: 600,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>
+          {copiedMsg}
+        </div>
+      )}
+
       <Footer />
     </>
   )
