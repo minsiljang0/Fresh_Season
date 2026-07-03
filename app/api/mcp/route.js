@@ -2048,23 +2048,27 @@ const baseHandler = createMcpHandler(
 
 
   },
-  {},
+  {
+    instructions:
+      '제철 먹거리 + 건강효능 + TV레시피 블로그(fresh-season) 자동화 서버. ' +
+      '블로그 글 1편을 기획→작성→발행하는 파이프라인 도구, 식재료/건강효능/TV방송/레시피 DB 관리 도구, ' +
+      '네이버 키워드 검색량 조회 도구, 발행 기록·SEO 지침 조회 도구를 제공한다. ' +
+      '오늘의 블로그 글을 쓰거나 발행하거나, 식재료·키워드 DB를 조회/수정할 때 이 서버의 도구를 사용한다.',
+  },
   { basePath: '/api', maxDuration: 30, verboseLogs: true }
 )
 
-// ── 간단한 공유 비밀키 보호 ───────────────────────────────────────────
-// claude.ai 커넥터 URL에 ?key=... 로 같이 등록해서 사용한다.
-// (전체 OAuth 플로우 대신, 개인/소규모 사용에 맞춘 가벼운 보호 장치)
-async function authedHandler(request) {
-  const url = new URL(request.url)
-  const key = url.searchParams.get('key')
-  if (!process.env.MCP_SHARED_SECRET || key !== process.env.MCP_SHARED_SECRET) {
-    return new Response(JSON.stringify({ error: '인증 필요 (key 파라미터 확인)' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-  return baseHandler(request)
-}
-
-export { authedHandler as GET, authedHandler as POST }
+// ── (202607031530 수정) 쿼리파라미터 키 인증 제거 ──────────────────────
+// Anthropic 커넥터 인증 스펙(MCP Authorization spec)은 액세스 토큰/키를
+// URL 쿼리스트링(?key=, ?token=, ?apiKey= 등)으로 전달하는 방식을 명시적으로
+// 지원하지 않는다. 이 서버가 그 방식을 쓰고 있었던 것이, 세션마다 도구가
+// 로드됐다 안 됐다 하던 원인이었을 가능성이 크다 (재연결/재인덱싱 시
+// 쿼리스트링이 유지된다는 보장이 없음).
+//
+// 대신 이 엔드포인트 경로 자체(/api/mcp)는 URL을 아는 사람만 접근 가능하다는
+// 점 외에는 별도 인증이 없다. 개인/소규모 운영 기준으로는 실용적인 선택이지만,
+// create_blog_post / update_blog_post / delete_row / run_sql 같은 쓰기·파괴적
+// 툴이 있으므로 이 URL이 외부에 노출되지 않도록 각별히 주의할 것.
+// (진짜 OAuth 2.1 인증으로 넘어가고 싶다면 Anthropic 커넥터 인증 문서의
+// oauth_anthropic_creds 방식을 참고 — 추후 필요해지면 별도로 작업)
+export { baseHandler as GET, baseHandler as POST }
