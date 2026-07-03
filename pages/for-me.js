@@ -55,6 +55,7 @@ function bmiCategory(bmi) {
   return { label:'고도비만', color:'#dc2626' }
 }
 const DIET_HEALTH_CATEGORY = '체중·다이어트'
+const FORME_STORAGE_KEY = 'fresh_season_forme_inputs_v1'
 
 // 카테고리별 "다이어트 중이면 참고할 만한" 일반적인 안내 (배제/금지가 아니라 적당량 권장 톤 유지)
 const MODERATION_HINTS = {
@@ -148,6 +149,24 @@ function FoodHealthTags({ food }) {
   )
 }
 
+// 지병별 좋은/피할 음식, 체중관리 카드 등에서 공통으로 쓰는 간단 카드
+function SimpleFoodCard({ food, borderColor, bg, textColor, text }) {
+  return (
+    <Link href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card" style={{ borderColor, background: bg }}>
+      <div style={{ marginBottom: 6 }}>
+        <span style={{ fontSize: 18, fontWeight: 900, display: 'block' }}>{food.ingredient}</span>
+        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 4 }}>
+          {[...food.months].sort((a, b) => a - b).map(m => (
+            <span key={m} style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'var(--surface2)', color: 'var(--text3)' }}>{m}월</span>
+          ))}
+        </div>
+      </div>
+      <FoodBadges food={food} />
+      {text && <p style={{ fontSize: 12, color: textColor, lineHeight: 1.6, fontWeight: 600 }}>{text}</p>}
+    </Link>
+  )
+}
+
 export default function ForMePage() {
   const [rawFoods, setRawFoods]   = useState([])
   const [loading, setLoading]     = useState(true)
@@ -162,19 +181,32 @@ export default function ForMePage() {
   const [copiedMsg, setCopiedMsg] = useState('')
   const [origin, setOrigin] = useState('https://www.fsfood.kr')
 
-  // 공유된 링크(?by=&g=&h=&w=&c=&m=)로 들어온 경우 입력값 복원, 아니면 이번 달로 기본 설정
+  // 공유된 링크(?by=&g=&h=&w=&c=&m=)로 들어온 경우가 최우선, 아니면 이전에 입력했던 값(세션 저장)을 복원,
+  // 그것도 없으면 이번 달로 기본 설정 — 카드 클릭 후 뒤로가기 해도 입력값이 사라지지 않게 하기 위함
   useEffect(() => {
+    let saved = {}
+    try { saved = JSON.parse(sessionStorage.getItem(FORME_STORAGE_KEY) || '{}') } catch {}
+
     const params = new URLSearchParams(window.location.search)
-    if (params.get('by')) setBirthYear(params.get('by'))
-    if (params.get('g'))  setGender(params.get('g'))
-    if (params.get('h'))  setHeightCm(params.get('h'))
-    if (params.get('w'))  setWeightKg(params.get('w'))
-    if (params.get('c'))  setConditions(params.get('c').split(',').filter(Boolean))
-    const m = Number(params.get('m'))
-    setMonth(m >= 1 && m <= 12 ? m : new Date().getMonth() + 1)
+    setBirthYear(params.get('by') ?? saved.birthYear ?? '')
+    setGender(params.get('g') ?? saved.gender ?? 'all')
+    setHeightCm(params.get('h') ?? saved.heightCm ?? '')
+    setWeightKg(params.get('w') ?? saved.weightKg ?? '')
+    setConditions(params.get('c') ? params.get('c').split(',').filter(Boolean) : (saved.conditions ?? []))
+    const mParam = Number(params.get('m'))
+    setMonth((mParam >= 1 && mParam <= 12) ? mParam : (saved.month ?? new Date().getMonth() + 1))
+
     setCanNativeShare(typeof navigator !== 'undefined' && !!navigator.share)
     setOrigin(window.location.origin)
   }, [])
+
+  // 입력값이 바뀔 때마다 세션에 저장 — 재료 카드를 눌러 이동했다가 뒤로가기 해도 그대로 복원됨
+  useEffect(() => {
+    if (month === null) return // 초기 복원 전에는 저장하지 않음(기본값으로 덮어쓰는 것 방지)
+    try {
+      sessionStorage.setItem(FORME_STORAGE_KEY, JSON.stringify({ birthYear, gender, heightCm, weightKg, conditions, month }))
+    } catch {}
+  }, [birthYear, gender, heightCm, weightKg, conditions, month])
 
   // 카카오톡 공유 SDK — NEXT_PUBLIC_KAKAO_JS_KEY가 설정된 경우에만 로드 (없으면 링크 복사로 대체)
   useEffect(() => {
@@ -264,14 +296,24 @@ export default function ForMePage() {
         moderation.push({ ...f, hint: MODERATION_HINTS[f.category] })
       }
     })
-
-    recommend.sort((a, b) => {
-      if (a.reasons.length !== b.reasons.length) return b.reasons.length - a.reasons.length
-      if (!!a.is_superfood !== !!b.is_superfood) return a.is_superfood ? -1 : 1
-      return a.ingredient.localeCompare(b.ingredient, 'ko')
-    })
+    // ㄱㄴㄷ 순(가나다순) 정렬 — monthFoods가 이미 가나다순이라 자연스럽게 유지됨
     return { avoidList: avoid, recommendList: recommend, moderationList: moderation }
   }, [monthFoods, selectedConditions, userAgeGroup, gender, wantsWeightCare])
+
+  // 체크한 지병별로 "좋은 음식" / "피해야 할 음식"을 따로 모아서 보여주기 위한 그룹
+  const conditionGroups = useMemo(() => {
+    return selectedConditions.map(c => ({
+      condition: c,
+      good: c.healthCategory ? monthFoods.filter(f => (f.healthBenefits || []).some(hb => hb.category === c.healthCategory)) : [],
+      bad: monthFoods.filter(f => f.caution && f.caution.includes(c.keyword)),
+    }))
+  }, [monthFoods, selectedConditions])
+
+  // 체중관리(다이어트)가 필요한 경우, 감량에 도움되는 음식만 따로 모은 목록
+  const dietGoodList = useMemo(() => {
+    if (!wantsWeightCare) return []
+    return monthFoods.filter(f => isDietFriendly(f))
+  }, [monthFoods, wantsWeightCare])
 
   const ageGroupInfo = AGE_GROUPS.find(g => g.id === userAgeGroup)
 
@@ -501,9 +543,9 @@ export default function ForMePage() {
                 <div className="grid-auto">
                   {recommendList.map((food, i) => (
                     <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 18, fontWeight: 900 }}>{food.ingredient}</span>
-                        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <div style={{ marginBottom: 6 }}>
+                        <span style={{ fontSize: 18, fontWeight: 900, display: 'block' }}>{food.ingredient}</span>
+                        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 4 }}>
                           {[...food.months].sort((a, b) => a - b).map(m => (
                             <span key={m} style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'var(--surface2)', color: 'var(--text3)' }}>{m}월</span>
                           ))}
@@ -530,33 +572,67 @@ export default function ForMePage() {
               )}
             </section>
 
-            {/* 주의 */}
+            {/* 지병별 맞춤 리스트 — 체크한 지병마다 "좋은 음식"과 "피해야 할 음식"을 따로 모아서 보여줌 */}
             <section style={{ marginBottom: 40 }}>
               <h2 className="section-title">
-                ⚠️ {month}월 주의가 필요한 식재료 <span>{avoidList.length}가지</span>
+                🩺 지병별 맞춤 리스트
               </h2>
               {selectedConditions.length === 0 ? (
-                <p style={{ color: 'var(--text3)', fontSize: 14, padding: '10px 0' }}>위에서 지병·주의사항을 선택하면 알려드려요.</p>
-              ) : avoidList.length === 0 ? (
-                <p style={{ color: 'var(--text3)', fontSize: 14, padding: '10px 0' }}>선택하신 조건에서 특별히 주의할 재료는 없어요.</p>
+                <p style={{ color: 'var(--text3)', fontSize: 14, padding: '10px 0' }}>위에서 지병·주의사항을 선택하면 지병별로 좋은 음식 / 피해야 할 음식을 나눠서 보여드려요.</p>
               ) : (
-                <div className="grid-auto">
-                  {avoidList.map((food, i) => (
-                    <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
-                      style={{ borderColor: '#fca5a5', background: '#fff8f8' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 18, fontWeight: 900 }}>{food.ingredient}</span>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          {food.matched.map(c => <span key={c.id} className="tag" style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#dc2626' }}>{c.label}</span>)}
-                        </div>
+                conditionGroups.map(g => (
+                  <div key={g.condition.id} style={{ marginBottom: 28 }}>
+                    <p style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{g.condition.label}</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', marginBottom: 8 }}>✅ 좋은 음식 ({g.good.length}가지)</p>
+                        {g.good.length === 0 ? (
+                          <p style={{ color: 'var(--text3)', fontSize: 13, padding: '6px 0' }}>
+                            {g.condition.healthCategory ? '이번 달엔 해당하는 재료가 없어요.' : '이 항목은 특정 효능 매칭이 없어 안내가 어려워요.'}
+                          </p>
+                        ) : (
+                          <div className="grid-auto">
+                            {g.good.map((food, i) => (
+                              <SimpleFoodCard key={i} food={food} borderColor="#86efac" bg="#f0fdf4" textColor="#166534" text={`💚 ${food.health}`} />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <FoodBadges food={food} />
-                      <p style={{ fontSize: 12, color: '#b91c1c', lineHeight: 1.6, fontWeight: 600 }}>{food.caution}</p>
-                    </Link>
-                  ))}
-                </div>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', marginBottom: 8 }}>🚫 피해야 할 음식 ({g.bad.length}가지)</p>
+                        {g.bad.length === 0 ? (
+                          <p style={{ color: 'var(--text3)', fontSize: 13, padding: '6px 0' }}>이번 달엔 특별히 주의할 재료가 없어요.</p>
+                        ) : (
+                          <div className="grid-auto">
+                            {g.bad.map((food, i) => (
+                              <SimpleFoodCard key={i} food={food} borderColor="#fca5a5" bg="#fff8f8" textColor="#b91c1c" text={food.caution} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
               )}
             </section>
+
+            {/* 체중관리(다이어트)에 도움되는 음식만 모아보기 */}
+            {wantsWeightCare && (
+              <section style={{ marginBottom: 40 }}>
+                <h2 className="section-title">
+                  🥗 {month}월, 체중관리에 도움되는 음식 <span>{dietGoodList.length}가지</span>
+                </h2>
+                {dietGoodList.length === 0 ? (
+                  <p style={{ color: 'var(--text3)', fontSize: 14, padding: '10px 0' }}>이번 달엔 다이어트 관련 배지가 등록된 재료가 없어요.</p>
+                ) : (
+                  <div className="grid-auto">
+                    {dietGoodList.map((food, i) => (
+                      <SimpleFoodCard key={i} food={food} borderColor="#86efac" bg="#f0fdf4" textColor="#166534" text={`💚 ${food.health}`} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* 체중관리 참고 (BMI 과체중 이상일 때만 노출) */}
             {wantsWeightCare && (
@@ -565,19 +641,14 @@ export default function ForMePage() {
                   🍽️ {month}월, 체중관리 중이면 적당히 <span>{moderationList.length}가지</span>
                 </h2>
                 <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
-                  못 먹는 게 아니라 <b>양 조절을 참고</b>해보시라는 의미예요. 위 추천 목록의 "체중관리에 참고하기 좋음" 재료와 함께 균형 있게 구성해보세요.
+                  못 먹는 게 아니라 <b>양 조절을 참고</b>해보시라는 의미예요. 위 "체중관리에 도움되는 음식"과 함께 균형 있게 구성해보세요.
                 </p>
                 {moderationList.length === 0 ? (
                   <p style={{ color: 'var(--text3)', fontSize: 14, padding: '10px 0' }}>이번 달엔 특별히 더 챙겨볼 재료가 없어요.</p>
                 ) : (
                   <div className="grid-auto">
                     {moderationList.map((food, i) => (
-                      <Link key={i} href={`/ingredient/${encodeURIComponent(food.ingredient)}`} className="card"
-                        style={{ borderColor: '#fde68a', background: '#fffbeb' }}>
-                        <span style={{ fontSize: 18, fontWeight: 900, display: 'block', marginBottom: 4 }}>{food.ingredient}</span>
-                        <FoodBadges food={food} />
-                        <p style={{ fontSize: 12, color: '#92400e', lineHeight: 1.6, fontWeight: 600 }}>💡 {food.hint}</p>
-                      </Link>
+                      <SimpleFoodCard key={i} food={food} borderColor="#fde68a" bg="#fffbeb" textColor="#92400e" text={`💡 ${food.hint}`} />
                     ))}
                   </div>
                 )}
