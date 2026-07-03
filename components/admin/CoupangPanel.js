@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { S, Toggle } from './AdminUI'
+import { S, Toggle, ConfirmModal } from './AdminUI'
 
 const ACCENT = '#ea580c'
 
@@ -47,6 +47,8 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
   const [form, setForm] = useState(item)
   const [saving, setSaving] = useState(false)
   const [open, setOpen] = useState(isNew)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -68,8 +70,10 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
     setSaving(false)
   }
 
+  const askDelete = () => setConfirmOpen(true)
+
   const del = async () => {
-    if (!confirm(`"${form.label || '이 항목'}"을 삭제할까요?`)) return
+    setDeleting(true)
     try {
       const res = await fetch(`${apiPath}?id=${encodeURIComponent(item.id)}`, {
         method: 'DELETE',
@@ -80,6 +84,8 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
     } catch (e) {
       alert('삭제 실패: ' + e.message)
     }
+    setDeleting(false)
+    setConfirmOpen(false)
   }
 
   return (
@@ -137,7 +143,7 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
             {isNew ? (
               <button onClick={onCancelNew} style={S.btnGhost}>취소</button>
             ) : (
-              <button onClick={del}
+              <button onClick={askDelete}
                 style={{ padding:'10px 16px', borderRadius:8, border:'1px solid #fca5a5', background:'#fff1f2', color:'#dc2626', fontWeight:600, cursor:'pointer', fontFamily:"'Outfit', sans-serif" }}>
                 삭제
               </button>
@@ -145,6 +151,16 @@ function RepeatableRow({ adminToken, item, isNew, apiPath, fields, onSaved, onDe
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="삭제 확인"
+        message={`"${form.label || '이 항목'}"을(를) 삭제할까요?`}
+        confirmLabel={deleting ? '삭제 중...' : '삭제'}
+        cancelLabel="취소"
+        onConfirm={deleting ? undefined : del}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   )
 }

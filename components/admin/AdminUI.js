@@ -44,6 +44,43 @@ export function Toggle({ value, onChange }) {
   )
 }
 
+export function ConfirmModal({ open, title, message, confirmLabel = '삭제', cancelLabel = '취소', danger = true, onConfirm, onCancel }) {
+  if (!open) return null
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(15,31,15,0.45)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 1000, padding: 20,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: 14, padding: 24, width: '100%', maxWidth: 360,
+          boxShadow: '0 12px 40px rgba(0,0,0,0.2)', border: '1px solid #d1e8d1',
+        }}
+      >
+        {title && <div style={{ fontSize: 16, fontWeight: 700, color: '#0f1f0f', marginBottom: 8 }}>{title}</div>}
+        {message && <div style={{ fontSize: 13, color: '#4b6e4b', lineHeight: 1.6, marginBottom: 20 }}>{message}</div>}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onCancel} style={S.btnGhost}>{cancelLabel}</button>
+          <button
+            onClick={onConfirm}
+            style={{
+              ...S.btn(danger ? '#dc2626' : '#16a34a'),
+              padding: '10px 22px',
+            }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Toast({ msg }) {
   if (!msg) return null
   return (
