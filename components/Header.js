@@ -81,6 +81,7 @@ export default function Header() {
               ))}
               <Link href="/map" className={`nav-link${router.pathname === '/map' ? ' active' : ''}`}>🗺 제철지도</Link>
               <Link href="/meal-plan" className={`nav-link${router.pathname.startsWith('/meal-plan') ? ' active' : ''}`}>🍽️ 월별 제철식단</Link>
+              <Link href="/recipe" className={`nav-link${router.pathname.startsWith('/recipe') ? ' active' : ''}`}>🍳 레시피</Link>
               <Link href="/for-me" className={`nav-link${router.pathname === '/for-me' ? ' active' : ''}`}>🧬 맞춤 추천</Link>
               <Link href="/health-guide" className={`nav-link${router.pathname.startsWith('/health-guide') ? ' active' : ''}`}>📖 연령별 건강 가이드</Link>
               <Link href="/global" className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}>🌍 글로벌 푸드</Link>
@@ -132,6 +133,9 @@ export default function Header() {
             <a className={`nav-link${router.pathname.startsWith('/meal-plan') ? ' active' : ''}`}
               style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
               onClick={() => handleNav('/meal-plan')}>🍽️ 월별 제철식단</a>
+            <a className={`nav-link${router.pathname.startsWith('/recipe') ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/recipe')}>🍳 레시피</a>
             <a className={`nav-link${router.pathname === '/for-me' ? ' active' : ''}`}
               style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
               onClick={() => handleNav('/for-me')}>🧬 맞춤 추천</a>

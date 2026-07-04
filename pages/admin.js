@@ -249,7 +249,7 @@ export default function Admin() {
             {activeTab === 'content_ideas' && <ContentIdeaPanel adminToken={adminToken} />}
             {activeTab === 'keyword' && <KeywordPanel token={adminToken} />}
             {activeTab === 'system_prompt' && <SystemPromptPanel adminToken={adminToken} />}
-            {activeTab === 'seasonal' && <MapAdminPanel adminToken={adminToken} />}
+            {activeTab === 'seasonal' && <MapAdminPanel adminToken={adminToken} onBlogWrite={openBlogWrite} />}
             {activeTab === 'free_board' && <BoardAdminPanel adminToken={adminToken} postType="free" />}
             {activeTab === 'requests' && <BoardAdminPanel adminToken={adminToken} postType="request" />}
             {activeTab === 'adsense' && (
