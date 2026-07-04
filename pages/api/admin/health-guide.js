@@ -1,6 +1,6 @@
 import { supabase, genId } from '../../../lib/supabase'
 
-const GROUP_SCOPED = ['nutrients', 'issues', 'checkup_highlights']
+const GROUP_SCOPED = ['nutrients', 'issues', 'checkup_highlights', 'school_meal']
 const TABLE_OF = {
   groups: 'age_health_groups',
   nutrients: 'age_health_nutrients',
@@ -10,6 +10,7 @@ const TABLE_OF = {
   cancer_screening: 'age_health_cancer_screening',
   sources: 'age_health_sources',
   meta: 'age_health_meta',
+  school_meal: 'age_health_school_meal',
 }
 
 // 문자열/배열 어느 쪽으로 와도 text[] 배열로 정규화 ("a, b, c" 형태의 콤마 구분 문자열도 허용)

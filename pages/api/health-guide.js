@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   try {
     const [
       groupsRes, nutrientsRes, issuesRes, checkupHlRes,
-      checkupCommonRes, cancerRes, sourcesRes, metaRes,
+      checkupCommonRes, cancerRes, sourcesRes, metaRes, schoolMealRes,
     ] = await Promise.all([
       supabase.from('age_health_groups').select('*').order('sort_order'),
       supabase.from('age_health_nutrients').select('*').order('age_group_id').order('sort_order'),
@@ -18,9 +18,10 @@ export default async function handler(req, res) {
       supabase.from('age_health_cancer_screening').select('*').order('sort_order'),
       supabase.from('age_health_sources').select('*').order('sort_order'),
       supabase.from('age_health_meta').select('*').eq('id', 'default').maybeSingle(),
+      supabase.from('age_health_school_meal').select('*').order('age_group_id').order('sort_order'),
     ])
 
-    for (const r of [groupsRes, nutrientsRes, issuesRes, checkupHlRes, checkupCommonRes, cancerRes, sourcesRes, metaRes]) {
+    for (const r of [groupsRes, nutrientsRes, issuesRes, checkupHlRes, checkupCommonRes, cancerRes, sourcesRes, metaRes, schoolMealRes]) {
       if (r.error) throw r.error
     }
 
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
       nutrients: groupBy(nutrientsRes.data),
       issues: groupBy(issuesRes.data),
       checkupHighlights: groupBy(checkupHlRes.data),
+      schoolMeal: groupBy(schoolMealRes.data),
       checkupCommon: {
         title: meta.checkup_common_title || '',
         subtitle: meta.checkup_common_subtitle || '',

@@ -42,7 +42,7 @@ const CONDITIONS = [
 ]
 
 // 연령대별로 특히 챙겨볼 만한 건강효능 카테고리 (있으면 추천 이유에 표시)
-// 국가건강검진·국가암검진에서 해당 연령대에 강화되는 항목을 근거로 매핑함 (/health-guide/health-issues 참고)
+// 국가건강검진·국가암검진에서 해당 연령대에 강화되는 항목을 근거로 매핑함 (/health-guide 참고)
 const AGE_HEALTH_CATEGORY = {
   infant: [],
   child:  ['어린이성장'],
@@ -547,9 +547,7 @@ export default function ForMePage() {
                 <span style={{ marginLeft: 10, fontSize: 12, color: 'var(--text2)' }}>
                   만 {userAge}세 · {ageGroupInfo.label} ({ageGroupInfo.range})
                   {' '}
-                  <Link href={`/health-guide/nutrients#${userAgeGroup}`} style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>🥗 영양소 기준</Link>
-                  {' · '}
-                  <Link href={`/health-guide/health-issues#${userAgeGroup}`} style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>🩺 질환·검진 기준</Link>
+                  <Link href={`/health-guide#${userAgeGroup}`} style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>📖 이 연령대 기준 보기</Link>
                 </span>
               )}
             </div>

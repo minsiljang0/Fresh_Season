@@ -25,6 +25,7 @@ const SECTIONS = [
   { id: 'nutrients', label: '영양소' },
   { id: 'issues', label: '질환·검진 이슈' },
   { id: 'checkup_highlights', label: '추가 국가검진' },
+  { id: 'school_meal', label: '학교급식 기준' },
   { id: 'checkup_common', label: '공통 필수 검진' },
   { id: 'cancer_screening', label: '국가암검진 6대암' },
   { id: 'sources', label: '출처' },
@@ -58,7 +59,7 @@ export default function HealthGuidePanel({ adminToken }) {
   const [editing, setEditing] = useState(null) // 편집중인 row (없으면 새 row 폼)
   const [toast, setToast] = useState('')
 
-  const isGroupScoped = ['nutrients', 'issues', 'checkup_highlights'].includes(section)
+  const isGroupScoped = ['nutrients', 'issues', 'checkup_highlights', 'school_meal'].includes(section)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -187,7 +188,7 @@ export default function HealthGuidePanel({ adminToken }) {
                   <div><b>암검진표 제목:</b> {row.cancer_screening_title}</div>
                 </div>
               )}
-              {['nutrients', 'issues', 'checkup_highlights', 'checkup_common'].includes(section) && (
+              {['nutrients', 'issues', 'checkup_highlights', 'checkup_common', 'school_meal'].includes(section) && (
                 <>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
                     {(row.tags || []).map(t => <span key={t} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, background: '#e5e7eb', color: '#374151', fontWeight: 700 }}>{t}</span>)}
@@ -260,7 +261,7 @@ export default function HealthGuidePanel({ adminToken }) {
               </>
             )}
 
-            {['nutrients', 'issues', 'checkup_highlights', 'checkup_common'].includes(section) && (
+            {['nutrients', 'issues', 'checkup_highlights', 'checkup_common', 'school_meal'].includes(section) && (
               <>
                 {isGroupScoped && (
                   <Field label="연령대">
