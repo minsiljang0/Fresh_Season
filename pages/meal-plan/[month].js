@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { SkeletonGrid } from '../../components/SkeletonCard'
-import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, getServingSize, buildCalendarMonthPlan } from '../../lib/mealPlans'
+import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, DIET_TYPES, getDietType, getServingSize, buildCalendarMonthPlan } from '../../lib/mealPlans'
 
 const MEAL_META = [
   { key: 'breakfast', label: '아침', icon: '🌅' },
@@ -63,12 +63,14 @@ export default function MealPlanMonthPage({ month }) {
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('month')       // 'month' | 'week'
   const [ageGroupId, setAgeGroupId] = useState('adult')
+  const [dietTypeId, setDietTypeId] = useState('normal')
   const [weekIdx, setWeekIdx] = useState(0)
   const [selectedDate, setSelectedDate] = useState(null)
 
   const monthTheme = getMonthTheme(month)
   const ageGroup = getAgeGroup(ageGroupId)
-  const servingSize = useMemo(() => getServingSize(ageGroupId), [ageGroupId])
+  const dietType = getDietType(dietTypeId)
+  const servingSize = useMemo(() => getServingSize(ageGroupId, dietTypeId), [ageGroupId, dietTypeId])
   const today = new Date()
   const currentMonth = today.getMonth() + 1
   const currentYear = today.getFullYear()
@@ -87,9 +89,9 @@ export default function MealPlanMonthPage({ month }) {
       .finally(() => setLoading(false))
   }, [])
 
-  const plan = useMemo(() => buildCalendarMonthPlan(year, month, foods, ageGroupId), [year, month, foods, ageGroupId])
+  const plan = useMemo(() => buildCalendarMonthPlan(year, month, foods, ageGroupId, dietTypeId), [year, month, foods, ageGroupId, dietTypeId])
 
-  useEffect(() => { setWeekIdx(0); setSelectedDate(null) }, [month, ageGroupId])
+  useEffect(() => { setWeekIdx(0); setSelectedDate(null) }, [month, ageGroupId, dietTypeId])
 
   const prevMonth = month === 1 ? 12 : month - 1
   const nextMonth = month === 12 ? 1 : month + 1
@@ -126,6 +128,11 @@ export default function MealPlanMonthPage({ month }) {
           <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 8, lineHeight: 1.6 }}>
             {monthTheme.theme} · 이번 달 제철재료 <b>{plan.totalCount}가지</b>로 짠 {year}년 {MONTH_NAMES[month - 1]} 달력형 식단표예요.
           </p>
+          {dietTypeId === 'vegetarian' && (
+            <p style={{ fontSize: 12, color: '#0c4a6e', marginTop: 4 }}>
+              🥦 채식 기준으로는 재료가 {plan.totalCount}가지로 줄어들어요. 달마다 채식 재료 수가 다를 수 있어요.
+            </p>
+          )}
         </section>
 
         {/* 연령대 탭 */}
@@ -163,6 +170,28 @@ export default function MealPlanMonthPage({ month }) {
               </p>
             )}
           </div>
+        </section>
+
+        {/* 식단 유형 탭 */}
+        <section style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {DIET_TYPES.map(d => (
+              <button key={d.id} onClick={() => setDietTypeId(d.id)}
+                style={{
+                  padding: '7px 13px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  border: `1.5px solid ${d.id === dietTypeId ? '#0ea5e9' : 'var(--border)'}`,
+                  background: d.id === dietTypeId ? '#0ea5e9' : 'var(--surface)',
+                  color: d.id === dietTypeId ? '#fff' : 'var(--text2)',
+                }}>
+                {d.icon} {d.label}
+              </button>
+            ))}
+          </div>
+          {dietType.note && (
+            <p style={{ fontSize: 12, color: '#0c4a6e', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '8px 10px', marginTop: 10, lineHeight: 1.6 }}>
+              💡 {dietType.note}
+            </p>
+          )}
         </section>
 
         {/* 보기 전환 */}
@@ -297,7 +326,7 @@ export default function MealPlanMonthPage({ month }) {
               </div>
               <DayMealDetail year={year} month={month} cell={cell} />
               <p style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 14, lineHeight: 1.6 }}>
-                🍚 밥 1공기 약 {servingSize.riceG}g · 🥣 국 1그릇 약 {servingSize.soupMl}ml 기준({ageGroup.label}) 대략적인 추정치예요.
+                🍚 밥 1공기 약 {servingSize.riceG}g · 🥣 국 1그릇 약 {servingSize.soupMl}ml 기준({ageGroup.label} · {dietType.label}) 대략적인 추정치예요.
               </p>
               <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
                 <button onClick={() => setSelectedDate(d => Math.max(1, d - 1))} disabled={selectedDate === 1} className="tag"
