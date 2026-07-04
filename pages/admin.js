@@ -16,6 +16,7 @@ import PopupPanel from '../components/admin/PopupPanel'
 import CoupangPanel from '../components/admin/CoupangPanel'
 import McpPanel from '../components/admin/McpPanel'
 import BacklinkPanel from '../components/admin/BacklinkPanel'
+import HealthGuidePanel from '../components/admin/HealthGuidePanel'
 
 const TAB_LABELS = {
   settings:      '🔧 서비스 설정',
@@ -37,6 +38,7 @@ const TAB_LABELS = {
   coupang:       '🛒 쿠팡 관리',
   mcp:           '🔌 MCP 관리',
   backlink:      '🔗 백링크 관리',
+  health_guide:  '🩺 건강 가이드 관리',
 }
 
 function LoginScreen({ onLogin }) {
@@ -263,6 +265,7 @@ export default function Admin() {
             {activeTab === 'coupang' && <CoupangPanel adminToken={adminToken} />}
             {activeTab === 'mcp' && <McpPanel adminToken={adminToken} />}
             {activeTab === 'backlink' && <BacklinkPanel adminToken={adminToken} />}
+            {activeTab === 'health_guide' && <HealthGuidePanel adminToken={adminToken} />}
             {activeTab === 'password' && (
               <div style={S.card}>
                 <div style={S.cardTitle}>🔑 비밀번호 변경</div>

@@ -17,6 +17,7 @@ const NAV = [
   { id: 'coupang',       label: '쿠팡 관리',       icon: '🛒' },
   { id: 'mcp',           label: 'MCP 관리',        icon: '🔌' },
   { id: 'backlink',      label: '백링크 관리',     icon: '🔗' },
+  { id: 'health_guide',  label: '건강 가이드 관리', icon: '🩺' },
 ]
 
 function NavItem({ item, active, onClick }) {

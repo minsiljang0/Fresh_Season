@@ -42,8 +42,14 @@ const CONDITIONS = [
 ]
 
 // 연령대별로 특히 챙겨볼 만한 건강효능 카테고리 (있으면 추천 이유에 표시)
+// 국가건강검진·국가암검진에서 해당 연령대에 강화되는 항목을 근거로 매핑함 (/health-guide/health-issues 참고)
 const AGE_HEALTH_CATEGORY = {
-  infant:null, child:'어린이성장', teen:'수험생·집중력', adult:null, middle:null, senior:'노인·골감소증',
+  infant: [],
+  child:  ['어린이성장'],
+  teen:   ['수험생·집중력'],
+  adult:  ['혈액·빈혈'],                          // 가임기 여성 철분 부족 이슈 반영
+  middle: ['소화·장', '혈관·심장', '갱년기·호르몬'], // 40대 위암검진 시작(소화기), 심뇌혈관질환, 폐경 이슈 반영
+  senior: ['노인·골감소증', '뼈·관절', '눈·두뇌'],   // 뼈 건강 + 인지·시력 관련 이슈 반영
 }
 
 // 체중관리(BMI) 관련 — 아시아·태평양 기준(대한비만학회 기준과 동일)
@@ -361,8 +367,10 @@ export default function ForMePage() {
           reasons.push(`${c.label.replace(/^\S+\s/, '')} 관리에 도움`)
         }
       })
-      const ageCat = userAgeGroup ? AGE_HEALTH_CATEGORY[userAgeGroup] : null
-      if (ageCat && (f.healthBenefits || []).some(hb => hb.category === ageCat)) reasons.push(`${ageCat} 관련 효능`)
+      const ageCats = userAgeGroup ? (AGE_HEALTH_CATEGORY[userAgeGroup] || []) : []
+      ageCats.forEach(cat => {
+        if ((f.healthBenefits || []).some(hb => hb.category === cat)) reasons.push(`${cat} 관련 효능`)
+      })
 
       const dietFriendly = wantsWeightCare && isDietFriendly(f)
       if (dietFriendly) reasons.push('체중관리에 참고하기 좋음')
@@ -504,7 +512,7 @@ export default function ForMePage() {
           </p>
           <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 6 }}>
             연령대별 추천은 보건복지부·한국영양학회의 「2025 한국인 영양소 섭취기준」과 국민건강보험공단의 국가건강검진 기준을 참고해서 만들어져요. →{' '}
-            <Link href="/age-guide" style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>연령대별 가이드 자세히 보기</Link>
+            <Link href="/health-guide" style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>연령별 건강 가이드 자세히 보기</Link>
           </p>
         </section>
 
@@ -539,7 +547,9 @@ export default function ForMePage() {
                 <span style={{ marginLeft: 10, fontSize: 12, color: 'var(--text2)' }}>
                   만 {userAge}세 · {ageGroupInfo.label} ({ageGroupInfo.range})
                   {' '}
-                  <Link href={`/age-guide/${userAgeGroup}`} style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>📖 이 연령대 기준 보기</Link>
+                  <Link href={`/health-guide/nutrients#${userAgeGroup}`} style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>🥗 영양소 기준</Link>
+                  {' · '}
+                  <Link href={`/health-guide/health-issues#${userAgeGroup}`} style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>🩺 질환·검진 기준</Link>
                 </span>
               )}
             </div>
