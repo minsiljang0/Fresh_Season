@@ -502,6 +502,10 @@ export default function ForMePage() {
           <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
             출생연도·성별·키/몸무게·지병(주의사항)을 알려주시면, 이번 달 제철 식재료 중 <b>추천할 것</b>과 <b>피하는(또는 적당히 조절하는) 게 좋은 것</b>을 정리해드려요.
           </p>
+          <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 6 }}>
+            연령대별 추천은 보건복지부·한국영양학회의 「2025 한국인 영양소 섭취기준」과 국민건강보험공단의 국가건강검진 기준을 참고해서 만들어져요. →{' '}
+            <Link href="/age-guide" style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>연령대별 가이드 자세히 보기</Link>
+          </p>
         </section>
 
         {/* 신토불이 메시지 */}
@@ -534,6 +538,8 @@ export default function ForMePage() {
               {ageGroupInfo && (
                 <span style={{ marginLeft: 10, fontSize: 12, color: 'var(--text2)' }}>
                   만 {userAge}세 · {ageGroupInfo.label} ({ageGroupInfo.range})
+                  {' '}
+                  <Link href={`/age-guide/${userAgeGroup}`} style={{ color: 'var(--accent, #16a34a)', fontWeight: 700 }}>📖 이 연령대 기준 보기</Link>
                 </span>
               )}
             </div>
