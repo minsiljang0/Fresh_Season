@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { SkeletonGrid } from '../../components/SkeletonCard'
-import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, DIET_TYPES, getDietType, getServingSize, buildCalendarMonthPlan } from '../../lib/mealPlans'
+import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, getDietTypesForAge, getDietType, getServingSize, buildCalendarMonthPlan } from '../../lib/mealPlans'
 
 const MEAL_META = [
   { key: 'breakfast', label: '아침', icon: '🌅' },
@@ -69,6 +69,7 @@ export default function MealPlanMonthPage({ month }) {
 
   const monthTheme = getMonthTheme(month)
   const ageGroup = getAgeGroup(ageGroupId)
+  const availableDietTypes = useMemo(() => getDietTypesForAge(ageGroupId), [ageGroupId])
   const dietType = getDietType(dietTypeId)
   const servingSize = useMemo(() => getServingSize(ageGroupId, dietTypeId), [ageGroupId, dietTypeId])
   const today = new Date()
@@ -92,6 +93,11 @@ export default function MealPlanMonthPage({ month }) {
   const plan = useMemo(() => buildCalendarMonthPlan(year, month, foods, ageGroupId, dietTypeId), [year, month, foods, ageGroupId, dietTypeId])
 
   useEffect(() => { setWeekIdx(0); setSelectedDate(null) }, [month, ageGroupId, dietTypeId])
+
+  // 연령대를 바꿔서 현재 선택된 식단 유형이 더 이상 노출 대상이 아니게 되면(예: 혈당식 선택 중 유아 탭으로 전환) 일반식으로 되돌린다
+  useEffect(() => {
+    if (!availableDietTypes.some(d => d.id === dietTypeId)) setDietTypeId('normal')
+  }, [availableDietTypes, dietTypeId])
 
   const prevMonth = month === 1 ? 12 : month - 1
   const nextMonth = month === 12 ? 1 : month + 1
@@ -175,7 +181,7 @@ export default function MealPlanMonthPage({ month }) {
         {/* 식단 유형 탭 */}
         <section style={{ marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {DIET_TYPES.map(d => (
+            {availableDietTypes.map(d => (
               <button key={d.id} onClick={() => setDietTypeId(d.id)}
                 style={{
                   padding: '7px 13px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer',
