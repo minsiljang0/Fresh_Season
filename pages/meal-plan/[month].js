@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { SkeletonGrid } from '../../components/SkeletonCard'
-import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, buildCalendarMonthPlan } from '../../lib/mealPlans'
+import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, getServingSize, buildCalendarMonthPlan } from '../../lib/mealPlans'
 
 const MEAL_META = [
   { key: 'breakfast', label: '아침', icon: '🌅' },
@@ -30,15 +30,45 @@ function dishSummary(meal) {
   return meal.dishes.map(d => d.dish).join(' · ')
 }
 
+// 주간보기 카드 / 날짜 클릭 모달에서 공통으로 쓰는 하루 식단 상세
+function DayMealDetail({ year, month, cell }) {
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 900 }}>{year}.{month}.{cell.date} ({cell.weekday})</h3>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#ea580c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 999, padding: '3px 10px' }}>
+          총 {cell.kcal.toLocaleString()}kcal
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+        {MEAL_META.map(mm => {
+          const meal = cell[mm.key]
+          return (
+            <div key={mm.key} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>{mm.icon} {mm.label}</span>
+                <span style={{ fontSize: 10.5, color: 'var(--text3)' }}>약 {meal.kcal.toLocaleString()}kcal</span>
+              </div>
+              <p style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>{dishSummary(meal)}</p>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
 export default function MealPlanMonthPage({ month }) {
   const [foods, setFoods] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('month')       // 'month' | 'week'
   const [ageGroupId, setAgeGroupId] = useState('adult')
   const [weekIdx, setWeekIdx] = useState(0)
+  const [selectedDate, setSelectedDate] = useState(null)
 
   const monthTheme = getMonthTheme(month)
   const ageGroup = getAgeGroup(ageGroupId)
+  const servingSize = useMemo(() => getServingSize(ageGroupId), [ageGroupId])
   const today = new Date()
   const currentMonth = today.getMonth() + 1
   const currentYear = today.getFullYear()
@@ -59,7 +89,7 @@ export default function MealPlanMonthPage({ month }) {
 
   const plan = useMemo(() => buildCalendarMonthPlan(year, month, foods, ageGroupId), [year, month, foods, ageGroupId])
 
-  useEffect(() => { setWeekIdx(0) }, [month, ageGroupId])
+  useEffect(() => { setWeekIdx(0); setSelectedDate(null) }, [month, ageGroupId])
 
   const prevMonth = month === 1 ? 12 : month - 1
   const nextMonth = month === 12 ? 1 : month + 1
@@ -120,6 +150,13 @@ export default function MealPlanMonthPage({ month }) {
             <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4, lineHeight: 1.5 }}>
               보건복지부 「한국인 영양소 섭취기준」의 연령대별 에너지필요추정량을 성별 평균 낸 대략적인 참고 범위이며, 실제 필요량은 활동량·체격·건강 상태에 따라 달라질 수 있어요.
             </p>
+            <p style={{ fontSize: 12.5, fontWeight: 600, marginTop: 8, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <span>🍚 밥 1공기 약 <b>{servingSize.riceG}g</b></span>
+              <span>🥣 국 1그릇 약 <b>{servingSize.soupMl}ml</b></span>
+            </p>
+            <p style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 2, lineHeight: 1.5 }}>
+              성인 1인분(밥 210g·국 300ml)을 기준으로 연령대 권장 칼로리에 맞춰 어림잡은 그릇 크기예요. 실제 그릇·식욕에 따라 조절해주세요.
+            </p>
             {ageGroup.note && (
               <p style={{ fontSize: 12, color: '#166534', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 10px', marginTop: 8, lineHeight: 1.6 }}>
                 📌 {ageGroup.note}
@@ -163,10 +200,13 @@ export default function MealPlanMonthPage({ month }) {
                 if (!cell) return <div key={i} style={{ minHeight: 108, borderRadius: 8, background: 'var(--surface2)', opacity: 0.4 }} />
                 const isToday = isCurrentMonth && cell.date === today.getDate()
                 return (
-                  <div key={i} style={{
-                    minHeight: 108, borderRadius: 8, padding: '6px 8px', background: 'var(--surface)',
+                  <div key={i} onClick={() => setSelectedDate(cell.date)} style={{
+                    minHeight: 108, borderRadius: 8, padding: '6px 8px', background: 'var(--surface)', cursor: 'pointer',
                     border: isToday ? '2px solid var(--accent)' : '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2,
-                  }}>
+                    transition: 'box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow, 0 4px 12px rgba(0,0,0,0.08))'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
                       <span style={{ fontSize: 12, fontWeight: 900 }}>{cell.date}</span>
                       <span style={{ fontSize: 9, fontWeight: 700, color: '#ea580c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 999, padding: '1px 5px' }}>{cell.kcal.toLocaleString()}kcal</span>
@@ -196,27 +236,9 @@ export default function MealPlanMonthPage({ month }) {
             </div>
 
             {(plan.weeks[weekIdx] || []).filter(Boolean).map(cell => (
-              <div key={cell.date} className="detail-box" style={{ padding: '16px 18px', marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 900 }}>{year}.{month}.{cell.date} ({cell.weekday})</h3>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#ea580c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 999, padding: '3px 10px' }}>
-                    총 {cell.kcal.toLocaleString()}kcal
-                  </span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
-                  {MEAL_META.map(mm => {
-                    const meal = cell[mm.key]
-                    return (
-                      <div key={mm.key} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>{mm.icon} {mm.label}</span>
-                          <span style={{ fontSize: 10.5, color: 'var(--text3)' }}>약 {meal.kcal.toLocaleString()}kcal</span>
-                        </div>
-                        <p style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>{dishSummary(meal)}</p>
-                      </div>
-                    )
-                  })}
-                </div>
+              <div key={cell.date} className="detail-box" style={{ padding: '16px 18px', marginBottom: 12, cursor: 'pointer' }}
+                onClick={() => setSelectedDate(cell.date)}>
+                <DayMealDetail year={year} month={month} cell={cell} />
               </div>
             ))}
           </section>
@@ -254,6 +276,40 @@ export default function MealPlanMonthPage({ month }) {
 
         <Link href="/meal-plan" className="back-link">← 월별 제철 식단 전체보기</Link>
       </main>
+
+      {/* 날짜 클릭 시 하루 식단 상세 모달 */}
+      {selectedDate && (() => {
+        const cell = plan.days.find(d => d.date === selectedDate)
+        if (!cell) return null
+        return (
+          <div onClick={() => setSelectedDate(null)} style={{
+            position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: 'var(--surface, #fff)', borderRadius: 16, width: '100%', maxWidth: 560,
+              maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', padding: '22px 22px 20px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -6 }}>
+                <button onClick={() => setSelectedDate(null)} style={{
+                  border: 'none', background: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text3)', lineHeight: 1,
+                }}>✕</button>
+              </div>
+              <DayMealDetail year={year} month={month} cell={cell} />
+              <p style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 14, lineHeight: 1.6 }}>
+                🍚 밥 1공기 약 {servingSize.riceG}g · 🥣 국 1그릇 약 {servingSize.soupMl}ml 기준({ageGroup.label}) 대략적인 추정치예요.
+              </p>
+              <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
+                <button onClick={() => setSelectedDate(d => Math.max(1, d - 1))} disabled={selectedDate === 1} className="tag"
+                  style={{ cursor: selectedDate === 1 ? 'default' : 'pointer', opacity: selectedDate === 1 ? 0.4 : 1 }}>← 전날</button>
+                <button onClick={() => setSelectedDate(d => Math.min(plan.daysInMonth, d + 1))} disabled={selectedDate === plan.daysInMonth} className="tag"
+                  style={{ cursor: selectedDate === plan.daysInMonth ? 'default' : 'pointer', opacity: selectedDate === plan.daysInMonth ? 0.4 : 1 }}>다음날 →</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       <Footer />
     </>
   )
