@@ -11,16 +11,16 @@ export default function MealPlanIndex() {
     <>
       <Head>
         <title>월별 제철 식단 — Fresh Season</title>
-        <meta name="description" content="매달 나오는 제철 식재료로 짜는 4주 식단(한 달 식단). 수산물·채소·과일·육류 주간별로 무엇을 먹으면 좋은지 한눈에 확인하세요." />
+        <meta name="description" content="매달 나오는 제철 식재료로 짜는 달력형 식단표(월간·주간 보기). 대략적인 칼로리와 연령대별 참고치까지 한눈에 확인하세요." />
       </Head>
       <Header />
       <main className="wrap" style={{ paddingTop: 20, paddingBottom: 60 }}>
         <section style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 6 }}>🍽️ 월별 제철 식단</h1>
           <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-            그 달에 가장 많이 나오는 제철 식재료로 <b>4주(한 달) 식단</b>을 짜봤어요.
-            1주차 수산물 → 2주차 채소·나물 → 3주차 과일·곡물 → 4주차 육류·버섯 순으로,
-            제철재료를 골고루 챙길 수 있도록 구성했어요.
+            그 달에 가장 많이 나오는 제철 식재료로 <b>달력형 식단표</b>를 짜봤어요.
+            📅 월간보기·📋 주간보기를 오가며 확인할 수 있고, 끼니마다 대략적인 <b>칼로리 참고치</b>도 함께 보여드려요.
+            <br />👶🧒🧑🧑‍💼🧑‍🦳👴 <b>연령대별 탭</b>으로 하루 권장 칼로리와 참고 식단이 달라지고, 영유아·어린이는 관련 공공기관 참고자료도 함께 안내해요.
           </p>
         </section>
 
@@ -37,7 +37,7 @@ export default function MealPlanIndex() {
                   )}
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{mt.theme}</p>
-                <p style={{ fontSize: 12, color: 'var(--accent)', marginTop: 10, fontWeight: 700 }}>4주 식단 보기 →</p>
+                <p style={{ fontSize: 12, color: 'var(--accent)', marginTop: 10, fontWeight: 700 }}>달력형 식단 보기 →</p>
               </Link>
             )
           })}
