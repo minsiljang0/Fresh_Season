@@ -57,6 +57,82 @@ function bmiCategory(bmi) {
 const DIET_HEALTH_CATEGORY = '체중·다이어트'
 const FORME_STORAGE_KEY = 'fresh_season_forme_inputs_v1'
 
+// ── 식단표(주간/월간) 생성 관련 ──────────────────────────
+const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일']
+
+const PROTEIN_CATS = ['fish','crustacean','shellfish','other_seafood','beef','pork','chicken','egg','processed_meat','meat','mushroom']
+const VEG_CATS      = ['veg','root_veg','fruit_veg','herb_veg','wild_herb','seaweed']
+const GRAIN_CATS    = ['grain']
+const FRUIT_CATS    = ['fruit','tropical_fruit','berry']
+
+const DISH_TEMPLATES = {
+  fish: ['{n} 구이', '{n} 조림', '{n}탕'],
+  crustacean: ['{n} 찜', '{n} 볶음'],
+  shellfish: ['{n} 탕', '{n} 무침'],
+  seaweed: ['{n} 무침', '{n} 국'],
+  other_seafood: ['{n} 볶음', '{n} 무침'],
+  veg: ['{n} 나물', '{n} 무침'],
+  root_veg: ['{n} 조림', '{n} 볶음'],
+  fruit_veg: ['{n} 볶음', '{n} 무침'],
+  herb_veg: ['{n} 나물'],
+  wild_herb: ['{n} 나물'],
+  grain: ['{n}밥', '{n}죽'],
+  processed: ['{n}'],
+  beef: ['{n} 구이', '{n} 볶음'],
+  pork: ['{n} 구이', '{n} 볶음'],
+  chicken: ['{n} 구이', '{n} 볶음'],
+  egg: ['{n}찜', '{n} 후라이'],
+  processed_meat: ['{n} 구이'],
+  meat: ['{n} 구이'],
+  mushroom: ['{n} 볶음', '{n}전'],
+  fruit: ['{n}'],
+  tropical_fruit: ['{n}'],
+  berry: ['{n}'],
+}
+
+function dishFor(food, rngIndex = 0) {
+  const templates = DISH_TEMPLATES[food.category] || ['{n} 요리']
+  const t = templates[rngIndex % templates.length]
+  return t.replace('{n}', food.ingredient)
+}
+
+function shuffle(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function cyclic(arr, i) { return arr.length ? arr[i % arr.length] : null }
+
+// pool(추천 재료 목록)을 바탕으로 7일치 아침/점심/저녁 예시 식단을 만든다.
+// 실제 존재하는 추천 재료만 사용하고, 없는 카테고리는 자연스럽게 생략한다.
+function generateWeekPlan(pool) {
+  const protein = shuffle(pool.filter(f => PROTEIN_CATS.includes(f.category)))
+  const veg     = shuffle(pool.filter(f => VEG_CATS.includes(f.category)))
+  const grain   = shuffle(pool.filter(f => GRAIN_CATS.includes(f.category)))
+  const fruit   = shuffle(pool.filter(f => FRUIT_CATS.includes(f.category)))
+
+  return DAY_LABELS.map((day, di) => {
+    const p1 = cyclic(protein, di * 2)
+    const p2 = cyclic(protein, di * 2 + 1)
+    const v1 = cyclic(veg, di * 2)
+    const v2 = cyclic(veg, di * 2 + 1)
+    const g  = cyclic(grain, di)
+    const fr = cyclic(fruit, di)
+    const riceLine = g ? dishFor(g, 0) : '잡곡밥'
+
+    return {
+      day,
+      breakfast: [riceLine, fr && dishFor(fr, di)].filter(Boolean),
+      lunch:     [riceLine, v1 && dishFor(v1, di), p1 && dishFor(p1, di)].filter(Boolean),
+      dinner:    [riceLine, v2 && dishFor(v2, di + 1), p2 && dishFor(p2, di + 1)].filter(Boolean),
+    }
+  })
+}
+
 // 카테고리별 "다이어트 중이면 참고할 만한" 일반적인 안내 (배제/금지가 아니라 적당량 권장 톤 유지)
 const MODERATION_HINTS = {
   fruit:          '당분이 있는 편이라 적당량을 추천해요',
@@ -180,6 +256,8 @@ export default function ForMePage() {
   const [kakaoReady, setKakaoReady] = useState(false)
   const [copiedMsg, setCopiedMsg] = useState('')
   const [origin, setOrigin] = useState('https://www.fsfood.kr')
+  const [mealWeeks, setMealWeeks] = useState([])   // 생성된 식단 (주 단위 배열)
+  const [planLength, setPlanLength] = useState(1)  // 1주 or 4주(한 달)
 
   // 공유된 링크(?by=&g=&h=&w=&c=&m=)로 들어온 경우가 최우선, 아니면 이전에 입력했던 값(세션 저장)을 복원,
   // 그것도 없으면 이번 달로 기본 설정 — 카드 클릭 후 뒤로가기 해도 입력값이 사라지지 않게 하기 위함
@@ -314,6 +392,16 @@ export default function ForMePage() {
     if (!wantsWeightCare) return []
     return monthFoods.filter(f => isDietFriendly(f))
   }, [monthFoods, wantsWeightCare])
+
+  // 식단표를 만들 때 쓸 재료 풀 — 체중관리 중이면 다이어트 친화 재료 비중을 살짝 높임
+  const mealPool = wantsWeightCare && dietGoodList.length >= 4
+    ? [...dietGoodList, ...dietGoodList, ...recommendList]
+    : recommendList
+
+  const regeneratePlan = (weeks) => {
+    setPlanLength(weeks)
+    setMealWeeks(Array.from({ length: weeks }, () => generateWeekPlan(mealPool)))
+  }
 
   const ageGroupInfo = AGE_GROUPS.find(g => g.id === userAgeGroup)
 
@@ -655,6 +743,66 @@ export default function ForMePage() {
               </section>
             )}
 
+            {/* 식단표 만들기 */}
+            <section style={{ marginBottom: 40 }}>
+              <h2 className="section-title">🍽️ 추천 재료로 식단표 만들기</h2>
+              <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
+                위 "😋 추천 식재료"를 재료 삼아 아침·점심·저녁 예시 식단을 짜드려요. 실제 조리법이 아니라 <b>재료 조합 아이디어</b>이니, 입맛과 상황에 맞게 바꿔서 활용해주세요.
+              </p>
+              {recommendList.length === 0 ? (
+                <p style={{ color: 'var(--text3)', fontSize: 14, padding: '10px 0' }}>추천 재료가 있어야 식단표를 만들 수 있어요. 위 조건을 조정해보세요.</p>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                    <button type="button" onClick={() => regeneratePlan(1)}
+                      style={{ padding: '9px 16px', borderRadius: 8, border: `1.5px solid ${planLength === 1 && mealWeeks.length ? '#16a34a' : 'var(--border)'}`,
+                        background: planLength === 1 && mealWeeks.length ? '#f0fdf4' : 'var(--surface2)', color: planLength === 1 && mealWeeks.length ? '#16a34a' : 'var(--text2)',
+                        fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>📅 1주 식단표</button>
+                    <button type="button" onClick={() => regeneratePlan(4)}
+                      style={{ padding: '9px 16px', borderRadius: 8, border: `1.5px solid ${planLength === 4 && mealWeeks.length ? '#16a34a' : 'var(--border)'}`,
+                        background: planLength === 4 && mealWeeks.length ? '#f0fdf4' : 'var(--surface2)', color: planLength === 4 && mealWeeks.length ? '#16a34a' : 'var(--text2)',
+                        fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🗓️ 1개월(4주) 식단표</button>
+                    {mealWeeks.length > 0 && (
+                      <button type="button" onClick={() => regeneratePlan(planLength)}
+                        style={{ padding: '9px 16px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--surface2)', color: 'var(--text2)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                        🔁 다른 조합으로 다시 만들기
+                      </button>
+                    )}
+                  </div>
+
+                  {mealWeeks.map((week, wi) => (
+                    <div key={wi} style={{ marginBottom: 24 }}>
+                      {mealWeeks.length > 1 && <p style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>{wi + 1}주차</p>}
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 640 }}>
+                          <thead>
+                            <tr>
+                              <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid var(--border)', width: 48 }}></th>
+                              {week.map(d => (
+                                <th key={d.day} style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid var(--border)', fontWeight: 800 }}>{d.day}요일</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[['🌅 아침', 'breakfast'], ['🍚 점심', 'lunch'], ['🌙 저녁', 'dinner']].map(([label, key]) => (
+                              <tr key={key}>
+                                <td style={{ padding: '10px 10px', borderBottom: '1px solid var(--border)', fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap' }}>{label}</td>
+                                {week.map(d => (
+                                  <td key={d.day} style={{ padding: '10px 10px', borderBottom: '1px solid var(--border)', color: 'var(--text2)', lineHeight: 1.5 }}>
+                                    {d[key].join(' + ')}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </section>
+
             {/* 내 결과 공유하기 */}
             <section style={{ marginBottom: 28, padding: '16px 20px', borderRadius: 12, background: 'var(--surface2)' }}>
               <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📤 내 결과 공유하기</p>
@@ -664,7 +812,7 @@ export default function ForMePage() {
         )}
 
         <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: -20, marginBottom: 30 }}>
-          ※ 이 페이지의 추천·주의·체중관리 정보는 일반적인 영양 정보를 바탕으로 한 참고용 안내이며, 의학적 진단·처방이나 개인 맞춤 식단을 대신하지 않아요. BMI 역시 참고 지표일 뿐이니, 정확한 체중·식이 관리는 담당 의료진이나 영양 전문가와 상담해주세요.
+          ※ 이 페이지의 추천·주의·체중관리·식단표 정보는 일반적인 영양 정보를 바탕으로 한 참고용 아이디어이며, 의학적 진단·처방이나 전문 영양사의 맞춤 식단을 대신하지 않아요. BMI도 참고 지표일 뿐이니, 정확한 체중·식이 관리는 담당 의료진이나 영양 전문가와 상담해주세요.
         </p>
 
         <Link href="/" className="back-link">← 홈으로</Link>
