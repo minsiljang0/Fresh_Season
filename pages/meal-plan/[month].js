@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { SkeletonGrid } from '../../components/SkeletonCard'
-import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, getDietTypesForAge, getDietType, getServingSize, buildCalendarMonthPlan } from '../../lib/mealPlans'
+import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, getDietTypesForAge, getDietType, getServingSize, buildCalendarMonthPlan, getBasicRecipe } from '../../lib/mealPlans'
 
 const MEAL_META = [
   { key: 'breakfast', label: '아침', icon: '🌅' },
@@ -31,28 +31,90 @@ function dishSummary(meal) {
 }
 
 // 주간보기 카드 / 날짜 클릭 모달에서 공통으로 쓰는 하루 식단 상세
-function DayMealDetail({ year, month, cell }) {
+// interactive=true(날짜 클릭 모달)일 때는 아침→점심→저녁 세로 배치 + 메뉴 클릭 시 오른쪽에 기본 레시피를 보여준다.
+function DayMealDetail({ year, month, cell, interactive = false }) {
+  const [selected, setSelected] = useState(null)
+  useEffect(() => { setSelected(null) }, [cell])
+
+  const header = (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+      <h3 style={{ fontSize: 15, fontWeight: 900 }}>{year}.{month}.{cell.date} ({cell.weekday})</h3>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#ea580c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 999, padding: '3px 10px' }}>
+        총 {cell.kcal.toLocaleString()}kcal
+      </span>
+    </div>
+  )
+
+  if (!interactive) {
+    return (
+      <>
+        {header}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+          {MEAL_META.map(mm => {
+            const meal = cell[mm.key]
+            return (
+              <div key={mm.key} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>{mm.icon} {mm.label}</span>
+                  <span style={{ fontSize: 10.5, color: 'var(--text3)' }}>약 {meal.kcal.toLocaleString()}kcal</span>
+                </div>
+                <p style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>{dishSummary(meal)}</p>
+              </div>
+            )
+          })}
+        </div>
+      </>
+    )
+  }
+
+  const recipe = selected ? getBasicRecipe(selected.ingredient, selected.dish) : null
+
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 900 }}>{year}.{month}.{cell.date} ({cell.weekday})</h3>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#ea580c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 999, padding: '3px 10px' }}>
-          총 {cell.kcal.toLocaleString()}kcal
-        </span>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
-        {MEAL_META.map(mm => {
-          const meal = cell[mm.key]
-          return (
-            <div key={mm.key} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>{mm.icon} {mm.label}</span>
-                <span style={{ fontSize: 10.5, color: 'var(--text3)' }}>약 {meal.kcal.toLocaleString()}kcal</span>
+      {header}
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div style={{ flex: '1 1 260px', minWidth: 240, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {MEAL_META.map(mm => {
+            const meal = cell[mm.key]
+            return (
+              <div key={mm.key} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)' }}>{mm.icon} {mm.label}</span>
+                  <span style={{ fontSize: 10.5, color: 'var(--text3)' }}>약 {meal.kcal.toLocaleString()}kcal</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {(meal.items || []).map((it, idx) => {
+                    const isOn = selected === it
+                    return (
+                      <button key={idx} onClick={() => setSelected(it)} style={{
+                        fontSize: 12.5, fontWeight: isOn ? 800 : 600, cursor: 'pointer',
+                        padding: '4px 10px', borderRadius: 999,
+                        border: `1.5px solid ${isOn ? 'var(--accent)' : 'var(--border)'}`,
+                        background: isOn ? 'var(--accent)' : 'var(--surface)',
+                        color: isOn ? '#fff' : 'var(--text2)',
+                      }}>
+                        {it.dish}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-              <p style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>{dishSummary(meal)}</p>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
+        <div style={{ flex: '1 1 220px', minWidth: 220, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', alignSelf: 'stretch' }}>
+          <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--accent)', marginBottom: 8 }}>📖 기본 레시피</p>
+          {selected ? (
+            <>
+              <p style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 8 }}>{selected.dish}</p>
+              <ol style={{ paddingLeft: 18, fontSize: 12.5, lineHeight: 1.8, color: 'var(--text2)' }}>
+                {recipe.map((step, i) => <li key={i}>{step}</li>)}
+              </ol>
+            </>
+          ) : (
+            <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.6 }}>메뉴 이름을 클릭하면 기본 레시피를 볼 수 있어요.</p>
+          )}
+        </div>
       </div>
     </>
   )
@@ -322,7 +384,7 @@ export default function MealPlanMonthPage({ month }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
           }}>
             <div onClick={e => e.stopPropagation()} style={{
-              background: 'var(--surface, #fff)', borderRadius: 16, width: '100%', maxWidth: 560,
+              background: 'var(--surface, #fff)', borderRadius: 16, width: '100%', maxWidth: 720,
               maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', padding: '22px 22px 20px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -6 }}>
@@ -330,7 +392,7 @@ export default function MealPlanMonthPage({ month }) {
                   border: 'none', background: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text3)', lineHeight: 1,
                 }}>✕</button>
               </div>
-              <DayMealDetail year={year} month={month} cell={cell} />
+              <DayMealDetail year={year} month={month} cell={cell} interactive />
               <p style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 14, lineHeight: 1.6 }}>
                 🍚 밥 1공기 약 {servingSize.riceG}g · 🥣 국 1그릇 약 {servingSize.soupMl}ml 기준({ageGroup.label} · {dietType.label}) 대략적인 추정치예요.
               </p>
