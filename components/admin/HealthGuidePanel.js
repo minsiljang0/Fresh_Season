@@ -8,13 +8,15 @@ const HEALTH_CATEGORIES = [
   '치아·구강','체력·근육','임산부·태아',
   '탈모·모발','아토피·피부염','통풍·요산','콜레스테롤',
   '전립선·남성건강','신장·저칼륨','알레르기완화',
-  '수험생·집중력','어린이성장','노인·골감소증','기타',
+  '수험생·집중력','어린이성장','노인·골감소증',
+  '귀·청각건강','췌장·담도건강','기타',
 ]
 
 const AGE_GROUP_OPTIONS = [
   { id: 'infant', label: '👶 영유아' },
   { id: 'child', label: '🧒 어린이' },
-  { id: 'teen', label: '🧑 청소년' },
+  { id: 'middleTeen', label: '🧑‍🎓 중학생' },
+  { id: 'highTeen', label: '🎓 고등학생' },
   { id: 'adult', label: '🧑‍💼 성인' },
   { id: 'middle', label: '🧑‍🦳 중장년' },
   { id: 'senior', label: '👴 노년' },
