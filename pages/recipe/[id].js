@@ -51,9 +51,6 @@ export default function RecipeDetail() {
           {recipe.dishes?.name && (
             <span className="badge" style={{ marginBottom: 10, display: 'inline-block' }}>{recipe.dishes.name}</span>
           )}
-          {recipe.servings && (
-            <span className="badge" style={{ marginBottom: 10, marginLeft: 6, display: 'inline-block' }}>{recipe.servings}인분</span>
-          )}
           <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>🍳 {recipe.title}</h1>
           {recipe.summary && <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7 }}>{recipe.summary}</p>}
           {(recipe.tv_shows?.name || recipe.chefs?.name) && (
@@ -74,7 +71,12 @@ export default function RecipeDetail() {
 
         {recipe.ingredients?.length > 0 && (
           <section className="detail-box" style={{ marginBottom: 20, padding: '18px 20px' }}>
-            <p className="detail-label">🥕 재료</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
+              <p className="detail-label" style={{ margin: 0 }}>🥕 재료</p>
+              {recipe.servings && (
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent, #16a34a)' }}>{recipe.servings}인분 기준</span>
+              )}
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {recipe.ingredients.map(ri => (
                 <span key={ri.id} className="tag">
