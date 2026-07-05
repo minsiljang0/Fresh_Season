@@ -11,6 +11,21 @@ export default function RecipeDetail() {
   const [recipe, setRecipe] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [modalName, setModalName] = useState(null)
+  const [modalList, setModalList] = useState(null)
+  const [modalLoading, setModalLoading] = useState(false)
+
+  const openIngredientModal = (name) => {
+    setModalName(name)
+    setModalList(null)
+    setModalLoading(true)
+    fetch(`/api/ingredient?name=${encodeURIComponent(name)}`)
+      .then(r => r.json())
+      .then(list => setModalList(Array.isArray(list) ? list : []))
+      .catch(() => setModalList([]))
+      .finally(() => setModalLoading(false))
+  }
+  const closeModal = () => { setModalName(null); setModalList(null) }
 
   useEffect(() => {
     if (!id) return
@@ -79,7 +94,9 @@ export default function RecipeDetail() {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {recipe.ingredients.map(ri => (
-                <span key={ri.id} className="tag">
+                <span key={ri.id} className="tag"
+                  onClick={() => ri.ingredients?.name && openIngredientModal(ri.ingredients.name)}
+                  style={{ cursor: ri.ingredients ? 'pointer' : 'default' }}>
                   {ri.ingredients?.name || '재료'}{ri.amount ? ` ${ri.amount}` : ''}
                 </span>
               ))}
@@ -133,6 +150,46 @@ export default function RecipeDetail() {
         <Link href="/recipe" className="back-link">← 레시피 전체보기</Link>
       </main>
       <Footer />
+
+      {modalName && (
+        <div onClick={closeModal}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} className="detail-box"
+            style={{ maxWidth: 420, width: '100%', padding: '22px 24px', position: 'relative' }}>
+            <button onClick={closeModal}
+              style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', color: 'var(--text3)', fontSize: 18, cursor: 'pointer' }}>✕</button>
+            <h3 style={{ fontSize: 19, fontWeight: 800, marginBottom: 12 }}>🥕 {modalName} 관련 식재료</h3>
+
+            {modalLoading ? (
+              <p style={{ fontSize: 13, color: 'var(--text2)' }}>불러오는 중...</p>
+            ) : !modalList?.length ? (
+              <p style={{ fontSize: 13, color: 'var(--text2)' }}>
+                ⚠️ 아직 식재료 등록이 안 되었으면 식재료 등록이 필요합니다.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {modalList.map(ing => (
+                  <Link key={ing.id} href={`/ingredient/${encodeURIComponent(ing.name)}`}
+                    style={{ display: 'block', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border, #333)', textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14 }}>{ing.name}</span>
+                      {ing.category && <span className="badge" style={{ fontSize: 10 }}>{ing.category}</span>}
+                    </div>
+                    {ing.hasRegion ? (
+                      <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0 }}>
+                        {ing.season_start && ing.season_end ? `📅 ${ing.season_start}~${ing.season_end}월 · ` : ''}
+                        {ing.description ? ing.description.slice(0, 40) : ''}
+                      </p>
+                    ) : (
+                      <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0 }}>⚠️ 아직 식재료 등록이 안 되었으면 식재료 등록이 필요합니다</p>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   )
 }
