@@ -5,20 +5,29 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { SkeletonGrid } from '../../components/SkeletonCard'
 
+const CATEGORIES = ['밥', '죽', '면', '국', '탕', '찌개', '전골', '찜', '구이', '숙채', '생채', '회', '전', '장', '김치', '장아찌', '조림', '볶음', '한과', '떡', '음청류']
+
 export default function RecipeIndex() {
   const [recipes, setRecipes] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [category, setCategory] = useState('')
+  const [counts, setCounts] = useState({ total: 0, byCategory: {} })
+
+  useEffect(() => {
+    fetch('/api/recipes?counts=1').then(r => r.json()).then(setCounts).catch(() => {})
+  }, [])
 
   useEffect(() => {
     setLoading(true)
     const params = new URLSearchParams()
     if (search) params.set('q', search)
-    params.set('limit', '60')
+    if (category) params.set('category', category)
+    params.set('limit', '200')
     fetch(`/api/recipes?${params.toString()}`).then(r => r.json()).then(d => setRecipes(Array.isArray(d) ? d : []))
       .catch(() => setRecipes([])).finally(() => setLoading(false))
-  }, [search])
+  }, [search, category])
 
   return (
     <>
@@ -30,10 +39,10 @@ export default function RecipeIndex() {
       <main className="wrap">
         <section style={{ padding: '40px 0 28px' }}>
           <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>🍳 레시피</h1>
-          <p style={{ fontSize: 13, color: 'var(--text2)' }}>제철 식재료로 만드는 조리법별 기본 레시피 모음</p>
+          <p style={{ fontSize: 13, color: 'var(--text2)' }}>제철 식재료로 만드는 조리법별 기본 레시피 모음 · 총 {counts.total}개</p>
         </section>
 
-        <section style={{ marginBottom: 24 }}>
+        <section style={{ marginBottom: 16 }}>
           <form onSubmit={e => { e.preventDefault(); setSearch(searchInput.trim()) }} style={{ display: 'flex', gap: 6, maxWidth: 360 }}>
             <input
               value={searchInput}
@@ -46,6 +55,19 @@ export default function RecipeIndex() {
               검색
             </button>
           </form>
+        </section>
+
+        <section style={{ marginBottom: 24, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <button onClick={() => setCategory('')} className="month-pill"
+            style={{ fontWeight: category === '' ? 800 : 500, background: category === '' ? 'var(--accent)' : undefined, color: category === '' ? '#fff' : undefined, borderColor: category === '' ? 'var(--accent)' : undefined }}>
+            전체 ({counts.total})
+          </button>
+          {CATEGORIES.map(c => (
+            <button key={c} onClick={() => setCategory(c)} className="month-pill"
+              style={{ fontWeight: category === c ? 800 : 500, background: category === c ? 'var(--accent)' : undefined, color: category === c ? '#fff' : undefined, borderColor: category === c ? 'var(--accent)' : undefined }}>
+              {c} ({counts.byCategory?.[c] || 0})
+            </button>
+          ))}
         </section>
 
         <section style={{ marginBottom: 64 }}>
@@ -67,8 +89,8 @@ export default function RecipeIndex() {
                   </div>
                 )}
                 <div style={{ padding: 20 }}>
-                  {r.dishes?.name && (
-                    <span className="badge" style={{ marginBottom: 10, display: 'inline-block' }}>{r.dishes.name}</span>
+                  {(r.category || r.dishes?.name) && (
+                    <span className="badge" style={{ marginBottom: 10, display: 'inline-block' }}>{r.category || r.dishes.name}</span>
                   )}
                   <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, lineHeight: 1.4 }}>{r.title}</h2>
                   {r.summary && (

@@ -133,14 +133,21 @@ export default async function handler(req, res) {
       }
       if (type === 'recipes') {
         const q = req.query.q || ''
+        const category = req.query.category || ''
         let query = supabase.from('recipes')
           .select('*, dishes(id,name), tv_shows(id,name,broadcaster), chefs(id,name)')
           .order('created_at', { ascending: false })
-          .limit(50)
         if (q) query = query.ilike('title', `%${q}%`)
+        if (category) query = query.eq('category', category)
         const { data, error } = await query
         if (error) throw error
-        return res.status(200).json(data || [])
+        const ids = (data || []).map(r => r.id)
+        let blogIds = new Set()
+        if (ids.length) {
+          const { data: blogRows } = await supabase.from('blog_posts').select('id').in('id', ids)
+          blogIds = new Set((blogRows || []).map(b => b.id))
+        }
+        return res.status(200).json((data || []).map(r => ({ ...r, has_blog: blogIds.has(r.id) })))
       }
       if (type === 'recipe_ingredients') {
         const { recipe_id } = req.query
