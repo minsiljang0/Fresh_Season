@@ -288,7 +288,7 @@ export default async function handler(req, res) {
       }
       if (type === 'recipes') {
         const { data, error } = await supabase.from('recipes')
-          .insert([{ id: genId(), dish_id: body.dish_id || null, show_id: body.show_id || null, chef_id: body.chef_id || null, episode: body.episode || '', aired_at: body.aired_at || null, title: body.title || '', summary: body.summary || '', source_url: body.source_url || '' }])
+          .insert([{ id: genId(), dish_id: body.dish_id || null, show_id: body.show_id || null, chef_id: body.chef_id || null, episode: body.episode || '', aired_at: body.aired_at || null, title: body.title || '', summary: body.summary || '', source_url: body.source_url || '', category: body.category || '밥', servings: body.servings || null }])
           .select().single()
         if (error) throw error
         await syncBlogFromRecipe(data)
@@ -310,7 +310,7 @@ export default async function handler(req, res) {
       }
       if (type === 'recipe_steps') {
         const { data, error } = await supabase.from('recipe_steps')
-          .insert([{ id: genId(), recipe_id: body.recipe_id, order_num: body.order_num || 1, description: body.description || '', photo_url: body.photo_url || '' }])
+          .insert([{ id: genId(), recipe_id: body.recipe_id, order_num: body.order_num || 1, phase: body.phase || '조리하기', description: body.description || '', photo_url: body.photo_url || '' }])
           .select().single()
         if (error) throw error
         return res.status(200).json(data)

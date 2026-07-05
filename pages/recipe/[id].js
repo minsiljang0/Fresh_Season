@@ -51,6 +51,9 @@ export default function RecipeDetail() {
           {recipe.dishes?.name && (
             <span className="badge" style={{ marginBottom: 10, display: 'inline-block' }}>{recipe.dishes.name}</span>
           )}
+          {recipe.servings && (
+            <span className="badge" style={{ marginBottom: 10, marginLeft: 6, display: 'inline-block' }}>{recipe.servings}인분</span>
+          )}
           <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>🍳 {recipe.title}</h1>
           {recipe.summary && <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7 }}>{recipe.summary}</p>}
           {(recipe.tv_shows?.name || recipe.chefs?.name) && (
@@ -94,17 +97,28 @@ export default function RecipeDetail() {
         {recipe.steps?.length > 0 && (
           <section className="detail-box" style={{ marginBottom: 24, padding: '18px 20px' }}>
             <p className="detail-label">📖 조리 순서</p>
-            <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {recipe.steps.map(s => (
-                <li key={s.id} style={{ fontSize: 14, lineHeight: 1.7 }}>
-                  {s.description}
-                  {s.photo_url && (
-                    <img src={s.photo_url} alt="" referrerPolicy="no-referrer"
-                      style={{ display: 'block', marginTop: 8, maxWidth: '100%', borderRadius: 10 }} />
-                  )}
-                </li>
-              ))}
-            </ol>
+            {['준비하기', '조리하기'].map(phase => {
+              const phaseSteps = recipe.steps.filter(s => (s.phase || '조리하기') === phase)
+              if (!phaseSteps.length) return null
+              return (
+                <div key={phase} style={{ marginBottom: 16 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: phase === '준비하기' ? '#0369a1' : '#c2410c', marginBottom: 8 }}>
+                    {phase === '준비하기' ? '🥣 준비하기' : '🔥 조리하기'}
+                  </p>
+                  <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {phaseSteps.map(s => (
+                      <li key={s.id} style={{ fontSize: 14, lineHeight: 1.7 }}>
+                        {s.description}
+                        {s.photo_url && (
+                          <img src={s.photo_url} alt="" referrerPolicy="no-referrer"
+                            style={{ display: 'block', marginTop: 8, maxWidth: '100%', borderRadius: 10 }} />
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )
+            })}
           </section>
         )}
 

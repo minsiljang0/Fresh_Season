@@ -20,7 +20,7 @@ const RECIPE_CATEGORIES = ['밥', '죽', '면', '국', '탕', '찌개', '전골'
 // ══════════════════════════════════════════════════════════
 export default function RecipeAdminPanel({ adminToken, onBlogWrite }) {
   const [formOpen, setFormOpen] = useState(false)
-  const EMPTY = { title: '', summary: '', source_url: '', category: '밥' }
+  const EMPTY = { title: '', summary: '', source_url: '', category: '밥', servings: 4 }
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(EMPTY)
@@ -45,7 +45,7 @@ export default function RecipeAdminPanel({ adminToken, onBlogWrite }) {
   const [stepsMap, setStepsMap] = useState({})
   const [ingredientsMap, setIngredientsMap] = useState({})
   const [toolsMap, setToolsMap] = useState({})
-  const [stepForm, setStepForm] = useState({ description: '', photo_url: '' })
+  const [stepForm, setStepForm] = useState({ '준비하기': '', '조리하기': '' })
   const [ingForm, setIngForm] = useState({ ingredient_id: '', amount: '' })
   const [toolForm, setToolForm] = useState({ name: '' })
 
@@ -98,18 +98,19 @@ export default function RecipeAdminPanel({ adminToken, onBlogWrite }) {
   const toggleExpand = (recipeId) => {
     if (expandedId === recipeId) { setExpandedId(null); return }
     setExpandedId(recipeId)
-    setStepForm({ description: '', photo_url: '' })
+    setStepForm({ '준비하기': '', '조리하기': '' })
     setIngForm({ ingredient_id: '', amount: '' })
     setToolForm({ name: '' })
     if (!stepsMap[recipeId]) loadDetail(recipeId)
   }
 
-  const addStep = async (recipeId) => {
-    if (!stepForm.description.trim()) { showToast('⚠️ 조리 순서 내용을 입력하세요'); return }
-    const orderNum = (stepsMap[recipeId]?.length || 0) + 1
+  const addStep = async (recipeId, phase) => {
+    const description = (stepForm[phase] || '').trim()
+    if (!description) { showToast('⚠️ 조리 순서 내용을 입력하세요'); return }
+    const orderNum = ((stepsMap[recipeId] || []).filter(s => (s.phase || '조리하기') === phase).length) + 1
     try {
-      await apiFetch(api('recipe_steps'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken }, body: JSON.stringify({ recipe_id: recipeId, order_num: orderNum, ...stepForm }) })
-      setStepForm({ description: '', photo_url: '' }); loadDetail(recipeId)
+      await apiFetch(api('recipe_steps'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken }, body: JSON.stringify({ recipe_id: recipeId, order_num: orderNum, phase, description, photo_url: '' }) })
+      setStepForm(p => ({ ...p, [phase]: '' })); loadDetail(recipeId)
     } catch (e) { showToast('❌ ' + e.message) }
   }
   const delStep = async (recipeId, stepId) => {
@@ -153,11 +154,17 @@ export default function RecipeAdminPanel({ adminToken, onBlogWrite }) {
         <label style={S.label}>레시피 제목 *</label>
         <input value={f.title || ''} onChange={e => setF(p => ({ ...p, title: e.target.value }))} placeholder="예: 고등어 구이" style={S.input} />
       </div>
-      <div style={{ gridColumn: '1/-1' }}>
+      <div>
         <label style={S.label}>카테고리</label>
         <select value={f.category || '밥'} onChange={e => setF(p => ({ ...p, category: e.target.value }))} style={S.input}>
           {RECIPE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
+      </div>
+      <div>
+        <label style={S.label}>인분수</label>
+        <input type="number" min="1" value={f.servings ?? ''}
+          onChange={e => setF(p => ({ ...p, servings: e.target.value === '' ? null : parseInt(e.target.value, 10) }))}
+          placeholder="예: 4" style={S.input} />
       </div>
       <div style={{ gridColumn: '1/-1' }}>
         <label style={S.label}>요약</label>
@@ -278,7 +285,7 @@ export default function RecipeAdminPanel({ adminToken, onBlogWrite }) {
                         {onBlogWrite && (
                           <button onClick={() => onBlogWrite(r.id, '레시피')} style={{ ...S.btnGhost, padding: '4px 10px', fontSize: 12 }}>📝 블로그 편집</button>
                         )}
-                        <button onClick={() => { setEditId(r.id); setEditForm({ title: r.title, summary: r.summary || '', source_url: r.source_url || '', category: r.category || '밥' }) }}
+                        <button onClick={() => { setEditId(r.id); setEditForm({ title: r.title, summary: r.summary || '', source_url: r.source_url || '', category: r.category || '밥', servings: r.servings ?? null }) }}
                           style={{ ...S.btnGhost, padding: '4px 10px', fontSize: 12 }}>✏️</button>
                         <button onClick={() => del(r.id, r.title)}
                           style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #fca5a5', background: '#fff1f2', color: '#dc2626', fontSize: 12, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>삭제</button>
@@ -288,22 +295,34 @@ export default function RecipeAdminPanel({ adminToken, onBlogWrite }) {
                     {expandedId === r.id && (
                       <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px dashed #d1e8d1', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                        {/* 조리 순서 */}
+                        {/* 조리 순서 — 준비하기/조리하기 항상 분리 표시 */}
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 700, color: '#0f1f0f', marginBottom: 8 }}>📖 조리 순서</div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-                            {(stepsMap[r.id] || []).map((s, i) => (
-                              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, fontSize: 12, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '6px 10px' }}>
-                                <span><b>{i + 1}.</b> {s.description}</span>
-                                <button onClick={() => delStep(r.id, s.id)} style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 11, flexShrink: 0 }}>삭제</button>
+                          {['준비하기', '조리하기'].map(phase => {
+                            const phaseSteps = (stepsMap[r.id] || []).filter(s => (s.phase || '조리하기') === phase)
+                            return (
+                              <div key={phase} style={{ marginBottom: 10 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: phase === '준비하기' ? '#0369a1' : '#c2410c', marginBottom: 6 }}>
+                                  {phase === '준비하기' ? '🥣 준비하기' : '🔥 조리하기'}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+                                  {phaseSteps.length === 0 ? (
+                                    <div style={{ fontSize: 11, color: '#aaa', padding: '2px 2px' }}>등록된 단계 없음</div>
+                                  ) : phaseSteps.map((s, i) => (
+                                    <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, fontSize: 12, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '6px 10px' }}>
+                                      <span><b>{i + 1}.</b> {s.description}</span>
+                                      <button onClick={() => delStep(r.id, s.id)} style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 11, flexShrink: 0 }}>삭제</button>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  <input value={stepForm[phase] || ''} onChange={e => setStepForm(p => ({ ...p, [phase]: e.target.value }))}
+                                    placeholder={`${phase} 설명`} style={{ ...S.input, flex: 1, fontSize: 12 }} />
+                                  <button onClick={() => addStep(r.id, phase)} style={{ ...S.btn(), padding: '6px 14px', fontSize: 12 }}>+ 추가</button>
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <input value={stepForm.description} onChange={e => setStepForm(p => ({ ...p, description: e.target.value }))}
-                              placeholder="조리 순서 설명" style={{ ...S.input, flex: 1, fontSize: 12 }} />
-                            <button onClick={() => addStep(r.id)} style={{ ...S.btn(), padding: '6px 14px', fontSize: 12 }}>+ 추가</button>
-                          </div>
+                            )
+                          })}
                         </div>
 
                         {/* 재료 */}
