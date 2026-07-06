@@ -30,15 +30,67 @@ export async function getStaticPaths() {
   }
 }
 
+// 빌드/재검증 시 DB에서 재료 상세를 직접 조회해 meta description·본문을
+// 클라이언트 JS 실행 전(첫 HTML)부터 채워둔다 — 예전엔 클라이언트에서만
+// fetch해서 크롤러가 보는 최초 HTML에 메타 설명이 전부 비어있거나
+// (loading 상태) 모든 재료가 똑같은 문구를 쓰는 문제가 있었다.
 export async function getStaticProps({ params }) {
+  const ingredientName = decodeURIComponent(params.name)
+  let initialFood = null
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const { data: ing } = await sb
+      .from('ingredients')
+      .select(`
+        id, name, category, description, caution,
+        is_special, is_limited, limited_days, months,
+        ingredient_health ( health_benefits ( id, name, category ) )
+      `)
+      .eq('name', ingredientName)
+      .maybeSingle()
+
+    if (ing) {
+      const { data: regionRows } = await sb
+        .from('ingredient_regions')
+        .select('region, district, months')
+        .eq('ingredient_id', ing.id)
+        .order('region')
+        .limit(1)
+
+      initialFood = {
+        ingredient: ing.name,
+        category: ing.category || 'veg',
+        region: regionRows?.[0]?.region || '',
+        district: regionRows?.[0]?.district || '',
+        months: Array.isArray(ing.months) && ing.months.length ? ing.months : (regionRows?.[0]?.months || []),
+        health: ing.description || '',
+        healthBenefits: (ing.ingredient_health || []).map(ih => ih.health_benefits).filter(Boolean),
+        tvPrograms: [],
+        caution: ing.caution || '',
+        is_special: ing.is_special || false,
+        is_limited: ing.is_limited || false,
+        limited_days: ing.limited_days || null,
+      }
+    }
+  } catch {
+    initialFood = null
+  }
+
+  if (!initialFood) return { notFound: true, revalidate: 60 }
+
   return {
-    props: { ingredientName: decodeURIComponent(params.name) },
+    props: { ingredientName, initialFood },
+    revalidate: 60, // ISR — DB 수정사항이 최대 60초 내 반영
   }
 }
 
-export default function IngredientPage({ ingredientName }) {
-  const [food, setFood] = useState(null)
-  const [loading, setLoading] = useState(true)
+export default function IngredientPage({ ingredientName, initialFood }) {
+  const [food, setFood] = useState(initialFood)
+  const [loading, setLoading] = useState(false)
   const [posts, setPosts] = useState([])
   const middleSlot = useAdSlot('home_middle')
   const [coupangLinks, setCoupangLinks] = useState([])
@@ -83,6 +135,12 @@ export default function IngredientPage({ ingredientName }) {
   const region = food ? REGIONS.find(r => r.id === food.region) : null
   const MONTHS = ['','1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 
+  // 재료마다 실제 DB 설명(효능)을 반영한 고유 메타 설명 — 모든 재료 페이지가
+  // 똑같은 문구를 쓰면 구글이 중복 콘텐츠로 판단해 색인에서 묶어버리는 문제가 있었다.
+  const metaDescription = food?.health
+    ? `${ingredientName} 효능: ${food.health}`.replace(/\s+/g, ' ').trim().slice(0, 150)
+    : `${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`
+
   if (loading) return (
     <>
       <Header />
@@ -116,16 +174,16 @@ export default function IngredientPage({ ingredientName }) {
     <>
       <Head>
         <title>{ingredientName} 제철 레시피 & 효능 — Fresh Season</title>
-        <meta name="description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
+        <meta name="description" content={metaDescription} />
         <meta property="og:title" content={`${ingredientName} 제철 레시피 & 효능 — Fresh Season`} />
-        <meta property="og:description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
+        <meta property="og:description" content={metaDescription} />
         <meta property="og:image" content="https://www.fsfood.kr/og-image.png" />
         <meta property="og:url" content={`https://www.fsfood.kr/ingredient/${encodeURIComponent(ingredientName)}`} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Fresh Season" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${ingredientName} 제철 레시피 & 효능 — Fresh Season`} />
-        <meta name="twitter:description" content={`${ingredientName}의 제철 시기와 건강 효능, TV 방영 레시피를 확인하세요. 신선한 제철 식재료로 만드는 건강한 요리법을 알아보세요.`} />
+        <meta name="twitter:description" content={metaDescription} />
         <meta name="twitter:image" content="https://www.fsfood.kr/og-image.png" />
         <link rel="canonical" href={`https://www.fsfood.kr/ingredient/${encodeURIComponent(ingredientName)}`} />
         <script
