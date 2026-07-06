@@ -623,7 +623,7 @@ function HealthTab({ adminToken, showToast, confirmDelete, allIngredients, allTv
 function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTvShows, refreshHealths }) {
   const EMPTY_FORM = {
     name:'', display_name:'', region_id:'', category:'fish', description:'',
-    coupang_url:'', coupang_banner_html:'', caution:'', is_special:false, is_limited:false, limited_days:'', is_global:false, is_brand:false,
+    coupang_url:'', coupang_banner_html:'', coupang_banner_html_blog:'', caution:'', is_special:false, is_limited:false, limited_days:'', is_global:false, is_brand:false,
     season_badge:[], jeolgi_badge:[], special_badge:[], habitat_badge:[], farming_badge:[],
     age_groups:[], gender:'all', months:[]
   }
@@ -930,6 +930,18 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
           <div style={{ marginTop:8, padding:10, background:'#f5f9f5', border:'1px dashed #d1e8d1', borderRadius:8, display:'inline-block' }}>
             <div style={{ fontSize:10, color:'#4b6e4b', marginBottom:6 }}>미리보기</div>
             <div dangerouslySetInnerHTML={{ __html: f.coupang_banner_html }} />
+          </div>
+        )}
+      </div>
+      <div style={{ gridColumn:'1/-1' }}>
+        <label style={S.label}>📝 블로그용 배너 iframe 코드</label>
+        <textarea value={f.coupang_banner_html_blog||''} onChange={e=>setF(p=>({...p,coupang_banner_html_blog:e.target.value}))}
+          placeholder='<iframe src="https://ads-partners.coupang.com/widgets.html?..." width="120" height="240" frameborder="0" scrolling="no"></iframe>'
+          rows={3} style={S.textarea} />
+        {f.coupang_banner_html_blog && f.coupang_banner_html_blog.includes('<iframe') && (
+          <div style={{ marginTop:8, padding:10, background:'#f5f9f5', border:'1px dashed #d1e8d1', borderRadius:8, display:'inline-block' }}>
+            <div style={{ fontSize:10, color:'#4b6e4b', marginBottom:6 }}>미리보기</div>
+            <div dangerouslySetInnerHTML={{ __html: f.coupang_banner_html_blog }} />
           </div>
         )}
       </div>
@@ -1499,7 +1511,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                       e.stopPropagation()
                       setSelId(null); setEditId(i.id)
                       setEditForm({ name:i.name, display_name:i.name, region_id:'', category:i.category,
-                        description:i.description||'', coupang_url:i.coupang_url||'', coupang_banner_html:i.coupang_banner_html||'', caution:i.caution||'',
+                        description:i.description||'', coupang_url:i.coupang_url||'', coupang_banner_html:i.coupang_banner_html||'', coupang_banner_html_blog:i.coupang_banner_html_blog||'', caution:i.caution||'',
                         is_special:i.is_special||false, is_limited:i.is_limited||false, limited_days:i.limited_days||'',
                         is_global:i.is_global||false, is_brand:i.is_brand||false,
                         season_badge:i.season_badge||[], jeolgi_badge:i.jeolgi_badge||[], special_badge:i.special_badge||[], habitat_badge:i.habitat_badge||[], farming_badge:i.farming_badge||[],
