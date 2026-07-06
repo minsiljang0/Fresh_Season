@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../../components/Header'
@@ -238,6 +239,36 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
   const { introHtml, steps } = stepMode ? splitStepsHtml(html) : { introHtml: '', steps: [] }
   const middleSlot = useAdSlot('home_middle')
 
+  // 관리자 전용 — 로그인 상태(sessionStorage에 admin_token 존재)에서만 이 글의
+  // 제목 점수·SEO 점수·네이버 요약글·인스타 카드뉴스를 가져와 보여준다.
+  // 일반 방문자에게는 절대 노출되지 않는다 (SSR 응답에는 애초에 포함 안 됨).
+  // 값이 비어있어도(아직 저장 전인 글 등) 관리자에게는 자리 자체는 항상 보여주고 "내용 없음"으로 표시한다.
+  const [adminExtra, setAdminExtra] = useState(null)
+  const [copiedField, setCopiedField] = useState('')
+  useEffect(() => {
+    if (!post?.slug) return
+    let adminToken = ''
+    try { adminToken = sessionStorage.getItem('admin_token') || '' } catch {}
+    if (!adminToken) return
+    fetch(`/api/blog/posts?slug=${post.slug}`, { headers: { 'x-admin-token': adminToken } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return
+        const { title_score, seo_score, naver_summary, instagram_cards } = data
+        setAdminExtra({ title_score, seo_score, naver_summary, instagram_cards })
+      })
+      .catch(() => {})
+  }, [post?.slug])
+
+  const copyToClipboard = (field, text) => {
+    if (!text) return
+    try {
+      navigator.clipboard.writeText(text)
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(''), 1500)
+    } catch {}
+  }
+
   return (
     <>
       <Head>
@@ -314,6 +345,49 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
             <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>
               이 블로그는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
             </p>
+
+            {adminExtra && (
+              <div style={{ marginBottom: 20, padding: '12px 16px', background: '#fef3c7', border: '1px dashed #f59e0b', borderRadius: 10, fontSize: 12.5, color: '#92400e' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', fontWeight: 700, marginBottom: 10 }}>
+                  <span>🔒 관리자 전용</span>
+                  <span>제목 점수: {adminExtra.title_score != null ? `${adminExtra.title_score}/10` : '내용 없음'}</span>
+                  <span>SEO 점수: {adminExtra.seo_score != null ? `${adminExtra.seo_score}/100` : '내용 없음'}</span>
+                </div>
+
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontWeight: 700 }}>📋 네이버 블로그용 요약글</span>
+                    {adminExtra.naver_summary && (
+                      <button
+                        onClick={() => copyToClipboard('naver', adminExtra.naver_summary)}
+                        style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #f59e0b', background: copiedField === 'naver' ? '#f59e0b' : '#fff', color: copiedField === 'naver' ? '#fff' : '#92400e', cursor: 'pointer' }}>
+                        {copiedField === 'naver' ? '복사됨!' : '복사'}
+                      </button>
+                    )}
+                  </div>
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 12.5, marginTop: 6, padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #fde68a', color: adminExtra.naver_summary ? '#92400e' : '#b45309aa' }}>
+                    {adminExtra.naver_summary || '내용 없음'}
+                  </pre>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontWeight: 700 }}>📱 인스타그램 카드뉴스 스크립트</span>
+                    {adminExtra.instagram_cards && (
+                      <button
+                        onClick={() => copyToClipboard('instagram', adminExtra.instagram_cards)}
+                        style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #f59e0b', background: copiedField === 'instagram' ? '#f59e0b' : '#fff', color: copiedField === 'instagram' ? '#fff' : '#92400e', cursor: 'pointer' }}>
+                        {copiedField === 'instagram' ? '복사됨!' : '복사'}
+                      </button>
+                    )}
+                  </div>
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 12.5, marginTop: 6, padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #fde68a', color: adminExtra.instagram_cards ? '#92400e' : '#b45309aa' }}>
+                    {adminExtra.instagram_cards || '내용 없음'}
+                  </pre>
+                </div>
+              </div>
+            )}
+
             {topBadge && (
               <span className="badge" style={{ marginBottom: 14, display: 'inline-block', background: `${topBadge.color}22`, color: topBadge.color, border: `1px solid ${topBadge.color}44`, fontSize: 12, padding: '4px 12px' }}>
                 {topBadge.icon} {topBadge.name}

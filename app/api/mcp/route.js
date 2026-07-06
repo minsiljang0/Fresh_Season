@@ -565,10 +565,12 @@ const baseHandler = createMcpHandler(
           scheduled_at: z.string().optional().describe('status가 scheduled일 때만 사용, ISO 날짜'),
           title_score: z.number().optional().describe('제목 점수표(10점 만점) 채점 결과. 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
           seo_score: z.number().optional().describe('SEO 체크리스트(100점 만점) 채점 결과. 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
+          naver_summary: z.string().optional().describe('네이버 블로그에 붙여넣을 요약글(300~500자 + 원문 링크). 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
+          instagram_cards: z.string().optional().describe('인스타그램 카드뉴스 슬라이드 스크립트(4~6장). 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
         },
         annotations: { destructiveHint: false, idempotentHint: false },
       },
-      async ({ title, slug, summary, content, category, tags, cover_image, step_images, author, status, scheduled_at, title_score, seo_score }) => {
+      async ({ title, slug, summary, content, category, tags, cover_image, step_images, author, status, scheduled_at, title_score, seo_score, naver_summary, instagram_cards }) => {
         const catCheck = await validateCategory(category)
         if (!catCheck.valid) {
           return {
@@ -603,9 +605,11 @@ const baseHandler = createMcpHandler(
           published_at: finalStatus === 'published' ? nowIso : null,
           created_at: nowIso,
           updated_at: nowIso,
-          // 제목 점수·SEO 점수 — 관리자 내부 참고용 (공개 API에서는 노출되지 않음)
+          // 제목 점수·SEO 점수·네이버 요약글·인스타 카드뉴스 — 관리자 내부 참고용 (공개 API에서는 노출되지 않음)
           title_score: title_score ?? null,
           seo_score: seo_score ?? null,
+          naver_summary: naver_summary ?? null,
+          instagram_cards: instagram_cards ?? null,
         }
         const { data, error } = await supabase.from('blog_posts').insert([row]).select().single()
         if (error) return { content: [{ type: 'text', text: `오류: ${error.message}` }], isError: true }
@@ -697,10 +701,12 @@ const baseHandler = createMcpHandler(
           status: z.enum(['published', 'draft']).optional().describe('글 상태 변경'),
           title_score: z.number().optional().describe('제목 점수표(10점 만점) 재채점 결과. 사이트 방문자에게는 노출되지 않는다.'),
           seo_score: z.number().optional().describe('SEO 체크리스트(100점 만점) 재채점 결과. 사이트 방문자에게는 노출되지 않는다.'),
+          naver_summary: z.string().optional().describe('네이버 블로그에 붙여넣을 요약글(300~500자 + 원문 링크). 사이트 방문자에게는 노출되지 않는다.'),
+          instagram_cards: z.string().optional().describe('인스타그램 카드뉴스 슬라이드 스크립트(4~6장). 사이트 방문자에게는 노출되지 않는다.'),
         },
         annotations: { destructiveHint: false, idempotentHint: true },
       },
-      async ({ slug, title, summary, content, cover_image, step_images, tags, status, title_score, seo_score }) => {
+      async ({ slug, title, summary, content, cover_image, step_images, tags, status, title_score, seo_score, naver_summary, instagram_cards }) => {
         const patch = {}
         if (title !== undefined)       patch.title = title
         if (summary !== undefined)     patch.summary = summary
@@ -710,6 +716,8 @@ const baseHandler = createMcpHandler(
         if (status !== undefined)      patch.status = status
         if (title_score !== undefined) patch.title_score = title_score
         if (seo_score !== undefined)   patch.seo_score = seo_score
+        if (naver_summary !== undefined)   patch.naver_summary = naver_summary
+        if (instagram_cards !== undefined) patch.instagram_cards = instagram_cards
 
         if (step_images !== undefined) {
           // content를 함께 안 넘겼으면, 기존 본문을 먼저 가져와서 그 위에 사진 배열만 교체한다.
@@ -725,7 +733,7 @@ const baseHandler = createMcpHandler(
         }
 
         if (Object.keys(patch).length === 0) {
-          return { content: [{ type: 'text', text: '오류: 수정할 필드가 없습니다. title/summary/content/cover_image/step_images/tags/status/title_score/seo_score 중 하나 이상을 전달해주세요.' }], isError: true }
+          return { content: [{ type: 'text', text: '오류: 수정할 필드가 없습니다. title/summary/content/cover_image/step_images/tags/status/title_score/seo_score/naver_summary/instagram_cards 중 하나 이상을 전달해주세요.' }], isError: true }
         }
         patch.updated_at = nowKST()
 
