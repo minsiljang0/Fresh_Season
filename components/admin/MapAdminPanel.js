@@ -926,7 +926,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
         <textarea value={f.coupang_banner_html||''} onChange={e=>setF(p=>({...p,coupang_banner_html:e.target.value}))}
           placeholder='<iframe src="https://ads-partners.coupang.com/widgets.html?..." width="120" height="240" frameborder="0" scrolling="no"></iframe>'
           rows={3} style={S.textarea} />
-        {f.coupang_banner_html && f.coupang_banner_html.includes('<iframe') && (
+        {f.coupang_banner_html && /<(iframe|a |img)/i.test(f.coupang_banner_html) && (
           <div style={{ marginTop:8, padding:10, background:'#f5f9f5', border:'1px dashed #d1e8d1', borderRadius:8, display:'inline-block' }}>
             <div style={{ fontSize:10, color:'#4b6e4b', marginBottom:6 }}>미리보기</div>
             <div dangerouslySetInnerHTML={{ __html: f.coupang_banner_html }} />
@@ -938,7 +938,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
         <textarea value={f.coupang_banner_html_blog||''} onChange={e=>setF(p=>({...p,coupang_banner_html_blog:e.target.value}))}
           placeholder='<iframe src="https://ads-partners.coupang.com/widgets.html?..." width="120" height="240" frameborder="0" scrolling="no"></iframe>'
           rows={3} style={S.textarea} />
-        {f.coupang_banner_html_blog && f.coupang_banner_html_blog.includes('<iframe') && (
+        {f.coupang_banner_html_blog && /<(iframe|a |img)/i.test(f.coupang_banner_html_blog) && (
           <div style={{ marginTop:8, padding:10, background:'#f5f9f5', border:'1px dashed #d1e8d1', borderRadius:8, display:'inline-block' }}>
             <div style={{ fontSize:10, color:'#4b6e4b', marginBottom:6 }}>미리보기</div>
             <div dangerouslySetInnerHTML={{ __html: f.coupang_banner_html_blog }} />
