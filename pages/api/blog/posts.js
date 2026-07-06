@@ -38,6 +38,13 @@ export default async function handler(req, res) {
       .eq('status', 'scheduled').lte('scheduled_at', now)
   } catch {}
 
+  // 제목 점수·SEO 점수는 관리자 내부 참고용 — 일반 방문자(비로그인) 응답에는 절대 포함하지 않는다.
+  const stripAdminScores = (row) => {
+    if (!row) return row
+    const { title_score, seo_score, ...rest } = row
+    return rest
+  }
+
   if (req.method === 'GET') {
     const { id, slug, category, limit = 20, offset = 0, q, post_type } = req.query
     if (id) {
@@ -45,14 +52,14 @@ export default async function handler(req, res) {
       if (!isAdmin) query = query.eq('status', 'published')
       const { data, error } = await query.single()
       if (error || !data) return res.status(404).json({ error: 'Not found' })
-      return res.status(200).json(data)
+      return res.status(200).json(isAdmin ? data : stripAdminScores(data))
     }
     if (slug) {
       let query = supabase.from('blog_posts').select('*').eq('slug', slug)
       if (!isAdmin) query = query.eq('status', 'published')
       const { data, error } = await query.single()
       if (error || !data) return res.status(404).json({ error: 'Not found' })
-      return res.status(200).json(data)
+      return res.status(200).json(isAdmin ? data : stripAdminScores(data))
     }
     let query = supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
     if (!isAdmin) query = query.eq('status', 'published')
@@ -66,13 +73,14 @@ export default async function handler(req, res) {
     query = query.range(Number(offset), Number(offset) + Number(limit) - 1)
     const { data, error } = await query
     if (error) return res.status(500).json({ error: error.message })
-    return res.status(200).json(data || [])
+    const rows = data || []
+    return res.status(200).json(isAdmin ? rows : rows.map(stripAdminScores))
   }
 
   if (!isAdmin) return res.status(401).json({ error: '인증 필요' })
 
   if (req.method === 'POST') {
-    const { title, slug, content, category, author, status = 'published', scheduled_at, summary, tags, cover_image } = req.body
+    const { title, slug, content, category, author, status = 'published', scheduled_at, summary, tags, cover_image, title_score, seo_score } = req.body
     if (!title || !slug || !content) return res.status(400).json({ error: '필수 항목 누락' })
     const { data, error } = await supabase.from('blog_posts').insert([{
       id: genId(), title, slug, content, category: category || '',
@@ -82,6 +90,9 @@ export default async function handler(req, res) {
       status, post_type: 'blog',
       scheduled_at: scheduled_at || null,
       published_at: status === 'published' ? nowKST() : null,
+      // 제목 점수(10점 만점)·SEO 점수(100점 만점) — 관리자만 보는 내부 참고용, 공개 API 응답에서는 stripAdminScores로 제외된다
+      title_score: title_score ?? null,
+      seo_score: seo_score ?? null,
       created_at: nowKST(),
     }]).select().single()
     if (error) return res.status(500).json({ error: error.message })
