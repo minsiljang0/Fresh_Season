@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../../components/Header'
@@ -30,6 +30,12 @@ export default function RegionPage({ regionId }) {
   const [isMobile, setIsMobile]         = useState(false)
   const [coupangLinks, setCoupangLinks] = useState([])
   const [coupangWidgets, setCoupangWidgets] = useState([])
+  const coupangScrollRef = useRef(null)
+  const scrollCoupang = (dir) => {
+    const el = coupangScrollRef.current
+    if (!el) return
+    el.scrollBy({ left: dir * 200, behavior: 'smooth' })
+  }
 
   // 관리자 로그인 여부 (admin.js에서 로그인 시 sessionStorage에 저장되는 토큰을 그대로 사용)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -196,7 +202,7 @@ export default function RegionPage({ regionId }) {
           )}
         </section>
 
-        {/* 지역 특산물 쇼핑하기 — 이 지역 특산품 중 쿠팡 정보가 등록된 재료만 개별 카드로 노출 */}
+        {/* 지역 식재료 쇼핑하기 — 이 지역 특산품 중 쿠팡 정보가 등록된 재료만 개별 카드로 노출 */}
         {(() => {
           // 이 지역 상품 중 재료 자체에 쿠팡 URL/배너가 등록된 것만 노출.
           // (예전엔 매칭되는 게 없으면 전체 공통 링크 목록으로 대체했지만,
@@ -205,37 +211,68 @@ export default function RegionPage({ regionId }) {
 
           if (specialFoods.length === 0) return null
 
+          const showArrows = specialFoods.length > 3
           return (
             <section className="detail-box" style={{ marginBottom: 24 }}>
-              <p className="detail-label">🛒 {region.name} 특산물 쇼핑하기</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                {specialFoods.map((food, i) => {
-                  const cp = resolveCoupangDisplay(coupangLinks, coupangWidgets, food)
-                  if (cp.links.length === 0 && cp.widgets.length === 0) return null
-                  return (
-                    <div key={i} style={{ maxWidth: 180 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>{food.ingredient}</div>
-                      {cp.widgets.map((html, j) => (
-                        <div key={j} dangerouslySetInnerHTML={{ __html: html }} />
-                      ))}
-                      {cp.links.map((l, j) => (
-                        <a key={j} href={l.url} target="_blank" rel="noopener noreferrer sponsored"
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6,
-                            fontSize: 12, fontWeight: 700, color: '#fff',
-                            background: '#ea580c', borderRadius: 10, padding: '7px 14px',
-                            textDecoration: 'none',
-                          }}>
-                          🛒 {l.label}
-                        </a>
-                      ))}
-                    </div>
-                  )
-                })}
+              <p className="detail-label">🛒 {region.name} 식재료 쇼핑하기</p>
+              <div style={{ position: 'relative' }}>
+                {showArrows && (
+                  <button onClick={() => scrollCoupang(-1)} aria-label="이전 상품"
+                    style={{
+                      position: 'absolute', left: -6, top: '50%', transform: 'translateY(-50%)',
+                      zIndex: 2, width: 30, height: 30, borderRadius: '50%',
+                      border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16, fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                    }}>‹</button>
+                )}
+                <div ref={coupangScrollRef} className="coupang-scroll"
+                  style={{
+                    display: 'flex', gap: 16, overflowX: 'auto', scrollSnapType: 'x proximity',
+                    WebkitOverflowScrolling: 'touch', paddingBottom: 4,
+                  }}>
+                  {specialFoods.map((food, i) => {
+                    const cp = resolveCoupangDisplay(coupangLinks, coupangWidgets, food)
+                    if (cp.links.length === 0 && cp.widgets.length === 0) return null
+                    return (
+                      <div key={i} style={{ minWidth: 180, maxWidth: 180, flex: '0 0 auto', scrollSnapAlign: 'start' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>{food.ingredient}</div>
+                        {cp.widgets.map((html, j) => (
+                          <div key={j} dangerouslySetInnerHTML={{ __html: html }} />
+                        ))}
+                        {cp.links.map((l, j) => (
+                          <a key={j} href={l.url} target="_blank" rel="noopener noreferrer sponsored"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6,
+                              fontSize: 12, fontWeight: 700, color: '#fff',
+                              background: '#ea580c', borderRadius: 10, padding: '7px 14px',
+                              textDecoration: 'none',
+                            }}>
+                            🛒 {l.label}
+                          </a>
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+                {showArrows && (
+                  <button onClick={() => scrollCoupang(1)} aria-label="다음 상품"
+                    style={{
+                      position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)',
+                      zIndex: 2, width: 30, height: 30, borderRadius: '50%',
+                      border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16, fontWeight: 700, boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                    }}>›</button>
+                )}
               </div>
               <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 12 }}>
                 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.
               </p>
+              <style jsx>{`
+                .coupang-scroll::-webkit-scrollbar { display: none; }
+                .coupang-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+              `}</style>
             </section>
           )
         })()}
