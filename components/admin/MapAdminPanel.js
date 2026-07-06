@@ -1141,11 +1141,6 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
 
       {/* ── 필터 바 ── */}
       <div style={{ background:'#f0fdf4', border:'1.5px solid #86efac', borderRadius:12, padding:14, marginBottom:12 }}>
-        {/* 1줄: 검색 + 카운트 */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, gap:8, flexWrap:'wrap' }}>
-          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 이름 검색" style={{ ...S.input, width:170, flex:'none' }} />
-          <span style={{ fontSize:12, color:'#4b6e4b', fontWeight:700 }}>{filtered.length}개</span>
-        </div>
         {/* 2줄: 월 필터 */}
         <div style={{ marginBottom:8 }}>
           <div style={{ fontSize:11, fontWeight:700, color:'#4b6e4b', marginBottom:5 }}>📅 월 필터</div>
@@ -1349,6 +1344,12 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
         ))}
       </div>
 
+      {/* ── 검색 + 카운트 ── */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, gap:8, flexWrap:'wrap' }}>
+        <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="🔍 이름 검색" style={{ ...S.input, width:170, flex:'none' }} />
+        <span style={{ fontSize:12, color:'#4b6e4b', fontWeight:700 }}>{filtered.length}개</span>
+      </div>
+
       {/* ── 목록 ── */}
       {loading ? <p style={{ textAlign:'center', color:'#aaa', padding:30 }}>불러오는 중...</p> : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:8 }}>
@@ -1484,7 +1485,6 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                         <span style={{ color:'#dc2626' }}>{i.caution.slice(0,35)}{i.caution.length>35?'…':''}</span>
                       </div>
                     )}
-                    {i.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:2 }}>🛒 쿠팡</div>}
                     {/* 건강효능 연결 개수 뱃지 */}
                     <div style={{ display:'flex', gap:4, marginTop:4 }}>
                       <span style={{ fontSize:10, padding:'2px 8px', borderRadius:20,
@@ -1492,6 +1492,7 @@ function IngredientTab({ adminToken, showToast, confirmDelete, allHealths, allTv
                         💊 건강효능 {(i.health_benefits||[]).length}개
                       </span>
                     </div>
+                    {i.coupang_url && <div style={{ fontSize:10, color:'#ea580c', marginTop:4 }}>🛒 쿠팡</div>}
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:3, flexShrink:0, marginLeft:6 }}>
                     <button onClick={e => {
