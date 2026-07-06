@@ -311,6 +311,9 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
           </div>
         ) : (
           <article style={{ padding: '40px 0 64px' }}>
+            <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>
+              이 블로그는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+            </p>
             {topBadge && (
               <span className="badge" style={{ marginBottom: 14, display: 'inline-block', background: `${topBadge.color}22`, color: topBadge.color, border: `1px solid ${topBadge.color}44`, fontSize: 12, padding: '4px 12px' }}>
                 {topBadge.icon} {topBadge.name}
