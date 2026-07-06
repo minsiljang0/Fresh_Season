@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import '../styles/globals.css'
 import { AdSlotsProvider, useAdSlot } from '../lib/AdSlotsContext'
 import { SidebarAd } from '../components/AdSlot'
-import CoupangRedirectGuard from '../components/CoupangRedirectGuard'
 
 const BASE_URL = 'https://www.fsfood.kr'
 
@@ -53,7 +52,6 @@ export default function App({ Component, pageProps }) {
           `
         }} />
       </Head>
-      <CoupangRedirectGuard />
       {showSiteAds && <SideRailAds />}
       <Component {...pageProps} />
     </AdSlotsProvider>
