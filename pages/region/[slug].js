@@ -37,6 +37,7 @@ export default function RegionPage({ regionId }) {
   const [editingFood, setEditingFood] = useState(null) // 쿠팡 정보 수정 중인 식재료
   const [editUrl, setEditUrl] = useState('')
   const [editHtml, setEditHtml] = useState('')
+  const [editHtmlBlog, setEditHtmlBlog] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
   const [savedToast, setSavedToast] = useState(false)
 
@@ -52,6 +53,7 @@ export default function RegionPage({ regionId }) {
     setEditingFood(food)
     setEditUrl(food.coupang_url || '')
     setEditHtml(food.coupang_banner_html || '')
+    setEditHtmlBlog(food.coupang_banner_html_blog || '')
   }
   const closeCoupangEdit = () => { if (!savingEdit) setEditingFood(null) }
 
@@ -62,11 +64,11 @@ export default function RegionPage({ regionId }) {
       const res = await fetch(`/api/admin/map-data?type=ingredients&id=${editingFood.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
-        body: JSON.stringify({ coupang_url: editUrl.trim(), coupang_banner_html: editHtml.trim() }),
+        body: JSON.stringify({ coupang_url: editUrl.trim(), coupang_banner_html: editHtml.trim(), coupang_banner_html_blog: editHtmlBlog.trim() }),
       })
       if (!res.ok) throw new Error()
       setAllFoods(prev => prev.map(f => f.id === editingFood.id
-        ? { ...f, coupang_url: editUrl.trim(), coupang_banner_html: editHtml.trim() }
+        ? { ...f, coupang_url: editUrl.trim(), coupang_banner_html: editHtml.trim(), coupang_banner_html_blog: editHtmlBlog.trim() }
         : f))
       setEditingFood(null)
       setSavedToast(true)
@@ -497,10 +499,24 @@ export default function RegionPage({ regionId }) {
               style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)',
                 fontSize:12, marginBottom:6, boxSizing:'border-box', fontFamily:'monospace', resize:'vertical' }} />
 
-            {editHtml && editHtml.includes('<iframe') && (
+            {editHtml && /<(iframe|a |img)/i.test(editHtml) && (
               <div style={{ margin:'10px 0', padding:10, background:'var(--surface2)', border:'1px dashed var(--border)', borderRadius:8, display:'inline-block' }}>
                 <div style={{ fontSize:10, color:'var(--text3)', marginBottom:6 }}>미리보기</div>
                 <div dangerouslySetInnerHTML={{ __html: editHtml }} />
+              </div>
+            )}
+
+            <label style={{ display:'block', fontSize:12, fontWeight:700, color:'var(--text2)', marginTop:14, marginBottom:6 }}>블로그용 배너 iframe 코드</label>
+            <textarea value={editHtmlBlog} onChange={e => setEditHtmlBlog(e.target.value)}
+              placeholder='<iframe src="https://coupa.ng/..." width="120" height="240" frameborder="0" scrolling="no"></iframe>'
+              rows={4}
+              style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)',
+                fontSize:12, marginBottom:6, boxSizing:'border-box', fontFamily:'monospace', resize:'vertical' }} />
+
+            {editHtmlBlog && /<(iframe|a |img)/i.test(editHtmlBlog) && (
+              <div style={{ margin:'10px 0', padding:10, background:'var(--surface2)', border:'1px dashed var(--border)', borderRadius:8, display:'inline-block' }}>
+                <div style={{ fontSize:10, color:'var(--text3)', marginBottom:6 }}>미리보기</div>
+                <div dangerouslySetInnerHTML={{ __html: editHtmlBlog }} />
               </div>
             )}
 
