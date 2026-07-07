@@ -42,7 +42,7 @@ export default async function handler(req, res) {
   // 일반 방문자(비로그인) 응답에는 절대 포함하지 않는다.
   const stripAdminScores = (row) => {
     if (!row) return row
-    const { title_score, seo_score, naver_summary, instagram_cards, ...rest } = row
+    const { title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards, ...rest } = row
     return rest
   }
 
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
   if (!isAdmin) return res.status(401).json({ error: '인증 필요' })
 
   if (req.method === 'POST') {
-    const { title, slug, content, category, author, status = 'published', scheduled_at, summary, tags, cover_image, title_score, seo_score, naver_summary, instagram_cards } = req.body
+    const { title, slug, content, category, author, status = 'published', scheduled_at, summary, tags, cover_image, title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards } = req.body
     if (!title || !slug || !content) return res.status(400).json({ error: '필수 항목 누락' })
     const { data, error } = await supabase.from('blog_posts').insert([{
       id: genId(), title, slug, content, category: category || '',
@@ -95,6 +95,8 @@ export default async function handler(req, res) {
       // 관리자만 보는 내부 참고용, 공개 API 응답에서는 stripAdminScores로 제외된다
       title_score: title_score ?? null,
       seo_score: seo_score ?? null,
+      title_score_detail: title_score_detail ?? null,
+      seo_score_detail: seo_score_detail ?? null,
       naver_summary: naver_summary ?? null,
       instagram_cards: instagram_cards ?? null,
       created_at: nowKST(),

@@ -254,8 +254,8 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data) return
-        const { title_score, seo_score, naver_summary, instagram_cards } = data
-        setAdminExtra({ title_score, seo_score, naver_summary, instagram_cards })
+        const { title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards } = data
+        setAdminExtra({ title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards })
       })
       .catch(() => {})
   }, [post?.slug])
@@ -353,6 +353,32 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
                   <span>제목 점수: {adminExtra.title_score != null ? `${adminExtra.title_score}/10` : '내용 없음'}</span>
                   <span>SEO 점수: {adminExtra.seo_score != null ? `${adminExtra.seo_score}/100` : '내용 없음'}</span>
                 </div>
+
+                {(Array.isArray(adminExtra.title_score_detail) && adminExtra.title_score_detail.length > 0) && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>📐 제목 점수 세부 근거</div>
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {adminExtra.title_score_detail.map((row, i) => (
+                        <li key={i} style={{ marginBottom: 4 }}>
+                          <strong>{row.label}</strong> {row.points}/{row.max} — {row.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {(Array.isArray(adminExtra.seo_score_detail) && adminExtra.seo_score_detail.length > 0) && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>📐 SEO 체크리스트 세부 근거</div>
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {adminExtra.seo_score_detail.map((row, i) => (
+                        <li key={i} style={{ marginBottom: 4 }}>
+                          {row.pass ? '✅' : '❌'} <strong>{row.label}</strong> {row.points}/{row.max} — {row.desc}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>

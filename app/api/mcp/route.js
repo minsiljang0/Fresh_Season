@@ -565,12 +565,25 @@ const baseHandler = createMcpHandler(
           scheduled_at: z.string().optional().describe('status가 scheduled일 때만 사용, ISO 날짜'),
           title_score: z.number().optional().describe('제목 점수표(10점 만점) 채점 결과. 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
           seo_score: z.number().optional().describe('SEO 체크리스트(100점 만점) 채점 결과. 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
+          title_score_detail: z.array(z.object({
+            label: z.string().describe('채점 항목명 (예: 키워드 포함·위치)'),
+            points: z.number().describe('이 항목에서 받은 점수'),
+            max: z.number().describe('이 항목의 배점'),
+            reason: z.string().describe('이 점수를 준 구체적 이유'),
+          })).optional().describe('제목 점수표(10점)의 항목별 배점·이유 breakdown. title_score 합계 숫자만으로는 나중에 "왜 이 점수인지" 알 수 없으므로, title_score를 줄 때 항상 이 breakdown도 함께 채워서 전달한다.'),
+          seo_score_detail: z.array(z.object({
+            label: z.string().describe('체크리스트 항목명 (예: 키워드 밀도)'),
+            points: z.number().describe('이 항목에서 받은 점수'),
+            max: z.number().describe('이 항목의 배점'),
+            pass: z.boolean().describe('이 항목 통과 여부'),
+            desc: z.string().describe('이 점수를 준 구체적 이유'),
+          })).optional().describe('SEO 체크리스트(100점)의 항목별 배점·통과여부·이유 breakdown. seo_score 합계 숫자만으로는 나중에 "왜 이 점수인지" 알 수 없으므로, seo_score를 줄 때 항상 이 breakdown도 함께 채워서 전달한다.'),
           naver_summary: z.string().optional().describe('네이버 블로그에 붙여넣을 요약글(300~500자 + 원문 링크). 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
           instagram_cards: z.string().optional().describe('인스타그램 카드뉴스 슬라이드 스크립트(4~6장). 사이트 방문자에게는 노출되지 않고 관리자만 조회 가능.'),
         },
         annotations: { destructiveHint: false, idempotentHint: false },
       },
-      async ({ title, slug, summary, content, category, tags, cover_image, step_images, author, status, scheduled_at, title_score, seo_score, naver_summary, instagram_cards }) => {
+      async ({ title, slug, summary, content, category, tags, cover_image, step_images, author, status, scheduled_at, title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards }) => {
         const catCheck = await validateCategory(category)
         if (!catCheck.valid) {
           return {
@@ -608,6 +621,8 @@ const baseHandler = createMcpHandler(
           // 제목 점수·SEO 점수·네이버 요약글·인스타 카드뉴스 — 관리자 내부 참고용 (공개 API에서는 노출되지 않음)
           title_score: title_score ?? null,
           seo_score: seo_score ?? null,
+          title_score_detail: title_score_detail ?? null,
+          seo_score_detail: seo_score_detail ?? null,
           naver_summary: naver_summary ?? null,
           instagram_cards: instagram_cards ?? null,
         }
@@ -701,12 +716,25 @@ const baseHandler = createMcpHandler(
           status: z.enum(['published', 'draft']).optional().describe('글 상태 변경'),
           title_score: z.number().optional().describe('제목 점수표(10점 만점) 재채점 결과. 사이트 방문자에게는 노출되지 않는다.'),
           seo_score: z.number().optional().describe('SEO 체크리스트(100점 만점) 재채점 결과. 사이트 방문자에게는 노출되지 않는다.'),
+          title_score_detail: z.array(z.object({
+            label: z.string().describe('채점 항목명'),
+            points: z.number().describe('이 항목에서 받은 점수'),
+            max: z.number().describe('이 항목의 배점'),
+            reason: z.string().describe('이 점수를 준 구체적 이유'),
+          })).optional().describe('제목 점수표(10점)의 항목별 배점·이유 breakdown. title_score를 줄 때 항상 함께 채운다.'),
+          seo_score_detail: z.array(z.object({
+            label: z.string().describe('체크리스트 항목명'),
+            points: z.number().describe('이 항목에서 받은 점수'),
+            max: z.number().describe('이 항목의 배점'),
+            pass: z.boolean().describe('이 항목 통과 여부'),
+            desc: z.string().describe('이 점수를 준 구체적 이유'),
+          })).optional().describe('SEO 체크리스트(100점)의 항목별 배점·통과여부·이유 breakdown. seo_score를 줄 때 항상 함께 채운다.'),
           naver_summary: z.string().optional().describe('네이버 블로그에 붙여넣을 요약글(300~500자 + 원문 링크). 사이트 방문자에게는 노출되지 않는다.'),
           instagram_cards: z.string().optional().describe('인스타그램 카드뉴스 슬라이드 스크립트(4~6장). 사이트 방문자에게는 노출되지 않는다.'),
         },
         annotations: { destructiveHint: false, idempotentHint: true },
       },
-      async ({ slug, title, summary, content, cover_image, step_images, tags, status, title_score, seo_score, naver_summary, instagram_cards }) => {
+      async ({ slug, title, summary, content, cover_image, step_images, tags, status, title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards }) => {
         const patch = {}
         if (title !== undefined)       patch.title = title
         if (summary !== undefined)     patch.summary = summary
@@ -716,6 +744,8 @@ const baseHandler = createMcpHandler(
         if (status !== undefined)      patch.status = status
         if (title_score !== undefined) patch.title_score = title_score
         if (seo_score !== undefined)   patch.seo_score = seo_score
+        if (title_score_detail !== undefined) patch.title_score_detail = title_score_detail
+        if (seo_score_detail !== undefined)   patch.seo_score_detail = seo_score_detail
         if (naver_summary !== undefined)   patch.naver_summary = naver_summary
         if (instagram_cards !== undefined) patch.instagram_cards = instagram_cards
 
@@ -733,7 +763,7 @@ const baseHandler = createMcpHandler(
         }
 
         if (Object.keys(patch).length === 0) {
-          return { content: [{ type: 'text', text: '오류: 수정할 필드가 없습니다. title/summary/content/cover_image/step_images/tags/status/title_score/seo_score/naver_summary/instagram_cards 중 하나 이상을 전달해주세요.' }], isError: true }
+          return { content: [{ type: 'text', text: '오류: 수정할 필드가 없습니다. title/summary/content/cover_image/step_images/tags/status/title_score/seo_score/title_score_detail/seo_score_detail/naver_summary/instagram_cards 중 하나 이상을 전달해주세요.' }], isError: true }
         }
         patch.updated_at = nowKST()
 
