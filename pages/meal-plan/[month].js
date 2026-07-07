@@ -4,7 +4,26 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { SkeletonGrid } from '../../components/SkeletonCard'
-import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, getDietTypesForAge, getDietType, getServingSize, buildCalendarMonthPlan, getBasicRecipe } from '../../lib/mealPlans'
+import { MONTH_NAMES, getMonthTheme, AGE_GROUPS, getAgeGroup, getDietTypesForAge, getDietType, getServingSize, buildCalendarMonthPlan, getBasicRecipe, getDishMethod } from '../../lib/mealPlans'
+
+const STEP_PHASE_ORDER = { '준비하기': 0, '조리하기': 1 }
+
+// 이 재료로 등록된 실제 레시피가 있는지 찾아서, 있으면 진짜 제목·단계·상세페이지 링크를 반환한다.
+// 없으면(또는 조회 실패하면) null — 호출 쪽에서 기존 참고용 예시 레시피로 폴백한다.
+async function findRealRecipe(ingredientId, ingredientName, dish) {
+  if (!ingredientId) return null
+  const method = getDishMethod(ingredientName, dish)
+  const params = new URLSearchParams({ for_ingredient: ingredientId, name: ingredientName })
+  if (method) params.set('method', method)
+  const list = await fetch(`/api/recipes?${params}`).then(r => r.ok ? r.json() : []).catch(() => [])
+  if (!Array.isArray(list) || !list.length) return null
+  const best = list[0]
+  const detail = await fetch(`/api/recipes?id=${encodeURIComponent(best.id)}`).then(r => r.ok ? r.json() : null).catch(() => null)
+  if (!detail || !Array.isArray(detail.steps) || !detail.steps.length) return null
+  const steps = [...detail.steps].sort((a, b) =>
+    (STEP_PHASE_ORDER[a.phase] ?? 2) - (STEP_PHASE_ORDER[b.phase] ?? 2) || a.order_num - b.order_num)
+  return { id: best.id, title: best.title, steps: steps.map(s => s.description) }
+}
 
 const MEAL_META = [
   { key: 'breakfast', label: '아침', icon: '🌅' },
@@ -34,7 +53,20 @@ function dishSummary(meal) {
 // interactive=true(날짜 클릭 모달)일 때는 아침→점심→저녁 세로 배치 + 메뉴 클릭 시 오른쪽에 기본 레시피를 보여준다.
 function DayMealDetail({ year, month, cell, interactive = false }) {
   const [selected, setSelected] = useState(null)
-  useEffect(() => { setSelected(null) }, [cell])
+  const [realRecipe, setRealRecipe] = useState(null)
+  const [recipeLoading, setRecipeLoading] = useState(false)
+  useEffect(() => { setSelected(null); setRealRecipe(null) }, [cell])
+
+  useEffect(() => {
+    setRealRecipe(null)
+    if (!selected) return
+    let cancelled = false
+    setRecipeLoading(true)
+    findRealRecipe(selected.ingredientId, selected.ingredient, selected.dish)
+      .then(r => { if (!cancelled) setRealRecipe(r) })
+      .finally(() => { if (!cancelled) setRecipeLoading(false) })
+    return () => { cancelled = true }
+  }, [selected])
 
   const header = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -67,7 +99,7 @@ function DayMealDetail({ year, month, cell, interactive = false }) {
     )
   }
 
-  const recipe = selected ? getBasicRecipe(selected.ingredient, selected.dish) : null
+  const fallbackRecipe = selected && !realRecipe ? getBasicRecipe(selected.ingredient, selected.dish) : null
 
   return (
     <>
@@ -103,16 +135,31 @@ function DayMealDetail({ year, month, cell, interactive = false }) {
           })}
         </div>
         <div style={{ flex: '1 1 220px', minWidth: 220, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', alignSelf: 'stretch' }}>
-          <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--accent)', marginBottom: 8 }}>📖 기본 레시피</p>
-          {selected ? (
+          <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--accent)', marginBottom: 8 }}>
+            {realRecipe ? '📖 등록된 레시피' : '📖 기본 레시피'}
+          </p>
+          {!selected ? (
+            <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.6 }}>메뉴 이름을 클릭하면 레시피를 볼 수 있어요.</p>
+          ) : recipeLoading ? (
+            <p style={{ fontSize: 12.5, color: 'var(--text3)' }}>레시피를 불러오는 중...</p>
+          ) : realRecipe ? (
+            <>
+              <p style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 8 }}>{realRecipe.title}</p>
+              <ol style={{ paddingLeft: 18, fontSize: 12.5, lineHeight: 1.8, color: 'var(--text2)' }}>
+                {realRecipe.steps.map((step, i) => <li key={i}>{step}</li>)}
+              </ol>
+              <Link href={`/recipe/${realRecipe.id}`} style={{ display: 'inline-block', marginTop: 8, fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
+                전체 레시피 보기 →
+              </Link>
+            </>
+          ) : (
             <>
               <p style={{ fontSize: 13.5, fontWeight: 800, marginBottom: 8 }}>{selected.dish}</p>
               <ol style={{ paddingLeft: 18, fontSize: 12.5, lineHeight: 1.8, color: 'var(--text2)' }}>
-                {recipe.map((step, i) => <li key={i}>{step}</li>)}
+                {fallbackRecipe.map((step, i) => <li key={i}>{step}</li>)}
               </ol>
+              <p style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 6 }}>※ 등록된 레시피가 아직 없어 조리법 기준 참고용 예시를 보여드려요.</p>
             </>
-          ) : (
-            <p style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.6 }}>메뉴 이름을 클릭하면 기본 레시피를 볼 수 있어요.</p>
           )}
         </div>
       </div>

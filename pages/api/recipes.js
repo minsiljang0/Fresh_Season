@@ -5,7 +5,34 @@ export const RECIPE_CATEGORIES = ['밥', '죽', '면', '국', '탕', '찌개', '
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
 
-  const { id, q, category, counts, limit = 30, offset = 0 } = req.query
+  const { id, q, category, counts, for_ingredient, name, method, limit = 30, offset = 0 } = req.query
+
+  // 월별 제철식단 등에서 "이 재료로 등록된 실제 레시피가 있는지" 찾을 때 사용.
+  // recipe_ingredients로 해당 재료가 쓰인 레시피를 먼저 찾고, name(재료명)이 제목에 포함된
+  // 레시피만 남겨서 양념으로만 쓰인 레시피(예: 소금)가 잡히지 않게 한다.
+  if (for_ingredient) {
+    const { data: links, error: linkErr } = await supabase
+      .from('recipe_ingredients')
+      .select('recipe_id')
+      .eq('ingredient_id', for_ingredient)
+    if (linkErr) return res.status(500).json({ error: linkErr.message })
+    const recipeIds = [...new Set((links || []).map(l => l.recipe_id))]
+    if (!recipeIds.length) return res.status(200).json([])
+
+    let query = supabase
+      .from('recipes')
+      .select('id,title,category,thumbnail,summary')
+      .in('id', recipeIds)
+    if (name) query = query.ilike('title', `%${name}%`)
+    const { data: recipes, error } = await query
+    if (error) return res.status(500).json({ error: error.message })
+
+    // method(조리법, 예: '구이')와 category가 일치하는 레시피를 앞쪽으로 정렬
+    const sorted = method
+      ? [...(recipes || [])].sort((a, b) => (b.category === method ? 1 : 0) - (a.category === method ? 1 : 0))
+      : (recipes || [])
+    return res.status(200).json(sorted)
+  }
 
   if (counts) {
     const { count: total } = await supabase.from('recipes').select('id', { count: 'exact', head: true })
