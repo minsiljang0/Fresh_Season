@@ -401,9 +401,21 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
                     <span style={{ fontWeight: 700 }}>📱 인스타그램 카드뉴스 스크립트</span>
                     {adminExtra.instagram_cards && (
                       <button
-                        onClick={() => copyToClipboard('instagram', adminExtra.instagram_cards)}
+                        onClick={() => {
+                          // HTML이 이어붙여진 경우, 복사 버튼은 HTML 부분만 클립보드에 담는다
+                          // (아래 표시는 전체를 그대로 보여주되, 실제로 쓰는 건 HTML뿐이라 나머지를 매번 직접 지울 필요가 없게 함)
+                          const marker = '--- 아래는 카드뉴스 HTML'
+                          const idx = adminExtra.instagram_cards.indexOf(marker)
+                          let toCopy = adminExtra.instagram_cards
+                          if (idx !== -1) {
+                            const afterMarker = adminExtra.instagram_cards.slice(idx)
+                            const htmlStart = afterMarker.indexOf('<!DOCTYPE')
+                            toCopy = htmlStart !== -1 ? afterMarker.slice(htmlStart) : afterMarker
+                          }
+                          copyToClipboard('instagram', toCopy)
+                        }}
                         style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #f59e0b', background: copiedField === 'instagram' ? '#f59e0b' : '#fff', color: copiedField === 'instagram' ? '#fff' : '#92400e', cursor: 'pointer' }}>
-                        {copiedField === 'instagram' ? '복사됨!' : '복사'}
+                        {copiedField === 'instagram' ? '복사됨! (HTML만)' : '복사 (HTML만)'}
                       </button>
                     )}
                   </div>
