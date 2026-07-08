@@ -86,27 +86,13 @@ export default function HealthMapPanel({ adminToken }) {
     }
   }
 
-  const seedDefaults = async () => {
-    if (!confirm('아직 영양소가 하나도 등록되지 않은 부위에 한해 기본값을 채워넣을까요? (이미 등록된 부위는 건드리지 않아요)')) return
-    try {
-      const result = await apiFetch(api('&action=seed_defaults'), { method: 'PUT', headers: { 'x-admin-token': adminToken } })
-      showToast(`✅ ${result.inserted}개 채워넣었어요`)
-      load()
-    } catch (e) {
-      alert('실패: ' + e.message)
-    }
-  }
-
   return (
     <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>🧍 건강지도 관리</h2>
-          <p style={{ fontSize: 12, color: '#888' }}>
-            /health-map 페이지의 신체 부위별 "좋은 성분" 목록을 관리해요. 부위를 고르고 성분을 추가·삭제·순서변경하면 바로 반영돼요.
-          </p>
-        </div>
-        <button onClick={seedDefaults} style={btnStyle('#f59e0b')}>🌱 기본값 채우기</button>
+      <div style={{ marginBottom: 4 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>🧍 건강지도 관리</h2>
+        <p style={{ fontSize: 12, color: '#888' }}>
+          /health-map 페이지의 신체 부위별 "좋은 성분" 목록을 관리해요. 부위를 고르고 성분을 추가·삭제·순서변경하면 바로 반영돼요.
+        </p>
       </div>
 
       <div style={{ display: 'flex', gap: 20, marginTop: 16, flexWrap: 'wrap' }}>

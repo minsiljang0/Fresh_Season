@@ -1,5 +1,4 @@
 import { supabase, genId } from '../../../lib/supabase'
-import { DEFAULT_NUTRIENTS } from '../../../lib/healthMapZones'
 
 export default async function handler(req, res) {
   const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_SECRET_TOKEN
@@ -32,27 +31,6 @@ export default async function handler(req, res) {
         .select().single()
       if (error) throw error
       return res.status(200).json(data)
-    } catch (e) {
-      return res.status(500).json({ error: e.message })
-    }
-  }
-
-  // ── POST-SEED: 아직 등록된 게 하나도 없는 부위에 한해 기본값을 채워넣기 (관리자 화면 "기본값 채우기" 버튼용) ──
-  if (req.method === 'PUT' && req.query.action === 'seed_defaults') {
-    try {
-      const { data: existing, error: exErr } = await supabase.from('health_map_nutrients').select('zone_id')
-      if (exErr) throw exErr
-      const existingZones = new Set((existing || []).map(r => r.zone_id))
-      const rows = []
-      Object.entries(DEFAULT_NUTRIENTS).forEach(([zoneId, list]) => {
-        if (existingZones.has(zoneId)) return // 이미 뭔가 있으면 건드리지 않음
-        list.forEach((n, i) => rows.push({ id: genId(), zone_id: zoneId, nutrient: n, sort_order: i + 1 }))
-      })
-      if (rows.length > 0) {
-        const { error } = await supabase.from('health_map_nutrients').insert(rows)
-        if (error) throw error
-      }
-      return res.status(200).json({ ok: true, inserted: rows.length })
     } catch (e) {
       return res.status(500).json({ error: e.message })
     }
