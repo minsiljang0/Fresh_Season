@@ -18,6 +18,7 @@ import CoupangPanel from '../components/admin/CoupangPanel'
 import McpPanel from '../components/admin/McpPanel'
 import BacklinkPanel from '../components/admin/BacklinkPanel'
 import HealthGuidePanel from '../components/admin/HealthGuidePanel'
+import HealthMapPanel from '../components/admin/HealthMapPanel'
 
 const TAB_LABELS = {
   settings:      '🔧 서비스 설정',
@@ -41,6 +42,7 @@ const TAB_LABELS = {
   mcp:           '🔌 MCP 관리',
   backlink:      '🔗 백링크 관리',
   health_guide:  '🩺 건강 가이드 관리',
+  health_map:    '🧍 건강지도 관리',
 }
 
 function LoginScreen({ onLogin }) {
@@ -269,6 +271,7 @@ export default function Admin() {
             {activeTab === 'mcp' && <McpPanel adminToken={adminToken} />}
             {activeTab === 'backlink' && <BacklinkPanel adminToken={adminToken} />}
             {activeTab === 'health_guide' && <HealthGuidePanel adminToken={adminToken} />}
+            {activeTab === 'health_map' && <HealthMapPanel adminToken={adminToken} />}
             {activeTab === 'password' && (
               <div style={S.card}>
                 <div style={S.cardTitle}>🔑 비밀번호 변경</div>

@@ -3,93 +3,25 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
-
-// 신체 부위별 존 정의
-// - keywords: DB의 health_benefits.category 문자열에 포함되는지(includes)로 매칭 (map.js의 BENEFIT_COLOR 방식과 동일)
-// - nutrients: 그 부위에 일반적으로 좋다고 알려진 대표 성분 (교육용 참고 정보, 의학적 처방 아님)
-// - pos: SVG 위 마커 좌표 (viewBox 0 0 300 480 기준, 해부학적으로 정확한 위치가 아니라 이해를 돕기 위한 대략적 표시)
-const ZONES = [
-  { id: 'brain', num: 1, emoji: '🧠', label: '뇌·집중력', keywords: ['두뇌', '기억력', '치매', '집중'],
-    nutrients: ['DHA', '오메가3', '레시틴', '비타민B군'],
-    blurb: '기억력과 집중력엔 DHA, 오메가3 같은 필수지방산이 대표적으로 알려져 있어요.',
-    color: '#6366f1', bg: '#ede9fe', pos: { x: 150, y: 8 } },
-  { id: 'eye', num: 2, emoji: '👁️', label: '눈', keywords: ['눈', '시력', '안구'],
-    nutrients: ['루테인', '지아잔틴', '비타민A', '안토시아닌'],
-    blurb: '눈 건강엔 루테인·지아잔틴(당근·시금치 등 녹황색 채소), 안토시아닌(블루베리 등)이 좋다고 알려져 있어요.',
-    color: '#f59e0b', bg: '#fef3c7', pos: { x: 181, y: 16 } },
-  { id: 'skinTone', num: 3, emoji: '🌟', label: '피부색·미백', keywords: ['미백', '피부톤'],
-    nutrients: ['비타민C', '글루타치온', '나이아신아마이드'],
-    blurb: '피부 톤 관리엔 비타민C, 글루타치온이 도움이 된다고 알려져 있어요.',
-    color: '#fb923c', bg: '#ffedd5', pos: { x: 204, y: 39 } },
-  { id: 'sleep', num: 4, emoji: '😴', label: '잠(수면)', keywords: ['수면', '불면'],
-    nutrients: ['멜라토닌', '트립토판', '글리신', '마그네슘'],
-    blurb: '숙면엔 멜라토닌 생성을 돕는 트립토판(우유·바나나 등), 마그네슘이 도움이 된다고 알려져 있어요.',
-    color: '#0ea5e9', bg: '#e0f2fe', pos: { x: 212, y: 70 } },
-  { id: 'stress', num: 5, emoji: '😌', label: '스트레스·멘탈', keywords: ['스트레스', '신경'],
-    nutrients: ['마그네슘', '테아닌', '비타민B군', '트립토판'],
-    blurb: '스트레스 완화엔 마그네슘, 테아닌(녹차 등)이 도움이 된다고 알려져 있어요.',
-    color: '#14b8a6', bg: '#ccfbf1', pos: { x: 119, y: 16 } },
-  { id: 'scalp', num: 6, emoji: '💆', label: '두피', keywords: ['두피'],
-    nutrients: ['비오틴', '아연', '판토텐산'],
-    blurb: '두피 건강엔 비오틴, 아연이 도움이 된다고 알려져 있어요.',
-    color: '#a855f7', bg: '#f3e8ff', pos: { x: 96, y: 39 } },
-  { id: 'hair', num: 7, emoji: '💇', label: '머리카락', keywords: ['모발', '탈모'],
-    nutrients: ['비오틴', '케라틴(단백질)', '철분', '아연'],
-    blurb: '모발 건강엔 단백질(케라틴 구성 성분), 비오틴, 철분·아연이 도움이 된다고 알려져 있어요.',
-    color: '#8b5cf6', bg: '#ede9fe', pos: { x: 88, y: 70 } },
-  { id: 'heart', num: 8, emoji: '❤️', label: '심장·혈관', keywords: ['심장', '혈관', '혈압', '혈액', '콜레스테롤'],
-    nutrients: ['오메가3', '칼륨', '코엔자임Q10', '식이섬유'],
-    blurb: '혈관 건강과 혈압 관리엔 오메가3, 칼륨, 항산화 성분이 도움이 된다고 알려져 있어요.',
-    color: '#ef4444', bg: '#fee2e2', pos: { x: 150, y: 122 } },
-  { id: 'stomach', num: 9, emoji: '🍽️', label: '위', keywords: ['위', '위장'],
-    nutrients: ['무기질', '식이섬유', '소화효소(브로멜라인 등)'],
-    blurb: '위 건강엔 소화를 돕는 효소가 든 식재료(파인애플·무 등)와 자극이 적은 담백한 식이가 도움이 된다고 알려져 있어요.',
-    color: '#22c55e', bg: '#dcfce7', pos: { x: 122, y: 158 } },
-  { id: 'liver', num: 10, emoji: '🫀', label: '간', keywords: ['간', '해독'],
-    nutrients: ['타우린', '실리마린', '항산화 성분'],
-    blurb: '간 건강엔 타우린(문어·조개류 등), 항산화 성분이 도움이 된다고 알려져 있어요.',
-    color: '#65a30d', bg: '#ecfccb', pos: { x: 185, y: 158 } },
-  { id: 'gut', num: 11, emoji: '🌿', label: '장', keywords: ['장', '변비', '소화'],
-    nutrients: ['식이섬유', '유산균(프로바이오틱스)'],
-    blurb: '장 건강엔 식이섬유와 유산균이 대표적으로 알려져 있어요.',
-    color: '#10b981', bg: '#d1fae5', pos: { x: 150, y: 200 } },
-  { id: 'weight', num: 12, emoji: '⚖️', label: '체중·다이어트', keywords: ['체중', '다이어트', '비만'],
-    nutrients: ['식이섬유', '단백질', '카테킨'],
-    blurb: '체중 관리엔 포만감을 주는 식이섬유·단백질, 카테킨(녹차 등)이 도움이 된다고 알려져 있어요.',
-    color: '#d946ef', bg: '#fae8ff', pos: { x: 150, y: 232 } },
-  { id: 'skin', num: 13, emoji: '✨', label: '피부(탄력)', keywords: ['피부', '미용', '콜라겐'],
-    nutrients: ['콜라겐', '비타민C', '코엔자임Q10'],
-    blurb: '피부 탄력엔 콜라겐과 이를 돕는 비타민C가 대표적으로 알려져 있어요.',
-    color: '#ec4899', bg: '#fce7f3', pos: { x: 232, y: 175 } },
-  { id: 'joint', num: 14, emoji: '🦵', label: '관절', keywords: ['관절'],
-    nutrients: ['글루코사민', '콘드로이친', '오메가3', 'MSM'],
-    blurb: '관절 건강엔 글루코사민·콘드로이친, 오메가3가 대표적으로 알려져 있어요. (철분은 빈혈 쪽 성분이라 관절과는 거리가 있어요)',
-    color: '#f59e0b', bg: '#fef3c7', pos: { x: 120, y: 390 } },
-  { id: 'bone', num: 15, emoji: '🦴', label: '뼈', keywords: ['뼈', '골다공증'],
-    nutrients: ['칼슘', '비타민D', '마그네슘', '비타민K'],
-    blurb: '뼈 건강엔 칼슘과 흡수를 돕는 비타민D가 대표적으로 알려져 있어요.',
-    color: '#eab308', bg: '#fef9c3', pos: { x: 180, y: 430 } },
-  { id: 'immune', num: 16, emoji: '🛡️', label: '면역·항산화', keywords: ['면역', '항산화', '항암'],
-    nutrients: ['비타민C', '폴리페놀', '베타카로틴', '아연'],
-    blurb: '면역력과 항산화엔 비타민C, 폴리페놀, 베타카로틴이 도움이 된다고 알려져 있어요.',
-    color: '#16a34a', bg: '#dcfce7', pos: { x: 40, y: 110 } },
-]
+import { ZONES, DEFAULT_NUTRIENTS } from '../../lib/healthMapZones'
 
 export default function HealthMapPage() {
   const [rawFoods, setRawFoods] = useState([])
   const [healthBenefits, setHealthBenefits] = useState([])
+  const [nutrientsByZone, setNutrientsByZone] = useState({})
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState('brain')
 
   useEffect(() => {
-    fetch('/api/map/seasonal-foods')
-      .then(r => r.ok ? r.json() : {})
-      .then(data => {
-        setRawFoods(Array.isArray(data) ? data : (data.foods || []))
-        setHealthBenefits(data.healthBenefits || [])
-      })
-      .catch(() => { setRawFoods([]); setHealthBenefits([]) })
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/map/seasonal-foods').then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('/api/health-map').then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    ]).then(([mapData, healthMapData]) => {
+      setRawFoods(Array.isArray(mapData) ? mapData : (mapData.foods || []))
+      setHealthBenefits(mapData.healthBenefits || [])
+      // 관리자 페이지에서 아직 등록 전인 부위는 기본값으로 보여줘요.
+      setNutrientsByZone({ ...DEFAULT_NUTRIENTS, ...(healthMapData.nutrients || {}) })
+    }).finally(() => setLoading(false))
   }, [])
 
   // 지역 무관, 재료명 기준으로 합치기 (health/[category].js와 동일한 방식)
@@ -120,6 +52,7 @@ export default function HealthMapPage() {
 
   const zone = ZONES.find(z => z.id === active) || ZONES[0]
   const data = zoneData[zone.id] || { matchedCategories: [], matchedFoods: [] }
+  const nutrients = nutrientsByZone[zone.id] || []
 
   return (
     <>
@@ -180,14 +113,18 @@ export default function HealthMapPage() {
                 {zone.num}. {zone.emoji} {zone.label}
               </h2>
               <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text)', marginBottom: 10 }}>{zone.blurb}</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {zone.nutrients.map(n => (
-                  <span key={n} style={{
-                    fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 999,
-                    background: '#fff', color: zone.color, border: `1.5px solid ${zone.color}`,
-                  }}>💊 {n}</span>
-                ))}
-              </div>
+              {nutrients.length === 0 ? (
+                <p style={{ fontSize: 12, color: 'var(--text3)' }}>아직 등록된 성분이 없어요. (관리자 페이지 &gt; 🧍 건강지도 관리)</p>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {nutrients.map(n => (
+                    <span key={n} style={{
+                      fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 999,
+                      background: '#fff', color: zone.color, border: `1.5px solid ${zone.color}`,
+                    }}>💊 {n}</span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="detail-box">
@@ -245,7 +182,9 @@ export default function HealthMapPage() {
                 <div style={{ fontSize: 15, fontWeight: 900, color: z.color, marginBottom: 4 }}>
                   {z.num}. {z.emoji} {z.label}
                 </div>
-                <p style={{ fontSize: 11.5, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 6 }}>{z.nutrients.join(' · ')}</p>
+                <p style={{ fontSize: 11.5, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 6 }}>
+                  {(nutrientsByZone[z.id] || []).join(' · ') || '성분 미등록'}
+                </p>
                 <p style={{ fontSize: 11, color: 'var(--text3)' }}>
                   🍽️ {(zoneData[z.id]?.matchedFoods || []).length}개 식재료
                 </p>
