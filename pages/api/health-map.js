@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     const nutrients = {}
     ;(data || []).forEach(row => {
       if (!nutrients[row.zone_id]) nutrients[row.zone_id] = []
-      nutrients[row.zone_id].push(row.nutrient)
+      if (!nutrients[row.zone_id].includes(row.nutrient)) nutrients[row.zone_id].push(row.nutrient)
     })
 
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300')

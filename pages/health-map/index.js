@@ -10,7 +10,7 @@ export default function HealthMapPage() {
   const [healthBenefits, setHealthBenefits] = useState([])
   const [nutrientsByZone, setNutrientsByZone] = useState({})
   const [loading, setLoading] = useState(true)
-  const [active, setActive] = useState('brain')
+  const [active, setActive] = useState(ZONES[0].id)
 
   useEffect(() => {
     Promise.all([
@@ -34,25 +34,24 @@ export default function HealthMapPage() {
     return Object.values(map)
   }, [rawFoods])
 
-  const zoneMatch = (cat, keywords) => !!cat && keywords.some(k => cat.includes(k))
-
+  // 실제 등록된 효능 카테고리(health_benefits.category)와 정확히 일치하는 것만 매칭
   const zoneData = useMemo(() => {
     const out = {}
     ZONES.forEach(z => {
-      const matchedCategories = Array.from(new Set(
-        healthBenefits.filter(b => zoneMatch(b.category, z.keywords)).map(b => b.category)
-      ))
+      const hasCategory = healthBenefits.some(b => b.category === z.id)
       const matchedFoods = allFoods
-        .filter(f => (f.healthBenefits || []).some(hb => zoneMatch(hb.category, z.keywords)))
+        .filter(f => (f.healthBenefits || []).some(hb => hb.category === z.id))
         .sort((a, b) => a.ingredient.localeCompare(b.ingredient, 'ko'))
-      out[z.id] = { matchedCategories, matchedFoods }
+      out[z.id] = { hasCategory, matchedFoods }
     })
     return out
   }, [allFoods, healthBenefits])
 
   const zone = ZONES.find(z => z.id === active) || ZONES[0]
-  const data = zoneData[zone.id] || { matchedCategories: [], matchedFoods: [] }
+  const data = zoneData[zone.id] || { hasCategory: false, matchedFoods: [] }
   const nutrients = nutrientsByZone[zone.id] || []
+  const bodyZones = ZONES.filter(z => z.pos)
+  const lifeZones = ZONES.filter(z => !z.pos)
 
   return (
     <>
@@ -108,10 +107,10 @@ export default function HealthMapPage() {
               <path d="M141,60 Q150,66 159,60" fill="none" stroke="var(--text2)" strokeWidth="2" strokeLinecap="round" />
 
               {/* 전신 아우라(면역) 점선 */}
-              <ellipse cx="150" cy="180" rx="128" ry="200" fill="none" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="5 5" opacity={active === 'immune' ? 0.55 : 0.15} />
+              <ellipse cx="150" cy="180" rx="128" ry="200" fill="none" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="5 5" opacity={active === '면역·항산화' ? 0.55 : 0.15} />
 
-              {/* 존 마커들 (번호) */}
-              {ZONES.map(z => {
+              {/* 존 마커들 (번호) — 신체 부위에 해당하는 것만 표시 */}
+              {bodyZones.map(z => {
                 const isActive = z.id === active
                 return (
                   <g key={z.id} style={{ cursor: 'pointer' }} onClick={() => setActive(z.id)}>
@@ -170,31 +169,51 @@ export default function HealthMapPage() {
               )}
             </div>
 
-            {data.matchedCategories.length > 0 && (
+            {data.hasCategory && (
               <div className="detail-box">
-                <p className="detail-label">🏷️ 관련 효능 카테고리 전체보기</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {data.matchedCategories.map(cat => (
-                    <Link key={cat} href={`/health/${encodeURIComponent(cat)}`}
-                      style={{
-                        fontSize: 12.5, fontWeight: 600, padding: '5px 10px', borderRadius: 8,
-                        background: 'var(--surface2)', color: 'var(--text2)', border: '1px solid var(--border)',
-                        textDecoration: 'none',
-                      }}>
-                      {cat} →
-                    </Link>
-                  ))}
-                </div>
+                <p className="detail-label">🏷️ 이 효능 카테고리 전체보기</p>
+                <Link href={`/health/${encodeURIComponent(zone.id)}`}
+                  style={{
+                    fontSize: 12.5, fontWeight: 600, padding: '5px 10px', borderRadius: 8,
+                    background: 'var(--surface2)', color: 'var(--text2)', border: '1px solid var(--border)',
+                    textDecoration: 'none', display: 'inline-block',
+                  }}>
+                  {zone.id} 전체 식재료 보기 →
+                </Link>
               </div>
             )}
           </div>
         </div>
 
-        {/* 전체 부위 목록 */}
+        {/* 신체 부위 목록 */}
         <section style={{ marginTop: 28 }}>
           <p className="detail-label" style={{ marginBottom: 10 }}>부위별 바로가기</p>
           <div className="grid-auto">
-            {ZONES.map(z => (
+            {bodyZones.map(z => (
+              <button key={z.id} onClick={() => setActive(z.id)} className="card"
+                style={{
+                  textAlign: 'left', border: `1.5px solid ${z.id === active ? z.color : 'var(--border)'}`,
+                  background: z.id === active ? z.bg : 'var(--surface)', cursor: 'pointer', font: 'inherit',
+                }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: z.color, marginBottom: 4 }}>
+                  {z.num}. {z.emoji} {z.label}
+                </div>
+                <p style={{ fontSize: 11.5, color: 'var(--text2)', lineHeight: 1.5, marginBottom: 6 }}>
+                  {(nutrientsByZone[z.id] || []).join(' · ') || '성분 미등록'}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  🍽️ {(zoneData[z.id]?.matchedFoods || []).length}개 식재료
+                </p>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* 생활습관·연령별 관심사 목록 (특정 부위는 아니지만 등록된 나머지 효능 카테고리 전부) */}
+        <section style={{ marginTop: 28 }}>
+          <p className="detail-label" style={{ marginBottom: 10 }}>생활·연령별 관심사</p>
+          <div className="grid-auto">
+            {lifeZones.map(z => (
               <button key={z.id} onClick={() => setActive(z.id)} className="card"
                 style={{
                   textAlign: 'left', border: `1.5px solid ${z.id === active ? z.color : 'var(--border)'}`,
