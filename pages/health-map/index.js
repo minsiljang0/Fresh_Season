@@ -75,16 +75,37 @@ export default function HealthMapPage() {
           {/* 신체 그림 */}
           <div style={{ flex: '0 0 280px', margin: '0 auto' }}>
             <svg viewBox="0 0 300 460" style={{ width: '100%', maxWidth: 280, display: 'block', margin: '0 auto' }}>
-              {/* 몸 실루엣 */}
-              <circle cx="150" cy="55" r="32" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
-              <rect x="138" y="82" width="24" height="18" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
-              <path d="M100,100 Q150,88 200,100 L212,235 Q150,252 88,235 Z" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
-              {/* 팔 */}
-              <path d="M100,105 Q78,150 82,195 Q84,210 92,208 Q98,165 112,112 Z" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
-              <path d="M200,105 Q222,150 218,195 Q216,210 208,208 Q202,165 188,112 Z" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
-              {/* 다리 */}
-              <path d="M100,238 L92,440 Q92,450 104,450 Q112,450 114,440 L128,240 Z" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
-              <path d="M200,238 L208,440 Q208,450 196,450 Q188,450 186,440 L172,240 Z" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
+              {/* 몸 실루엣 (플랫 일러스트 스타일) */}
+              {/* 다리(바지) — 이중 스트로크로 아웃라인 느낌 */}
+              <path d="M122,232 C114,270 110,320 108,370 C107,400 108,425 111,445" fill="none" stroke="var(--border)" strokeWidth="26" strokeLinecap="round" />
+              <path d="M122,232 C114,270 110,320 108,370 C107,400 108,425 111,445" fill="none" stroke="var(--surface2)" strokeWidth="21" strokeLinecap="round" />
+              <path d="M178,232 C186,270 190,320 192,370 C193,400 192,425 189,445" fill="none" stroke="var(--border)" strokeWidth="26" strokeLinecap="round" />
+              <path d="M178,232 C186,270 190,320 192,370 C193,400 192,425 189,445" fill="none" stroke="var(--surface2)" strokeWidth="21" strokeLinecap="round" />
+              {/* 신발 */}
+              <ellipse cx="109" cy="449" rx="15" ry="8" fill="var(--text2)" />
+              <ellipse cx="191" cy="449" rx="15" ry="8" fill="var(--text2)" />
+
+              {/* 팔(소매) — 이중 스트로크 */}
+              <path d="M120,102 C98,120 84,150 82,182 C81,194 84,205 90,212" fill="none" stroke="var(--accent)" strokeWidth="24" strokeLinecap="round" />
+              <path d="M120,102 C98,120 84,150 82,182 C81,194 84,205 90,212" fill="none" stroke="var(--surface3)" strokeWidth="19" strokeLinecap="round" />
+              <path d="M180,102 C202,120 216,150 218,182 C219,194 216,205 210,212" fill="none" stroke="var(--accent)" strokeWidth="24" strokeLinecap="round" />
+              <path d="M180,102 C202,120 216,150 218,182 C219,194 216,205 210,212" fill="none" stroke="var(--surface3)" strokeWidth="19" strokeLinecap="round" />
+              {/* 손 */}
+              <circle cx="90" cy="212" r="9.5" fill="var(--surface2)" stroke="var(--border)" strokeWidth="1.5" />
+              <circle cx="210" cy="212" r="9.5" fill="var(--surface2)" stroke="var(--border)" strokeWidth="1.5" />
+
+              {/* 몸통(셔츠) */}
+              <path d="M118,96 Q150,87 182,96 L194,150 Q198,182 191,211 Q186,230 150,233 Q114,230 109,211 Q102,182 106,150 Z"
+                fill="var(--surface3)" stroke="var(--accent)" strokeWidth="2" />
+
+              {/* 목 */}
+              <rect x="139" y="76" width="22" height="18" rx="4" fill="var(--surface2)" stroke="var(--border)" strokeWidth="1.5" />
+
+              {/* 머리 + 얼굴 */}
+              <circle cx="150" cy="52" r="30" fill="var(--surface2)" stroke="var(--border)" strokeWidth="2" />
+              <circle cx="140" cy="48" r="2.4" fill="var(--text2)" />
+              <circle cx="160" cy="48" r="2.4" fill="var(--text2)" />
+              <path d="M141,60 Q150,66 159,60" fill="none" stroke="var(--text2)" strokeWidth="2" strokeLinecap="round" />
 
               {/* 전신 아우라(면역) 점선 */}
               <ellipse cx="150" cy="180" rx="128" ry="200" fill="none" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="5 5" opacity={active === 'immune' ? 0.55 : 0.15} />
