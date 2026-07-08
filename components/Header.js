@@ -84,6 +84,7 @@ export default function Header() {
               <Link href="/recipe" className={`nav-link${router.pathname.startsWith('/recipe') ? ' active' : ''}`}>🍳 레시피</Link>
               <Link href="/for-me" className={`nav-link${router.pathname === '/for-me' ? ' active' : ''}`}>🧬 맞춤 추천</Link>
               <Link href="/health-guide" className={`nav-link${router.pathname.startsWith('/health-guide') ? ' active' : ''}`}>📖 연령별 건강 가이드</Link>
+              <Link href="/health-map" className={`nav-link${router.pathname.startsWith('/health-map') ? ' active' : ''}`}>🧍 건강지도</Link>
               <Link href="/global" className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}>🌍 글로벌 푸드</Link>
               <Link href="/blog" className={`nav-link${router.pathname.startsWith('/blog') ? ' active' : ''}`}>📝 블로그</Link>
               <Link href="/board/free" className={`nav-link${router.pathname === '/board/free' ? ' active' : ''}`}>💬 자유게시판</Link>
@@ -142,6 +143,9 @@ export default function Header() {
             <a className={`nav-link${router.pathname.startsWith('/health-guide') ? ' active' : ''}`}
               style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
               onClick={() => handleNav('/health-guide')}>📖 연령별 건강 가이드</a>
+            <a className={`nav-link${router.pathname.startsWith('/health-map') ? ' active' : ''}`}
+              style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
+              onClick={() => handleNav('/health-map')}>🧍 건강지도</a>
             <a className={`nav-link${router.pathname === '/global' ? ' active' : ''}`}
               style={{display:'block', padding:'13px 24px', fontSize:15, cursor:'pointer', textDecoration:'none'}}
               onClick={() => handleNav('/global')}>🌍 글로벌 푸드</a>
