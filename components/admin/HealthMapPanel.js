@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ZONES } from '../../lib/healthMapZones'
 
-const api = (extra = '') => `/api/admin/health-map${extra}`
+const api = (extra = '') => `/api/admin/health-map${extra ? '?' + extra.replace(/^&/, '') : ''}`
 
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, opts)
