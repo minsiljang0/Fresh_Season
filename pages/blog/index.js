@@ -101,15 +101,6 @@ export default function BlogIndex() {
               </button>
             </form>
           </div>
-
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {customCategories.map(c => (
-              <button key={c.id} onClick={() => { setCategory(c.label === category ? '' : c.label); setSearchInput(''); setSearch(''); setHealthCat('') }} className="month-pill"
-                style={{ borderColor: category === c.label ? '#16a34a' : undefined, background: category === c.label ? '#16a34a22' : undefined, color: category === c.label ? '#16a34a' : undefined, fontWeight: 600 }}>
-                {c.icon || '📁'} {c.label}
-              </button>
-            ))}
-          </div>
         </section>
 
         <section style={{ marginBottom: 64 }}>
