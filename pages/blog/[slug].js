@@ -355,34 +355,34 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
                 </div>
 
                 {(Array.isArray(adminExtra.title_score_detail) && adminExtra.title_score_detail.length > 0) && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontWeight: 700, marginBottom: 4 }}>📐 제목 점수 세부 근거</div>
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  <details style={{ marginBottom: 10 }}>
+                    <summary style={{ fontWeight: 700, cursor: 'pointer' }}>📐 제목 점수 세부 근거</summary>
+                    <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
                       {adminExtra.title_score_detail.map((row, i) => (
                         <li key={i} style={{ marginBottom: 4 }}>
                           <strong>{row.label}</strong> {row.points}/{row.max} — {row.reason}
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </details>
                 )}
 
                 {(Array.isArray(adminExtra.seo_score_detail) && adminExtra.seo_score_detail.length > 0) && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontWeight: 700, marginBottom: 4 }}>📐 SEO 체크리스트 세부 근거</div>
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  <details style={{ marginBottom: 10 }}>
+                    <summary style={{ fontWeight: 700, cursor: 'pointer' }}>📐 SEO 체크리스트 세부 근거</summary>
+                    <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
                       {adminExtra.seo_score_detail.map((row, i) => (
                         <li key={i} style={{ marginBottom: 4 }}>
                           {row.pass ? '✅' : '❌'} <strong>{row.label}</strong> {row.points}/{row.max} — {row.desc}
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </details>
                 )}
 
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontWeight: 700 }}>📋 네이버 블로그용 요약글</span>
+                <details style={{ marginBottom: 8 }}>
+                  <summary style={{ fontWeight: 700, cursor: 'pointer' }}>📋 네이버 블로그용 요약글</summary>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 6 }}>
                     {adminExtra.naver_summary && (
                       <button
                         onClick={() => copyToClipboard('naver', adminExtra.naver_summary)}
@@ -394,11 +394,11 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
                   <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 12.5, marginTop: 6, padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #fde68a', color: adminExtra.naver_summary ? '#92400e' : '#b45309aa' }}>
                     {adminExtra.naver_summary || '내용 없음'}
                   </pre>
-                </div>
+                </details>
 
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontWeight: 700 }}>📱 인스타그램 카드뉴스 스크립트</span>
+                <details>
+                  <summary style={{ fontWeight: 700, cursor: 'pointer' }}>📱 인스타그램 카드뉴스 스크립트</summary>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 6 }}>
                     {adminExtra.instagram_cards && (
                       <button
                         onClick={() => {
@@ -422,7 +422,7 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
                   <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', fontSize: 12.5, marginTop: 6, padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #fde68a', color: adminExtra.instagram_cards ? '#92400e' : '#b45309aa' }}>
                     {adminExtra.instagram_cards || '내용 없음'}
                   </pre>
-                </div>
+                </details>
               </div>
             )}
 
