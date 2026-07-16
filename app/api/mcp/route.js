@@ -5,7 +5,8 @@
 // Claude(연결된 커넥터)가 이 툴들을 직접 호출해서 "오늘 블로그 글" 글감을
 // 사람 개입 없이 스스로 판단할 수 있게 하는 것이 목적입니다.
 //
-// 노출 툴 18개 (실제 등록 기준):
+// 노출 툴 19개 (실제 등록 기준):
+//   - append_system_prompt: Claude 지침(주로 main2) 맨 아래에 새 내용 추가 — update_system_prompt처럼 전체 재전송 불필요
 //   - get_publish_log     : 발행 기록 조회 (메모 포함, 중복 방지 + 키워드 사용 추적용, STEP 1에서 가장 먼저 호출)
 //   - get_keyword_data    : 도구별 찜한 키워드 + 캐시된 TOP 키워드 조회 (Supabase, hint로 좁혀서 봄)
 //   - search_keyword_data : keyword_stats 전체를 hint 구분 없이 검색/열람, competition 필터로 황금키워드 탐색
@@ -1115,6 +1116,46 @@ const baseHandler = createMcpHandler(
         }
         return {
           content: [{ type: 'text', text: `✅ [${tabId}] 시스템 프롬프트 저장 완료 (${nowKST})\n\n저장된 글자수: ${content.length.toLocaleString()}자` }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'append_system_prompt',
+      {
+        title: 'Claude 시스템 프롬프트(지침) 맨 아래에 추가',
+        description:
+          'admin에 저장된 Claude 프로젝트 지침의 특정 탭 맨 아래에 새 내용을 이어붙인다. ' +
+          'update_system_prompt처럼 전체 내용을 다시 불러와서 통째로 다시 보낼 필요 없이, ' +
+          '추가할 내용만 전달하면 서버가 기존 내용 뒤에 이어붙여 저장한다. ' +
+          'main2(작업 메모장)처럼 계속 누적되는 로그 성격 문서에 새 기록 한 건을 추가할 때 update_system_prompt 대신 우선 사용한다. ' +
+          '문서 중간에 있는 특정 섹션(예: main2의 "글감별 학습 메모")에 끼워 넣어야 하거나, ' +
+          '기존 내용을 수정·삭제해야 할 때는 이 툴로는 안 되니 get_system_prompt로 전체를 불러온 뒤 update_system_prompt를 쓴다.',
+        inputSchema: {
+          id: z.enum(['claude', 'main', 'main2', 'month']).describe('추가할 탭. main2(작업 메모장)에 주로 사용'),
+          content: z.string().describe('맨 아래에 추가할 내용 (마크다운). 앞뒤 구분용 빈 줄은 자동으로 들어가므로 따로 넣지 않아도 됨'),
+        },
+        annotations: { destructiveHint: false, idempotentHint: false },
+      },
+      async ({ id, content }) => {
+        const { data: existing, error: readErr } = await supabase
+          .from('system_prompts')
+          .select('content')
+          .eq('id', id)
+          .single()
+        if (readErr || !existing) {
+          return { content: [{ type: 'text', text: `❌ [${id}] 기존 지침을 불러오지 못했습니다: ${readErr?.message || '문서 없음'}` }], isError: true }
+        }
+        const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+        const newContent = existing.content.replace(/\n+$/, '') + '\n\n' + content.trim() + '\n'
+        const { error: writeErr } = await supabase
+          .from('system_prompts')
+          .upsert({ id, content: newContent, updated_at: nowKST }, { onConflict: 'id' })
+        if (writeErr) {
+          return { content: [{ type: 'text', text: `❌ 저장 실패: ${writeErr.message}` }], isError: true }
+        }
+        return {
+          content: [{ type: 'text', text: `✅ [${id}] 맨 아래에 추가 완료 (${nowKST})\n\n추가된 글자수: ${content.trim().length.toLocaleString()}자 / 총 글자수: ${newContent.length.toLocaleString()}자` }],
         }
       }
     )
