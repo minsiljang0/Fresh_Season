@@ -245,7 +245,7 @@ export default function SystemPromptPanel({ adminToken }) {
       <div style={{ ...S.card, background: '#f0fdf4', border: '1px solid #86efac' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 12 }}>💡 사용 방법</div>
         <div style={{ fontSize: 13, color: '#166534', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span>① 탭(1️⃣ 클로드 실행지침 / 2-1️⃣ 블로그 글작성지침 / 2-2️⃣ 블로그 글작성지침 / 3️⃣ 글감관리 월기획지침 / 4️⃣ 글쓰기 참고자료)을 선택해서 각각 따로 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
+          <span>① 탭(1️⃣ 클로드 실행지침 / 2-1️⃣ 블로그 글작성지침 / 2-2️⃣ 블로그 글작성지침 / 3️⃣ 글감관리 월기획지침 / 4️⃣ 글쓰기 참고자료 / 5️⃣ 정보 소스(RSS))을 선택해서 각각 따로 수정하고 <b style={{ color: '#0f1f0f' }}>💾 저장</b>을 누르세요.</span>
           <span>⓪ 긴 문서는 직접 타이핑하지 않아도 <b style={{ color: '#0f1f0f' }}>📁 파일 업로드</b> 버튼으로 .md/.txt 파일을 선택하면 내용이 그대로 불러와져요 (이후 💾 저장 필수).</span>
           <span>② Claude 프로젝트 Instructions에는 아래 한 줄만 남겨두세요:</span>
           <code style={{
@@ -255,7 +255,7 @@ export default function SystemPromptPanel({ adminToken }) {
           }}>
             대화를 시작하면 즉시 get_system_prompt 툴을 호출해서 전체 지침을 로드하고, 그 지침대로만 행동하세요.
           </code>
-          <span>③ MCP <code style={{ background: '#e8f5e9', padding: '1px 6px', borderRadius: 4, fontSize: 12, color: '#15803d' }}>get_system_prompt</code> 툴에 id(<b>claude</b>=클로드 실행지침/<b>main</b>=2-1 블로그 글작성지침/<b>main2</b>=2-2 블로그 글작성지침/<b>month</b>=글감관리 월기획지침/<b>reference</b>=글쓰기 참고자료)를 넘기면 해당 탭만 불러와요. id를 안 주면 기존 호환을 위해 2-1️⃣ 블로그 글작성지침 탭 내용을 가져와요.</span>
+          <span>③ MCP <code style={{ background: '#e8f5e9', padding: '1px 6px', borderRadius: 4, fontSize: 12, color: '#15803d' }}>get_system_prompt</code> 툴에 id(<b>claude</b>=클로드 실행지침/<b>main</b>=2-1 블로그 글작성지침/<b>main2</b>=2-2 블로그 글작성지침/<b>month</b>=글감관리 월기획지침/<b>reference</b>=글쓰기 참고자료/<b>rss_sources</b>=정보 소스(RSS))를 넘기면 해당 탭만 불러와요. id를 안 주면 기존 호환을 위해 2-1️⃣ 블로그 글작성지침 탭 내용을 가져와요.</span>
           <span>④ <b style={{ color: '#0f1f0f' }}>📋 전체 복사</b>로 복사해서 직접 붙여넣는 것도 가능해요.</span>
           <span>⑤ <b style={{ color: '#0f1f0f' }}>4️⃣ 글쓰기 참고자료</b> 탭은 다른 1~3번 탭과 달리 "지켜야 할 규칙"이 아니라 "가끔 열어보는 예시 모음"이에요 — Claude에게 "참고자료 탭 봐줘"라고 명시적으로 말했을 때만 불러오도록 안내할 것을 권장해요(매 대화 자동 로드 X).</span>
         </div>
