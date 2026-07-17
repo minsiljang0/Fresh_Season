@@ -1067,11 +1067,11 @@ const baseHandler = createMcpHandler(
           '대화를 시작할 때 가장 먼저 id="claude"로 호출해서 메인 지침을 로드하고, 그 내용대로 행동한다. ' +
           '지침은 admin → 🤖 Claude 지침 메뉴에서 수정할 수 있다.',
         inputSchema: {
-          id: z.enum(['claude', 'main', 'main2', 'month']).optional().describe('불러올 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
+          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources']).optional().describe('불러올 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
         },
       },
       async ({ id }) => {
-        const tabId = ['claude', 'main', 'main2', 'month'].includes(id) ? id : 'main'
+        const tabId = ['claude', 'main', 'main2', 'month', 'reference', 'rss_sources'].includes(id) ? id : 'main'
         const { data, error } = await supabase
           .from('system_prompts')
           .select('content, updated_at')
@@ -1100,13 +1100,13 @@ const baseHandler = createMcpHandler(
           '지침 전문을 content에 담아 전달하면 해당 탭의 기존 내용을 완전히 교체한다. ' +
           '저장 후 get_system_prompt로 다시 불러와서 확인하는 것을 권장한다.',
         inputSchema: {
-          id: z.enum(['claude', 'main', 'main2', 'month']).optional().describe('덮어쓸 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
+          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources']).optional().describe('덮어쓸 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
           content: z.string().describe('새로 저장할 지침 전문 (마크다운)'),
         },
         annotations: { destructiveHint: true, idempotentHint: false },
       },
       async ({ id, content }) => {
-        const tabId = ['claude', 'main', 'main2', 'month'].includes(id) ? id : 'main'
+        const tabId = ['claude', 'main', 'main2', 'month', 'reference', 'rss_sources'].includes(id) ? id : 'main'
         const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
         const { error } = await supabase
           .from('system_prompts')
@@ -1132,7 +1132,7 @@ const baseHandler = createMcpHandler(
           '문서 중간에 있는 특정 섹션(예: main2의 "글감별 학습 메모")에 끼워 넣어야 하거나, ' +
           '기존 내용을 수정·삭제해야 할 때는 이 툴로는 안 되니 get_system_prompt로 전체를 불러온 뒤 update_system_prompt를 쓴다.',
         inputSchema: {
-          id: z.enum(['claude', 'main', 'main2', 'month']).describe('추가할 탭. main2(작업 메모장)에 주로 사용'),
+          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources']).describe('추가할 탭. main2(작업 메모장)에 주로 사용'),
           content: z.string().describe('맨 아래에 추가할 내용 (마크다운). 앞뒤 구분용 빈 줄은 자동으로 들어가므로 따로 넣지 않아도 됨'),
         },
         annotations: { destructiveHint: false, idempotentHint: false },
