@@ -3,6 +3,7 @@ import Head from 'next/head'
 import AdminSidebar from '../components/admin/AdminSidebar'
 import BlogAdminPanel from '../components/admin/BlogAdminPanel'
 import BlogMenuPanel from '../components/admin/BlogMenuPanel'
+import BlogImagePanel from '../components/admin/BlogImagePanel'
 import ContentLogPanel from '../components/admin/ContentLogPanel'
 import ContentIdeaPanel from '../components/admin/ContentIdeaPanel'
 import KeywordPanel from '../components/admin/KeywordPanel'
@@ -25,6 +26,7 @@ const TAB_LABELS = {
   blog_write:    '✍️ 블로그 글쓰기',
   blog_admin:    '📝 블로그 관리',
   blog_menu:     '📋 블로그 메뉴관리',
+  blog_images:   '🖼️ 블로그 사진',
   content_log:   '🗂️ 발행 기록',
   content_ideas: '💡 글감 관리',
   keyword:       '🔍 키워드 관리',
@@ -248,6 +250,7 @@ export default function Admin() {
                 initialCategory={activeTab === 'blog_write' ? blogWriteTarget.category : null} />
             )}
             {activeTab === 'blog_menu' && <BlogMenuPanel adminToken={adminToken} />}
+            {activeTab === 'blog_images' && <BlogImagePanel adminToken={adminToken} showToast={showToast} />}
             {activeTab === 'content_log' && <ContentLogPanel adminToken={adminToken} />}
 
             {activeTab === 'content_ideas' && <ContentIdeaPanel adminToken={adminToken} />}
