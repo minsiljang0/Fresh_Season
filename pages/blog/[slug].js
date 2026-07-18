@@ -231,7 +231,25 @@ function StepTimeline({ introHtml, steps, images }) {
   )
 }
 
-export default function BlogPost({ post, html, allPosts, stepImages, customCategories }) {
+export default function BlogPost({ post, html, stepImages }) {
+  // 관련 글 추천·카테고리 배지 데이터 — SSR을 막지 않도록 마운트 후 백그라운드로 채운다.
+  // (예전엔 getServerSideProps가 본문 조회 + 전체 글 최대 100개(본문 포함) 조회 +
+  // 카테고리 조회를 순서대로 기다렸다가 응답해서, 목록에서 글을 클릭한 뒤 페이지가
+  // 뜨기까지 체감이 느렸다. 본문은 SSR로 즉시 내려주고, 이 두 조회는 화면이 뜬 뒤
+  // 백그라운드로 채워서 "이런 글도 궁금하지 않으세요?" 영역만 살짝 늦게 나타나게 한다.)
+  const [allPosts, setAllPosts] = useState([])
+  const [customCategories, setCustomCategories] = useState([])
+  useEffect(() => {
+    if (!post?.slug) return
+    Promise.all([
+      fetch('/api/blog/posts?limit=50&skipPublishCheck=1').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/blog/categories').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([posts, cats]) => {
+      setAllPosts(Array.isArray(posts) ? posts : [])
+      setCustomCategories(Array.isArray(cats) ? cats : [])
+    })
+  }, [post?.slug])
+
   const topBadge = post ? resolveCategoryBadge(post.category, customCategories) : null
   const relatedPool = post ? scoreRelated(post, allPosts).slice(0, 3) : []
   const inlineUsedIds = new Set(relatedPool.map(p => p.id))
@@ -484,39 +502,27 @@ export default function BlogPost({ post, html, allPosts, stepImages, customCateg
   )
 }
 
+// ── SSR: 크롤러가 OG태그·본문을 바로 읽을 수 있도록 서버에서 글 데이터 + 마크다운 HTML을 미리 렌더링
+// 예전엔 여기서 관련 글 추천용 전체 글 목록(최대 100개, 본문 포함)과 카테고리 목록까지
+// 순서대로 기다렸다가 응답해서 목록 클릭 → 상세 진입이 느렸다. 지금은 본문 조회 1번만
+// 하고, 나머지 두 조회는 컴포넌트가 마운트된 뒤 클라이언트에서 병렬로 채운다.
 export async function getServerSideProps(context) {
   const { slug } = context.params
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.fsfood.kr'
     const res = await fetch(`${baseUrl}/api/blog/posts?slug=${slug}`)
-    if (!res.ok) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
+    if (!res.ok) return { props: { post: null, html: '', stepImages: [] } }
     const post = await res.json()
-    if (!post) return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
+    if (!post) return { props: { post: null, html: '', stepImages: [] } }
 
     // 서버에서 마크다운 → HTML 변환 (레시피/식재료손질은 본문 끝에 숨겨진 사진 목록을 먼저 분리)
     const { parseMarkdown } = await import('../../lib/parseMarkdown')
     const { content: cleanContent, images: stepImages } = extractStepImages(post.content || '')
     const html = parseMarkdown(cleanContent)
 
-    // 관련 글 추천을 위해 글 목록도 서버에서 같이 가져온다 (SSR에 포함되어야
-    // 검색엔진도 내부링크를 크롤링할 수 있다)
-    let allPosts = []
-    try {
-      const listRes = await fetch(`${baseUrl}/api/blog/posts?limit=100`)
-      if (listRes.ok) allPosts = await listRes.json()
-    } catch {}
-
-    // 커스텀 카테고리(레시피·식재료손질·팁·해외 등)도 함께 가져와야 지역이 아닌
-    // 카테고리로 발행된 글에서도 배지가 정상적으로 표시된다
-    let customCategories = []
-    try {
-      const catRes = await fetch(`${baseUrl}/api/blog/categories`)
-      if (catRes.ok) customCategories = await catRes.json()
-    } catch {}
-
-    return { props: { post, html, allPosts: Array.isArray(allPosts) ? allPosts : [], stepImages, customCategories: Array.isArray(customCategories) ? customCategories : [] } }
+    return { props: { post, html, stepImages } }
   } catch (error) {
     console.error('블로그 상세 SSR 에러:', error)
-    return { props: { post: null, html: '', allPosts: [], stepImages: [], customCategories: [] } }
+    return { props: { post: null, html: '', stepImages: [] } }
   }
 }
