@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
@@ -7,6 +8,7 @@ import { REGIONS } from '../../lib/regions'
 import { parseMarkdown } from '../../lib/parseMarkdown'
 import { isStepCategory } from '../../lib/blogCategories'
 import { extractStepImages, splitStepsHtml } from '../../lib/stepContent'
+import { extractRecipeData } from '../../lib/recipeSchema'
 import { AdSlot } from '../../components/AdSlot'
 import { useAdSlot } from '../../lib/AdSlotsContext'
 
@@ -231,7 +233,7 @@ function StepTimeline({ introHtml, steps, images }) {
   )
 }
 
-export default function BlogPost({ post, html, stepImages }) {
+export default function BlogPost({ post, html, stepImages, recipeData }) {
   // 관련 글 추천·카테고리 배지 데이터 — SSR을 막지 않도록 마운트 후 백그라운드로 채운다.
   // (예전엔 getServerSideProps가 본문 조회 + 전체 글 최대 100개(본문 포함) 조회 +
   // 카테고리 조회를 순서대로 기다렸다가 응답해서, 목록에서 글을 클릭한 뒤 페이지가
@@ -344,6 +346,27 @@ export default function BlogPost({ post, html, stepImages }) {
             }}
           />
         )}
+        {/* Recipe 구조화 데이터 — 레시피/식재료손질 글이고, 본문에서 재료·단계를 안전하게
+            뽑아낼 수 있었을 때만(lib/recipeSchema.js) 추가한다. 못 뽑아냈으면 조용히 생략 —
+            애매한 데이터를 억지로 만들어 제출하지 않는다. */}
+        {post && recipeData && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'Recipe',
+                name: post.title,
+                image: post.cover_image ? [post.cover_image] : undefined,
+                description: post.summary || '',
+                datePublished: post.published_at || post.created_at || undefined,
+                author: { '@type': 'Organization', name: post.author_name || 'Fresh Season 편집팀', url: 'https://www.fsfood.kr/' },
+                recipeIngredient: recipeData.ingredients,
+                recipeInstructions: recipeData.steps.map(text => ({ '@type': 'HowToStep', text })),
+              }),
+            }}
+          />
+        )}
       </Head>
 
       <Header />
@@ -370,6 +393,7 @@ export default function BlogPost({ post, html, stepImages }) {
                   <span>🔒 관리자 전용</span>
                   <span>제목 점수: {adminExtra.title_score != null ? `${adminExtra.title_score}/10` : '내용 없음'}</span>
                   <span>SEO 점수: {adminExtra.seo_score != null ? `${adminExtra.seo_score}/100` : '내용 없음'}</span>
+                  <span>Recipe schema: {recipeData ? `✅ (재료 ${recipeData.ingredients.length}개·단계 ${recipeData.steps.length}개)` : '❌ 미적용'}</span>
                 </div>
 
                 {(Array.isArray(adminExtra.title_score_detail) && adminExtra.title_score_detail.length > 0) && (
@@ -511,18 +535,22 @@ export async function getServerSideProps(context) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.fsfood.kr'
     const res = await fetch(`${baseUrl}/api/blog/posts?slug=${slug}`)
-    if (!res.ok) return { props: { post: null, html: '', stepImages: [] } }
+    if (!res.ok) return { props: { post: null, html: '', stepImages: [], recipeData: null } }
     const post = await res.json()
-    if (!post) return { props: { post: null, html: '', stepImages: [] } }
+    if (!post) return { props: { post: null, html: '', stepImages: [], recipeData: null } }
 
     // 서버에서 마크다운 → HTML 변환 (레시피/식재료손질은 본문 끝에 숨겨진 사진 목록을 먼저 분리)
     const { parseMarkdown } = await import('../../lib/parseMarkdown')
     const { content: cleanContent, images: stepImages } = extractStepImages(post.content || '')
     const html = parseMarkdown(cleanContent)
 
-    return { props: { post, html, stepImages } }
+    // Recipe schema — 레시피/식재료손질 글이고 "재료: ..." + 번호 목록 패턴이 실제로
+    // 있을 때만 추출한다(lib/recipeSchema.js). 못 뽑으면 null — 억지로 만들지 않는다.
+    const recipeData = isStepCategory(post.category) ? extractRecipeData(cleanContent) : null
+
+    return { props: { post, html, stepImages, recipeData } }
   } catch (error) {
     console.error('블로그 상세 SSR 에러:', error)
-    return { props: { post: null, html: '', stepImages: [] } }
+    return { props: { post: null, html: '', stepImages: [], recipeData: null } }
   }
 }
