@@ -5,7 +5,9 @@
 // Claude(연결된 커넥터)가 이 툴들을 직접 호출해서 "오늘 블로그 글" 글감을
 // 사람 개입 없이 스스로 판단할 수 있게 하는 것이 목적입니다.
 //
-// 노출 툴 19개 (실제 등록 기준):
+// 노출 툴 21개 (실제 등록 기준):
+//   - publish_thread_post : threads_posts에 저장된 초안을 Threads(스레드) 계정에 실제로 게시 (Meta Threads API, 쓰기 작업)
+//   - refresh_threads_token: Threads 장기 액세스 토큰 갱신 (60일 만료 전 수동 실행, 새 토큰 값을 반환하므로 Vercel 환경변수에 직접 반영 필요)
 //   - append_system_prompt: Claude 지침(주로 main2) 맨 아래에 새 내용 추가 — update_system_prompt처럼 전체 재전송 불필요
 //   - get_publish_log     : 발행 기록 조회 (메모 포함, 중복 방지 + 키워드 사용 추적용, STEP 1에서 가장 먼저 호출)
 //   - get_keyword_data    : 도구별 찜한 키워드 + 캐시된 TOP 키워드 조회 (Supabase, hint로 좁혀서 봄)
@@ -88,6 +90,51 @@
 // Claude가 추측하거나 다른 글에서 유추한 내용으로는 절대 update_tool_info를 호출하지 않고,
 // 사용자가 대화 중 직접 확인·정정해준 내용만 반영합니다.
 //
+// ── Threads(스레드) 자동화 파일럿 (2026-07-20 추가) ──────────────────────────
+// publish_thread_post/refresh_threads_token이 쓰는 테이블 3개, 최초 1회 생성 필요
+// (Supabase SQL 에디터에서 실행 — run_sql은 SELECT 전용이라 이 파일에서 직접 실행 불가):
+//
+// create table if not exists threads_categories (
+//   id text primary key,
+//   name text not null,
+//   tone_description text,
+//   active boolean not null default true,
+//   created_at timestamptz not null default now()
+// );
+//
+// create table if not exists threads_viral_patterns (
+//   id text primary key,
+//   category text,              -- 자유 텍스트 (과일/아이디어상품/무료나눔 등), FK 강제 안 함
+//   hook_type text,             -- 예: 노하우공개형 / 질문형 / 후킹카피형
+//   structure_note text,
+//   example_text text,
+//   source_url text,
+//   engagement_note text,
+//   collected_at timestamptz not null default now()
+// );
+//
+// create table if not exists threads_posts (
+//   id text primary key,
+//   category_id text,
+//   content text not null,
+//   status text not null default 'draft',   -- draft | scheduled | posted | failed
+//   scheduled_at timestamptz,
+//   posted_at timestamptz,
+//   threads_post_id text,
+//   permalink text,
+//   error_message text,
+//   created_at timestamptz not null default now(),
+//   updated_at timestamptz not null default now()
+// );
+//
+// 카테고리·바이럴패턴·초안 CRUD는 새 전용 툴을 만들지 않고 기존 get_rows/upsert_row/run_sql/
+// list_tables(범용 테이블 도구)로 처리합니다. 이 섹션에서 새로 등록하는 건 Threads Graph API를
+// 직접 호출해야 하는 publish_thread_post/refresh_threads_token 2개뿐입니다.
+// 액세스 토큰은 threads_posts 등 어떤 테이블에도 저장하지 않습니다 — get_rows로 누구나 조회
+// 가능한 테이블에 넣으면 채팅 로그로 토큰이 노출될 위험이 있어, THREADS_ACCESS_TOKEN 환경변수로만
+// 관리합니다.
+// ────────────────────────────────────────────────────────────────────────────
+//
 // 필요한 환경변수 (Vercel 프로젝트 설정 > Environment Variables):
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY   - 기존 admin API들과 동일하게 사용
 //   NAVER_AD_API_KEY / NAVER_AD_SECRET_KEY / NAVER_AD_CUSTOMER_ID - 네이버 검색광고 API
@@ -95,6 +142,10 @@
 //   GITHUB_TOKEN (선택)                        - list_github_files/get_github_file 툴의 GitHub API
 //                                                 요청 한도를 늘리고 싶을 때만 등록. 없어도 동작
 //                                                 (minsiljang0/Fresh_Season은 공개 저장소, 시간당 60회 제한)
+//   THREADS_USER_ID / THREADS_ACCESS_TOKEN     - publish_thread_post/refresh_threads_token용.
+//                                                 Meta for Developers에서 Threads API 앱을 만들고
+//                                                 발급받은 장기(60일) 액세스 토큰. 토큰 만료 전
+//                                                 refresh_threads_token으로 갱신하고 값을 여기에 재등록.
 //
 // claude.ai 커넥터 등록 주소 (Settings > Connectors > Add custom connector):
 //   https://fresh-season.vercel.app/api/mcp?key=여기에_MCP_SHARED_SECRET_값
@@ -1104,16 +1155,16 @@ URL: ${pub.publicUrl}` }] }
         title: 'Claude 시스템 프롬프트(지침) 조회',
         description:
           'admin에 저장된 Claude 프로젝트 지침을 가져온다. ' +
-          '지침은 4개 탭으로 나뉜다: claude(메인 행동 지침) / main(2-1 블로그 글작성지침) / main2(2-2 블로그 글작성지침) / month(월글감 작성 지침). ' +
+          '지침은 5개 탭으로 나뉜다: claude(메인 행동 지침) / main(2-1 블로그 글작성지침) / main2(2-2 블로그 글작성지침) / month(월글감 작성 지침) / threads(스레드 자동화 파일럿 지침). ' +
           'id를 주면 해당 탭만 가져오고, 비우면 하위호환을 위해 main(2-1) 탭을 가져온다. ' +
           '대화를 시작할 때 가장 먼저 id="claude"로 호출해서 메인 지침을 로드하고, 그 내용대로 행동한다. ' +
           '지침은 admin → 🤖 Claude 지침 메뉴에서 수정할 수 있다.',
         inputSchema: {
-          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo']).optional().describe('불러올 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
+          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo', 'threads']).optional().describe('불러올 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
         },
       },
       async ({ id }) => {
-        const tabId = ['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo'].includes(id) ? id : 'main'
+        const tabId = ['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo', 'threads'].includes(id) ? id : 'main'
         const { data, error } = await supabase
           .from('system_prompts')
           .select('content, updated_at')
@@ -1137,18 +1188,18 @@ URL: ${pub.publicUrl}` }] }
         title: 'Claude 시스템 프롬프트(지침) 저장',
         description:
           'admin에 저장된 Claude 프로젝트 지침을 덮어쓴다. ' +
-          '지침은 4개 탭으로 나뉜다: claude(메인 행동 지침) / main(2-1 블로그 글작성지침) / main2(2-2 블로그 글작성지침) / month(월글감 작성 지침). ' +
+          '지침은 5개 탭으로 나뉜다: claude(메인 행동 지침) / main(2-1 블로그 글작성지침) / main2(2-2 블로그 글작성지침) / month(월글감 작성 지침) / threads(스레드 자동화 파일럿 지침). ' +
           'id로 어느 탭을 덮어쓸지 지정한다 (비우면 main). ' +
           '지침 전문을 content에 담아 전달하면 해당 탭의 기존 내용을 완전히 교체한다. ' +
           '저장 후 get_system_prompt로 다시 불러와서 확인하는 것을 권장한다.',
         inputSchema: {
-          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo']).optional().describe('덮어쓸 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
+          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo', 'threads']).optional().describe('덮어쓸 탭. claude=메인 지침, main=2-1 블로그 글작성지침, main2=2-2 블로그 글작성지침, month=월글감 지침. 비우면 main'),
           content: z.string().describe('새로 저장할 지침 전문 (마크다운)'),
         },
         annotations: { destructiveHint: true, idempotentHint: false },
       },
       async ({ id, content }) => {
-        const tabId = ['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo'].includes(id) ? id : 'main'
+        const tabId = ['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo', 'threads'].includes(id) ? id : 'main'
         const nowKST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
         const { error } = await supabase
           .from('system_prompts')
@@ -1174,7 +1225,7 @@ URL: ${pub.publicUrl}` }] }
           '문서 중간에 있는 특정 섹션(예: main2의 "글감별 학습 메모")에 끼워 넣어야 하거나, ' +
           '기존 내용을 수정·삭제해야 할 때는 이 툴로는 안 되니 get_system_prompt로 전체를 불러온 뒤 update_system_prompt를 쓴다.',
         inputSchema: {
-          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo']).describe('추가할 탭. main2(작업 메모장)에 주로 사용'),
+          id: z.enum(['claude', 'main', 'main2', 'month', 'reference', 'rss_sources', 'todo', 'threads']).describe('추가할 탭. main2(작업 메모장)에 주로 사용'),
           content: z.string().describe('맨 아래에 추가할 내용 (마크다운). 앞뒤 구분용 빈 줄은 자동으로 들어가므로 따로 넣지 않아도 됨'),
         },
         annotations: { destructiveHint: false, idempotentHint: false },
@@ -2357,6 +2408,127 @@ URL: ${pub.publicUrl}` }] }
       }
     )
 
+    // ── Threads(스레드) 자동화 파일럿 ──────────────────────────────────────
+    // 카테고리/바이럴패턴/초안 CRUD는 get_rows·upsert_row·run_sql·list_tables(범용 테이블 도구)로
+    // 처리한다. 여기서는 Meta Threads Graph API를 직접 호출해야 하는 발행/토큰갱신만 다룬다.
+    async function threadsApiCall(url, options) {
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(15000) })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        const msg = data?.error?.message || `HTTP ${res.status}`
+        throw new Error(msg)
+      }
+      return data
+    }
+
+    server.registerTool(
+      'publish_thread_post',
+      {
+        title: 'Threads(스레드) 초안 실제 게시',
+        description:
+          'threads_posts 테이블에 저장해둔 초안 한 건을 Meta Threads API로 실제 게시한다. ' +
+          '초안은 이 툴로 만들지 않고 upsert_row(table: "threads_posts", row: {id, content, category_id, status: "draft"})로 ' +
+          '먼저 저장한 뒤, 검토가 끝나면 이 툴에 그 id를 넘겨 호출한다. ' +
+          '성공하면 threads_posts 행을 status="posted"로 갱신하고 실제 게시물 permalink를 반환한다. ' +
+          'THREADS_USER_ID/THREADS_ACCESS_TOKEN 환경변수가 없으면 오류를 반환한다.',
+        inputSchema: {
+          post_id: z.string().describe('threads_posts.id — 게시할 초안의 id'),
+        },
+        annotations: { destructiveHint: false, idempotentHint: false },
+      },
+      async ({ post_id }) => {
+        const threadsUserId = process.env.THREADS_USER_ID
+        const accessToken = process.env.THREADS_ACCESS_TOKEN
+        if (!threadsUserId || !accessToken) {
+          return { content: [{ type: 'text', text: '❌ THREADS_USER_ID/THREADS_ACCESS_TOKEN 환경변수가 설정되어 있지 않습니다. Meta for Developers에서 Threads API 토큰을 발급받아 Vercel에 등록해주세요.' }], isError: true }
+        }
+
+        const { data: post, error: fetchErr } = await supabase
+          .from('threads_posts').select('*').eq('id', post_id).single()
+        if (fetchErr || !post) {
+          return { content: [{ type: 'text', text: `❌ threads_posts에서 id="${post_id}"를 찾지 못했습니다: ${fetchErr?.message || '없음'}` }], isError: true }
+        }
+        if (!['draft', 'scheduled', 'failed'].includes(post.status)) {
+          return { content: [{ type: 'text', text: `❌ status가 "${post.status}"라 게시할 수 없습니다 (draft/scheduled/failed만 가능). 이미 posted된 글은 다시 게시하지 않습니다.` }], isError: true }
+        }
+
+        try {
+          const containerParams = new URLSearchParams({ media_type: 'TEXT', text: post.content, access_token: accessToken })
+          const container = await threadsApiCall(
+            `https://graph.threads.net/v1.0/${threadsUserId}/threads?${containerParams.toString()}`,
+            { method: 'POST' }
+          )
+          const creationId = container?.id
+          if (!creationId) throw new Error('컨테이너 생성 응답에 id가 없습니다: ' + JSON.stringify(container))
+
+          const publishParams = new URLSearchParams({ creation_id: creationId, access_token: accessToken })
+          const published = await threadsApiCall(
+            `https://graph.threads.net/v1.0/${threadsUserId}/threads_publish?${publishParams.toString()}`,
+            { method: 'POST' }
+          )
+          const threadsPostId = published?.id
+          const permalink = threadsPostId ? `https://www.threads.net/@${threadsUserId}/post/${threadsPostId}` : null
+          const nowIso = nowKST()
+
+          await supabase.from('threads_posts').update({
+            status: 'posted',
+            posted_at: nowIso,
+            threads_post_id: threadsPostId || null,
+            permalink,
+            error_message: null,
+            updated_at: nowIso,
+          }).eq('id', post_id)
+
+          return { content: [{ type: 'text', text: `✅ 게시 완료\nthreads_post_id: ${threadsPostId}${permalink ? '\n' + permalink : ''}` }] }
+        } catch (err) {
+          await supabase.from('threads_posts').update({
+            status: 'failed',
+            error_message: err.message,
+            updated_at: nowKST(),
+          }).eq('id', post_id)
+          return { content: [{ type: 'text', text: `❌ 게시 실패: ${err.message}` }], isError: true }
+        }
+      }
+    )
+
+    server.registerTool(
+      'refresh_threads_token',
+      {
+        title: 'Threads(스레드) 액세스 토큰 갱신',
+        description:
+          'Meta Threads 장기 액세스 토큰(기본 60일 만료)을 현재 THREADS_ACCESS_TOKEN으로 갱신 요청해 ' +
+          '새 토큰을 발급받는다. 이 서버는 토큰을 DB에 저장하지 않으므로, 반환된 새 토큰 값을 ' +
+          'Vercel 프로젝트 환경변수 THREADS_ACCESS_TOKEN에 사용자가 직접 반영하고 재배포해야 적용된다. ' +
+          '만료 며칠 전에 한 번씩 수동으로 호출한다 (자동 스케줄링은 아직 붙어있지 않음).',
+        inputSchema: {},
+        annotations: { destructiveHint: false, idempotentHint: false },
+      },
+      async () => {
+        const accessToken = process.env.THREADS_ACCESS_TOKEN
+        if (!accessToken) {
+          return { content: [{ type: 'text', text: '❌ THREADS_ACCESS_TOKEN 환경변수가 설정되어 있지 않습니다.' }], isError: true }
+        }
+        try {
+          const refreshParams = new URLSearchParams({ grant_type: 'th_refresh_token', access_token: accessToken })
+          const data = await threadsApiCall(
+            `https://graph.threads.net/refresh_access_token?${refreshParams.toString()}`,
+            { method: 'GET' }
+          )
+          const expiresInDays = data.expires_in ? Math.round(data.expires_in / 86400) : '?'
+          return {
+            content: [{
+              type: 'text',
+              text: `✅ 토큰 갱신 완료 (${expiresInDays}일 후 만료)\n\n` +
+                `⚠️ 아래 값을 Vercel 프로젝트 설정 > Environment Variables > THREADS_ACCESS_TOKEN에 반영하고 재배포하세요:\n\n` +
+                data.access_token,
+            }],
+          }
+        } catch (err) {
+          return { content: [{ type: 'text', text: `❌ 토큰 갱신 실패: ${err.message}` }], isError: true }
+        }
+      }
+    )
+    // ────────────────────────────────────────────────────────────────────────
 
   },
   {
@@ -2366,8 +2538,10 @@ URL: ${pub.publicUrl}` }] }
       '네이버 키워드 검색량 조회 도구, 발행 기록·SEO 지침 조회 도구, ' +
       '뉴스·공식 홈페이지의 그래프·차트를 실제로 캡처해서 저장하는 도구(capture_screenshot), ' +
       '로컬 이미지 파일을 base64로 받아 Storage에 업로드하는 도구(upload_image), ' +
-      'GitHub 저장소(minsiljang0/Fresh_Season) 파일 확인 도구(list_github_files/get_github_file)를 제공한다. ' +
-      '오늘의 블로그 글을 쓰거나 발행하거나, 식재료·키워드 DB를 조회/수정할 때 이 서버의 도구를 사용한다.',
+      'GitHub 저장소(minsiljang0/Fresh_Season) 파일 확인 도구(list_github_files/get_github_file), ' +
+      'Threads(스레드) 자동화 파일럿 도구(publish_thread_post/refresh_threads_token — 초안 관리는 ' +
+      'get_rows/upsert_row로 threads_posts 테이블을 직접 조작)를 제공한다. ' +
+      '오늘의 블로그 글을 쓰거나 발행하거나, 식재료·키워드 DB를 조회/수정하거나, 스레드 초안을 게시할 때 이 서버의 도구를 사용한다.',
   },
   { basePath: '/api', maxDuration: 30, verboseLogs: true }
 )
