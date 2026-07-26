@@ -1,0 +1,130 @@
+name: 휴일지킴이약국 자동 수집
+
+on:
+  schedule:
+    - cron: '30 20 * * *'  # 매일 오전 5시 30분 KST (UTC 20:30)
+  workflow_dispatch:        # 수동 실행 가능
+
+jobs:
+  sync-holiday-pharmacy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 전국 약국 정보 조회 → 공휴일 진료 약국만 골라 Supabase에 저장
+        env:
+          HOLIDAY_PHARMACY_API_KEY: ${{ secrets.HOLIDAY_PHARMACY_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node << 'SCRIPT'
+          const API_BASE = 'https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyListInfoInqire'
+          const SIDO_LIST = [
+            '서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시',
+            '세종특별자치시','경기도','강원특별자치도','충청북도','충청남도','전북특별자치도','전라남도',
+            '경상북도','경상남도','제주특별자치도',
+          ]
+          const NUM_OF_ROWS = 500
+
+          // 필드명 확인 완료(프레시시즌 쪽에서 2026-07-26 실제 응답으로 검증): dutyName/dutyAddr/dutyTel1/dutyTimeNs·Nc/hpid/wgs84Lat/wgs84Lon
+          // dutyTimeNs는 문자열("0900") dutyTimeNc는 숫자(2100)로 API가 타입을 다르게 내려줘서 fmtTime으로 통일
+          function fmtTime(v) {
+            if (v === undefined || v === null || v === '') return null
+            return String(v).padStart(4, '0')
+          }
+
+          function mapItem(sido, item) {
+            const hpid = item.hpid || `${sido}|${item.dutyName}|${item.dutyAddr}`
+            return {
+              hpid,
+              name: item.dutyName || '',
+              sido,
+              addr: item.dutyAddr || '',
+              tel: item.dutyTel1 || '',
+              lat: item.wgs84Lat ? Number(item.wgs84Lat) : null,
+              lng: item.wgs84Lon ? Number(item.wgs84Lon) : null,
+              duty_time1_s: fmtTime(item.dutyTime1s), duty_time1_c: fmtTime(item.dutyTime1c),
+              duty_time2_s: fmtTime(item.dutyTime2s), duty_time2_c: fmtTime(item.dutyTime2c),
+              duty_time3_s: fmtTime(item.dutyTime3s), duty_time3_c: fmtTime(item.dutyTime3c),
+              duty_time4_s: fmtTime(item.dutyTime4s), duty_time4_c: fmtTime(item.dutyTime4c),
+              duty_time5_s: fmtTime(item.dutyTime5s), duty_time5_c: fmtTime(item.dutyTime5c),
+              duty_time6_s: fmtTime(item.dutyTime6s), duty_time6_c: fmtTime(item.dutyTime6c),
+              duty_time7_s: fmtTime(item.dutyTime7s), duty_time7_c: fmtTime(item.dutyTime7c),
+              duty_time8_s: fmtTime(item.dutyTime8s), duty_time8_c: fmtTime(item.dutyTime8c),
+              fetched_at: new Date().toISOString(),
+            }
+          }
+
+          async function fetchSido(sido) {
+            let pageNo = 1
+            let totalCount = Infinity
+            const rows = []
+            let loggedSample = false
+
+            while ((pageNo - 1) * NUM_OF_ROWS < totalCount) {
+              const url = `${API_BASE}?serviceKey=${HOLIDAY_PHARMACY_API_KEY}&Q0=${encodeURIComponent(sido)}&pageNo=${pageNo}&numOfRows=${NUM_OF_ROWS}&_type=json`
+              const res = await fetch(url)
+              const text = await res.text()
+              let json
+              try { json = JSON.parse(text) }
+              catch { console.log(`❌ [${sido}] JSON 파싱 실패 (응답 앞부분): ${text.slice(0, 300)}`); return rows }
+
+              const header = json?.response?.header
+              if (!header || header.resultCode !== '00') {
+                console.log(`❌ [${sido}] API 오류: ${JSON.stringify(header)}`)
+                return rows
+              }
+
+              const body = json.response.body
+              totalCount = Number(body.totalCount || 0)
+              let items = body.items?.item || []
+              if (!Array.isArray(items)) items = items ? [items] : []
+
+              if (!loggedSample && items[0]) {
+                console.log(`🔍 [${sido}] 샘플 item 키: ${Object.keys(items[0]).join(', ')}`)
+                loggedSample = true
+              }
+
+              for (const item of items) {
+                if (item.dutyTime8s || item.dutyTime8c) rows.push(mapItem(sido, item)) // 공휴일 진료시간이 있는 약국만
+              }
+
+              if (items.length === 0) break
+              pageNo++
+              await new Promise(r => setTimeout(r, 150))
+            }
+            return rows
+          }
+
+          async function upsertRows(rows) {
+            if (rows.length === 0) return
+            const chunkSize = 200
+            for (let i = 0; i < rows.length; i += chunkSize) {
+              const chunk = rows.slice(i, i + chunkSize)
+              const res = await fetch(`${SUPABASE_URL}/rest/v1/holiday_pharmacies?on_conflict=hpid`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': SUPABASE_SERVICE_ROLE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                  'Prefer': 'resolution=merge-duplicates,return=minimal',
+                },
+                body: JSON.stringify(chunk),
+              })
+              if (!res.ok) console.log(`❌ Supabase upsert 실패 (${res.status}): ${await res.text()}`)
+            }
+          }
+
+          async function main() {
+            let totalSaved = 0
+            for (const sido of SIDO_LIST) {
+              const rows = await fetchSido(sido)
+              await upsertRows(rows)
+              console.log(`✅ ${sido}: 공휴일 진료 약국 ${rows.length}곳 저장`)
+              totalSaved += rows.length
+              await new Promise(r => setTimeout(r, 200))
+            }
+            console.log(`\n완료: 전국 공휴일 진료 약국 총 ${totalSaved}곳 저장`)
+          }
+
+          main().catch(e => { console.error(e); process.exit(1) })
+          SCRIPT
