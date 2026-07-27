@@ -112,7 +112,7 @@ function KoreaClickMap({ sidoId, onSelect, district, onSelectDistrict }) {
                   onClick={() => onSelectDistrict(d)}
                   style={{ padding: '4px 6px', cursor: 'pointer', color: district === d ? 'var(--accent)' : 'var(--text2)', fontWeight: district === d ? 700 : 400 }}
                 >
-                  {selectedRegion.name} {d}
+                  {d}
                 </div>
               ))}
             </div>
