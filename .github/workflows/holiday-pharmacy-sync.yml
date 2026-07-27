@@ -1,3 +1,4 @@
+
 name: 휴일지킴이약국 자동 수집 및 발행
 
 on:
@@ -43,11 +44,23 @@ jobs:
           ]
           const NUM_OF_ROWS = 500
 
-          // 2026년 신정~성탄절 중 명절(설날/추석) 제외 단일 공휴일 + 대체공휴일. 매년 1월 갱신 필요.
-          const SINGLE_DAY_HOLIDAYS_2026 = [
-            '2026-01-01', '2026-03-01', '2026-03-02', '2026-05-05', '2026-05-24', '2026-05-25',
-            '2026-06-06', '2026-08-15', '2026-08-17', '2026-10-03', '2026-10-05', '2026-10-09', '2026-12-25',
-          ]
+          // 2026년 신정~성탄절 중 명절(설날/추석) 제외 단일 공휴일 + 대체공휴일과 그 명칭. 매년 1월 실제 달력과 대조해서 갱신 필요.
+          const SINGLE_DAY_HOLIDAY_NAMES = {
+            '2026-01-01': '신정',
+            '2026-03-01': '삼일절',
+            '2026-03-02': '삼일절 대체공휴일',
+            '2026-05-05': '어린이날',
+            '2026-05-24': '부처님오신날',
+            '2026-05-25': '부처님오신날 대체공휴일',
+            '2026-06-06': '현충일',
+            '2026-08-15': '광복절',
+            '2026-08-17': '광복절 대체공휴일',
+            '2026-10-03': '개천절',
+            '2026-10-05': '개천절 대체공휴일',
+            '2026-10-09': '한글날',
+            '2026-12-25': '성탄절',
+          }
+          const SINGLE_DAY_HOLIDAYS_2026 = Object.keys(SINGLE_DAY_HOLIDAY_NAMES)
 
           function fmtTime(v) {
             if (v === undefined || v === null || v === '') return null
@@ -194,86 +207,192 @@ jobs:
             return `${hhmm.slice(0, 2)}:${hhmm.slice(2, 4)}`
           }
 
-          // ============ 지역 분할 발행 (서울/경기는 인구가 많아 강남·강북/북부·남부로 추가 분할, 총 19개 지역) ============
-          const SEOUL_GANGBUK_GU = ['종로구','중구','용산구','성동구','광진구','동대문구','중랑구','성북구','강북구','도봉구','노원구','은평구','서대문구','마포구']
-          const SEOUL_GANGNAM_GU = ['강남구','서초구','송파구','강동구','영등포구','동작구','관악구','금천구','구로구','양천구','강서구']
-          const GYEONGGI_NORTH_SI = ['고양시','구리시','남양주시','동두천시','양주시','연천군','의정부시','파주시','포천시','가평군','김포시']
+          const WEEKDAY_KO = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
+          function weekdayLabel(dateStr) { return WEEKDAY_KO[dayOfWeek(dateStr)] }
 
-          const REGION_DEFS = [
-            { key: 'seoul-gangbuk', title: '서울(강북권)', filter: r => r.sido === '서울특별시' && SEOUL_GANGBUK_GU.includes(subRegionOf(r.addr)) },
-            { key: 'seoul-gangnam', title: '서울(강남권)', filter: r => r.sido === '서울특별시' && SEOUL_GANGNAM_GU.includes(subRegionOf(r.addr)) },
-            { key: 'gyeonggi-north', title: '경기북부', filter: r => r.sido === '경기도' && GYEONGGI_NORTH_SI.includes(subRegionOf(r.addr)) },
-            { key: 'gyeonggi-south', title: '경기남부', filter: r => r.sido === '경기도' && !GYEONGGI_NORTH_SI.includes(subRegionOf(r.addr)) },
-            { key: 'busan', title: '부산광역시', filter: r => r.sido === '부산광역시' },
-            { key: 'daegu', title: '대구광역시', filter: r => r.sido === '대구광역시' },
-            { key: 'incheon', title: '인천광역시', filter: r => r.sido === '인천광역시' },
-            { key: 'gwangju', title: '광주광역시', filter: r => r.sido === '광주광역시' },
-            { key: 'daejeon', title: '대전광역시', filter: r => r.sido === '대전광역시' },
-            { key: 'ulsan', title: '울산광역시', filter: r => r.sido === '울산광역시' },
-            { key: 'sejong', title: '세종특별자치시', filter: r => r.sido === '세종특별자치시' },
-            { key: 'gangwon', title: '강원특별자치도', filter: r => r.sido === '강원특별자치도' },
-            { key: 'chungbuk', title: '충청북도', filter: r => r.sido === '충청북도' },
-            { key: 'chungnam', title: '충청남도', filter: r => r.sido === '충청남도' },
-            { key: 'jeonbuk', title: '전북특별자치도', filter: r => r.sido === '전북특별자치도' },
-            { key: 'jeonnam', title: '전라남도', filter: r => r.sido === '전라남도' },
-            { key: 'gyeongbuk', title: '경상북도', filter: r => r.sido === '경상북도' },
-            { key: 'gyeongnam', title: '경상남도', filter: r => r.sido === '경상남도' },
-            { key: 'jeju', title: '제주특별자치도', filter: r => r.sido === '제주특별자치도' },
-          ]
-
-          function subRegionOf(addr) {
-            const parts = (addr || '').trim().split(/\s+/)
-            return parts[1] || '기타'
+          // 설날은 1~2월, 추석은 9~10월(양력 기준)에만 온다는 규칙을 이용한 단순 판별 — 실제 명절 여부/구간 자체는
+          // chuseok_seollal_pharmacies 테이블 매칭으로 이미 확정된 뒤, 이름표만 붙이는 용도.
+          function chuseokSeasonLabel(dateStr) {
+            const month = Number(dateStr.split('-')[1])
+            if (month === 1 || month === 2) return '설날 연휴'
+            if (month === 9 || month === 10) return '추석 연휴'
+            return '명절 연휴'
           }
 
-          function buildRegionTable(rows) {
-            const bySub = {}
-            for (const r of rows) {
-              const sub = subRegionOf(r.addr)
-              if (!bySub[sub]) bySub[sub] = []
-              bySub[sub].push(r)
-            }
-            const th = (label) => `<th style="border:1px solid #ccc;padding:6px 8px;background:#f2f2f2;">${label}</th>`
-            const td = (val, center) => `<td style="border:1px solid #ccc;padding:6px 8px;${center ? 'text-align:center;' : ''}">${val}</td>`
-            let html = ''
-            let n = 0
-            for (const sub of Object.keys(bySub).sort((a, b) => a.localeCompare(b, 'ko'))) {
-              const list = bySub[sub].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
-              html += `<h3>${sub}</h3>\n<table style="width:100%;border-collapse:collapse;margin:0 0 24px;font-size:14px;">\n`
-              html += `<thead><tr>${th('번호')}${th('약국명')}${th('주소')}${th('전화')}${th('영업시간')}</tr></thead>\n<tbody>\n`
-              for (const r of list) {
-                n++
-                html += `<tr>${td(n, true)}${td(`<strong>${r.name}</strong>`)}${td(r.addr)}${td(r.tel || '')}${td(r.timeStr || '')}</tr>\n`
-              }
-              html += `</tbody></table>\n`
-            }
+          // 제목/부제에 공통으로 쓰는 라벨: 요일 + (해당하면) 구체적인 공휴일·명절 이름
+          function kindLabelFor(targetDate, postType) {
+            const weekday = weekdayLabel(targetDate)
+            if (postType === 'sunday') return weekday
+            if (postType === 'holiday') return `${weekday} ${SINGLE_DAY_HOLIDAY_NAMES[targetDate] || '공휴일'}`
+            return `${weekday} ${chuseokSeasonLabel(targetDate)}`
+          }
+
+          // 주소 문자열에서 시도명을 뗀 다음 그 다음 토큰(시/군/구)을 지역명으로 추출.
+          // 예: "경기도 남양주시 화도읍 ..." + sido="경기도" -> "남양주시"
+          function extractDistrict(addr, sido) {
+            if (!addr) return ''
+            const rest = addr.startsWith(sido) ? addr.slice(sido.length).trim() : addr.trim()
+            return rest.split(/\s+/)[0] || ''
+          }
+
+          const SEOUL_GANGNAM_GU = ['강남구', '서초구', '송파구', '강동구', '영등포구', '동작구', '관악구', '금천구', '구로구', '양천구', '강서구']
+          const SEOUL_GANGBUK_GU = ['종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구', '강북구', '도봉구', '노원구', '은평구', '서대문구', '마포구']
+          const GYEONGGI_NORTH_SI = ['고양시', '구리시', '남양주시', '동두천시', '양주시', '연천군', '의정부시', '파주시', '포천시', '가평군', '김포시']
+          const GYEONGGI_SOUTH_SI = ['수원시', '성남시', '용인시', '부천시', '안산시', '안양시', '평택시', '시흥시', '화성시', '광명시', '군포시', '이천시', '오산시', '하남시', '의왕시', '여주시', '광주시', '안성시', '과천시', '양평군']
+
+          // 서울/경기를 뺀 나머지 15개 시도 (슬러그용 영문 키)
+          const OTHER_SIDO_KEY = {
+            '부산광역시': 'busan', '대구광역시': 'daegu', '인천광역시': 'incheon', '광주광역시': 'gwangju',
+            '대전광역시': 'daejeon', '울산광역시': 'ulsan', '세종특별자치시': 'sejong', '강원특별자치도': 'gangwon',
+            '충청북도': 'chungbuk', '충청남도': 'chungnam', '전북특별자치도': 'jeonbuk', '전라남도': 'jeonnam',
+            '경상북도': 'gyeongbuk', '경상남도': 'gyeongnam', '제주특별자치도': 'jeju',
+          }
+
+          // 서울 강남/강북 + 경기 북부/남부 + 나머지 15개 시도 = 총 19개 발행 지역
+          const REGION_GROUPS = [
+            { key: 'seoul-gangnam', label: '서울 강남권', filter: r => r.sido === '서울특별시' && SEOUL_GANGNAM_GU.includes(extractDistrict(r.addr, r.sido)) },
+            { key: 'seoul-gangbuk', label: '서울 강북권', filter: r => r.sido === '서울특별시' && SEOUL_GANGBUK_GU.includes(extractDistrict(r.addr, r.sido)) },
+            { key: 'gyeonggi-north', label: '경기 북부', filter: r => r.sido === '경기도' && GYEONGGI_NORTH_SI.includes(extractDistrict(r.addr, r.sido)) },
+            { key: 'gyeonggi-south', label: '경기 남부', filter: r => r.sido === '경기도' && GYEONGGI_SOUTH_SI.includes(extractDistrict(r.addr, r.sido)) },
+            ...Object.entries(OTHER_SIDO_KEY).map(([sido, key]) => ({ key, label: sido, filter: r => r.sido === sido })),
+          ]
+
+          function buildTable(rows) {
+            let html = `<table style="width:100%;border-collapse:collapse;">\n<thead>\n<tr>` +
+              `<th style="border:1px solid #ccc;padding:6px 8px;background:#f5f5f5;">번호</th>` +
+              `<th style="border:1px solid #ccc;padding:6px 8px;background:#f5f5f5;">약국명</th>` +
+              `<th style="border:1px solid #ccc;padding:6px 8px;background:#f5f5f5;">주소</th>` +
+              `<th style="border:1px solid #ccc;padding:6px 8px;background:#f5f5f5;">전화</th>` +
+              `<th style="border:1px solid #ccc;padding:6px 8px;background:#f5f5f5;">운영시간</th>` +
+              `</tr>\n</thead>\n<tbody>\n`
+            rows.forEach((r, i) => {
+              html += `<tr>` +
+                `<td style="border:1px solid #ccc;padding:6px 8px;text-align:center;">${i + 1}</td>` +
+                `<td style="border:1px solid #ccc;padding:6px 8px;"><strong>${r.name}</strong></td>` +
+                `<td style="border:1px solid #ccc;padding:6px 8px;">${r.addr}</td>` +
+                `<td style="border:1px solid #ccc;padding:6px 8px;">${r.tel || ''}</td>` +
+                `<td style="border:1px solid #ccc;padding:6px 8px;">${r.timeStr || ''}</td>` +
+                `</tr>\n`
+            })
+            html += `</tbody>\n</table>\n`
             return html
           }
 
-          async function composeChuseokPost(targetDate) {
+          // district(구/시)별로 <h2> 소제목을 붙이고 그 구/시 안에서만 번호를 다시 매긴 표를 이어붙임.
+          // 소제목도 제목과 같은 방식(날짜+요일/공휴일명+지역+오늘)으로 구성.
+          // rows는 이미 district, name 순으로 정렬돼 있어야 함(같은 district가 뭉쳐 있어야 grouping이 맞음).
+          function buildDistrictSections(rows, dateLabel, kindLabel) {
+            let html = ''
+            let currentDistrict = null
+            let bucket = []
+            const flush = () => {
+              if (bucket.length === 0) return
+              html += `<h2>${dateLabel} ${kindLabel} ${currentDistrict} 오늘 문여는 약국</h2>\n`
+              html += buildTable(bucket)
+              bucket = []
+            }
+            for (const r of rows) {
+              if (r.district !== currentDistrict) { flush(); currentDistrict = r.district }
+              bucket.push(r)
+            }
+            flush()
+            return html
+          }
+
+          // 정기(매주 일요일 / 지정 공휴일) 발행 — 서울강남/강북·경기북부/남부·나머지 15개 시도 = 19개 글로 분리
+          async function composeRegionalPosts(targetDate, kind) {
+            // 일요일(매주 반복)은 duty_time7, 실제 지정 공휴일(신정·삼일절 등)은 duty_time8 — 서로 다른 필드라 구분해서 읽어야 함
+            const fieldIdx = kind === 'sunday' ? 7 : 8
+            const sField = `duty_time${fieldIdx}_s`, cField = `duty_time${fieldIdx}_c`
+            const allRows = await sbSelect('holiday_pharmacies', `select=name,sido,addr,tel,${sField},${cField}&order=sido,name&limit=10000`)
+
+            const usable = allRows
+              .filter(r => r[sField] || r[cField]) // 이 날짜 종류에 해당하는 시간이 없는 약국은 제외
+              .map(r => ({
+                name: r.name, sido: r.sido, addr: r.addr, tel: r.tel,
+                district: extractDistrict(r.addr, r.sido),
+                timeStr: fmtHM(r[sField]) && fmtHM(r[cField]) ? `${fmtHM(r[sField])}~${fmtHM(r[cField])}` : '',
+              }))
+
+            const dateLabel = targetDate.replace(/-/g, '.')
+            const kindLabel = kindLabelFor(targetDate, kind)
+
+            const posts = []
+            for (const group of REGION_GROUPS) {
+              const rows = usable.filter(group.filter).sort((a, b) => {
+                const d = a.district.localeCompare(b.district, 'ko')
+                if (d !== 0) return d
+                return a.name.localeCompare(b.name, 'ko')
+              })
+              if (rows.length === 0) { console.log(`⏭️ [${group.label}] 대상 약국 없음, 건너뜀`); continue }
+
+              const title = `${dateLabel} ${kindLabel} 약국 찾기 — ${group.label} 오늘 문 여는 약국 리스트`
+              const summary = `${dateLabel}(${kindLabel}) ${group.label}에서 오늘 문 여는 약국을 구/시별 가나다순으로 정리했습니다. 방문 전 전화 확인 권장.`
+              const content =
+                `<p>${dateLabel}(${kindLabel}) ${group.label} 지역에서 오늘 문을 여는 약국 리스트입니다. ` +
+                `국립중앙의료원 공공데이터 기반으로 자동 갱신됩니다. 약국명은 구/시 안에서 가나다순으로 정렬되어 있습니다. ` +
+                `실제 방문 전 전화로 한 번 더 확인하시는 걸 권장드려요.</p>\n` +
+                buildDistrictSections(rows, dateLabel, kindLabel)
+
+              posts.push({ key: group.key, label: group.label, title, summary, content })
+            }
+            return posts
+          }
+
+          // 명절(설날/추석) 발행 — 정기 발행과 동일하게 19개 지역 글로 분리
+          async function composeChuseokPosts(targetDate) {
             const orFilter = [1, 2, 3, 4, 5].map(n => `duty_day${n}.eq.${targetDate}`).join(',')
             const rows = await sbSelect('chuseok_seollal_pharmacies', `select=*&or=(${orFilter})&order=sido,name&limit=10000`)
-            const bySido = {}
+
+            const usable = []
             for (const r of rows) {
               let timeStr = null
               for (let n = 1; n <= 5; n++) {
                 if (r[`duty_day${n}`] === targetDate) { timeStr = r[`duty_time${n}`]; break }
               }
               if (!timeStr) continue
-              if (!bySido[r.sido]) bySido[r.sido] = []
-              bySido[r.sido].push({ ...r, timeStr })
+              usable.push({
+                name: r.name, sido: r.sido, addr: r.addr, tel: r.tel,
+                district: extractDistrict(r.addr, r.sido),
+                timeStr: r.duty_etc ? `${timeStr} (${r.duty_etc})` : timeStr,
+              })
             }
+
             const dateLabel = targetDate.replace(/-/g, '.')
-            const title = `${dateLabel} 명절 약국 찾기 — 설날·추석 연휴 문 여는 약국 리스트`
-            let content = `<p>${dateLabel}은 명절 연휴 기간입니다. 이날 실제로 문을 여는 전국 약국 리스트입니다(국립중앙의료원 명절 비상진료기관 데이터 기반). 연휴 중 일정이 매일 달라질 수 있으니 방문 전 전화 확인을 권장드려요.</p>\n`
-            for (const sido of Object.keys(bySido).sort()) {
-              content += `<h2>${sido}</h2>\n<ul>\n`
-              for (const r of bySido[sido]) {
-                content += `<li><strong>${r.name}</strong> ${r.addr} ${r.tel || ''} — ${r.timeStr}${r.duty_etc ? ` (${r.duty_etc})` : ''}</li>\n`
-              }
-              content += `</ul>\n`
+            const kindLabel = kindLabelFor(targetDate, 'chuseok')
+
+            const posts = []
+            for (const group of REGION_GROUPS) {
+              const groupRows = usable.filter(group.filter).sort((a, b) => {
+                const d = a.district.localeCompare(b.district, 'ko')
+                if (d !== 0) return d
+                return a.name.localeCompare(b.name, 'ko')
+              })
+              if (groupRows.length === 0) { console.log(`⏭️ [${group.label}] 명절 대상 약국 없음, 건너뜀`); continue }
+
+              const title = `${dateLabel} ${kindLabel} 약국 찾기 — ${group.label} 오늘 문 여는 약국 리스트`
+              const summary = `${dateLabel}(${kindLabel}) ${group.label}에서 오늘 문 여는 약국을 구/시별 가나다순으로 정리했습니다. 연휴 중 일정이 바뀔 수 있으니 방문 전 전화 확인 권장.`
+              const content =
+                `<p>${dateLabel}(${kindLabel}) 기간입니다. ${group.label} 지역에서 오늘 실제로 문을 여는 약국 리스트입니다(국립중앙의료원 명절 비상진료기관 데이터 기반). ` +
+                `약국명은 구/시 안에서 가나다순으로 정렬되어 있습니다. 연휴 중 일정이 매일 달라질 수 있으니 방문 전 전화 확인을 권장드려요.</p>\n` +
+                buildDistrictSections(groupRows, dateLabel, kindLabel)
+
+              posts.push({ key: group.key, label: group.label, title, summary, content })
             }
-            return { title, content }
+            return posts
+          }
+
+          async function publishPost({ title, slug, summary, content }) {
+            const existing = await sbSelect('blog_posts', `select=id&slug=eq.${slug}&limit=1`)
+            if (existing.length > 0) { console.log(`ℹ️ 이미 발행됨: ${slug}`); return }
+
+            const res = await fetch(`${SITE_BASE}/api/blog/posts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_SECRET_TOKEN },
+              body: JSON.stringify({ title, slug, summary, content, category: '휴일약국', status: 'published', content_format: 'html' }),
+            })
+            if (!res.ok) console.log(`❌ 발행 실패 (${res.status}) [${slug}]: ${await res.text()}`)
+            else console.log(`✅ 발행 완료: ${title} (${slug})`)
           }
 
           async function decideAndPublish() {
@@ -289,22 +408,18 @@ jobs:
 
             if (!postType) { console.log(`ℹ️ ${targetDate}는 발행 대상 아님 (평일)`); return }
 
-            const slug = `${postType}-pharmacy-${targetDate.replace(/-/g, '')}`
+            const dateStamp = targetDate.replace(/-/g, '')
 
-            const existing = await sbSelect('blog_posts', `select=id&slug=eq.${slug}&limit=1`)
-            if (existing.length > 0) { console.log(`ℹ️ 이미 발행됨: ${slug}`); return }
+            // chuseok / sunday / holiday 전부 동일하게 19개 지역 글로 분리 발행
+            const posts = postType === 'chuseok'
+              ? await composeChuseokPosts(targetDate)
+              : await composeRegionalPosts(targetDate, postType)
 
-            const { title, content } = postType === 'chuseok'
-              ? await composeChuseokPost(targetDate)
-              : await composeRegularPost(targetDate, postType)
-
-            const res = await fetch(`${SITE_BASE}/api/blog/posts`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_SECRET_TOKEN },
-              body: JSON.stringify({ title, slug, content, category: '휴일약국', status: 'published', content_format: 'html' }),
-            })
-            if (!res.ok) console.log(`❌ 발행 실패 (${res.status}): ${await res.text()}`)
-            else console.log(`✅ 발행 완료: ${title} (${slug})`)
+            for (const p of posts) {
+              const slug = `${postType}-pharmacy-${p.key}-${dateStamp}`
+              await publishPost({ title: p.title, slug, content: p.content })
+              await new Promise(r => setTimeout(r, 300))
+            }
           }
 
           async function main() {
