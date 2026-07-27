@@ -194,31 +194,60 @@ jobs:
             return `${hhmm.slice(0, 2)}:${hhmm.slice(2, 4)}`
           }
 
-          async function composeRegularPost(targetDate, kind) {
-            // 일요일(매주 반복)은 duty_time7, 실제 지정 공휴일(신정·삼일절 등)은 duty_time8 — 서로 다른 필드라 구분해서 읽어야 함
-            const fieldIdx = kind === 'sunday' ? 7 : 8
-            const sField = `duty_time${fieldIdx}_s`, cField = `duty_time${fieldIdx}_c`
-            const rows = await sbSelect('holiday_pharmacies', `select=name,sido,addr,tel,${sField},${cField}&order=sido,name&limit=10000`)
-            const bySido = {}
+          // ============ 지역 분할 발행 (서울/경기는 인구가 많아 강남·강북/북부·남부로 추가 분할, 총 19개 지역) ============
+          const SEOUL_GANGBUK_GU = ['종로구','중구','용산구','성동구','광진구','동대문구','중랑구','성북구','강북구','도봉구','노원구','은평구','서대문구','마포구']
+          const SEOUL_GANGNAM_GU = ['강남구','서초구','송파구','강동구','영등포구','동작구','관악구','금천구','구로구','양천구','강서구']
+          const GYEONGGI_NORTH_SI = ['고양시','구리시','남양주시','동두천시','양주시','연천군','의정부시','파주시','포천시','가평군','김포시']
+
+          const REGION_DEFS = [
+            { key: 'seoul-gangbuk', title: '서울(강북권)', filter: r => r.sido === '서울특별시' && SEOUL_GANGBUK_GU.includes(subRegionOf(r.addr)) },
+            { key: 'seoul-gangnam', title: '서울(강남권)', filter: r => r.sido === '서울특별시' && SEOUL_GANGNAM_GU.includes(subRegionOf(r.addr)) },
+            { key: 'gyeonggi-north', title: '경기북부', filter: r => r.sido === '경기도' && GYEONGGI_NORTH_SI.includes(subRegionOf(r.addr)) },
+            { key: 'gyeonggi-south', title: '경기남부', filter: r => r.sido === '경기도' && !GYEONGGI_NORTH_SI.includes(subRegionOf(r.addr)) },
+            { key: 'busan', title: '부산광역시', filter: r => r.sido === '부산광역시' },
+            { key: 'daegu', title: '대구광역시', filter: r => r.sido === '대구광역시' },
+            { key: 'incheon', title: '인천광역시', filter: r => r.sido === '인천광역시' },
+            { key: 'gwangju', title: '광주광역시', filter: r => r.sido === '광주광역시' },
+            { key: 'daejeon', title: '대전광역시', filter: r => r.sido === '대전광역시' },
+            { key: 'ulsan', title: '울산광역시', filter: r => r.sido === '울산광역시' },
+            { key: 'sejong', title: '세종특별자치시', filter: r => r.sido === '세종특별자치시' },
+            { key: 'gangwon', title: '강원특별자치도', filter: r => r.sido === '강원특별자치도' },
+            { key: 'chungbuk', title: '충청북도', filter: r => r.sido === '충청북도' },
+            { key: 'chungnam', title: '충청남도', filter: r => r.sido === '충청남도' },
+            { key: 'jeonbuk', title: '전북특별자치도', filter: r => r.sido === '전북특별자치도' },
+            { key: 'jeonnam', title: '전라남도', filter: r => r.sido === '전라남도' },
+            { key: 'gyeongbuk', title: '경상북도', filter: r => r.sido === '경상북도' },
+            { key: 'gyeongnam', title: '경상남도', filter: r => r.sido === '경상남도' },
+            { key: 'jeju', title: '제주특별자치도', filter: r => r.sido === '제주특별자치도' },
+          ]
+
+          function subRegionOf(addr) {
+            const parts = (addr || '').trim().split(/\s+/)
+            return parts[1] || '기타'
+          }
+
+          function buildRegionTable(rows) {
+            const bySub = {}
             for (const r of rows) {
-              if (!r[sField] && !r[cField]) continue // 이 날짜 종류에 해당하는 시간이 없는 약국은 제외
-              if (!bySido[r.sido]) bySido[r.sido] = []
-              bySido[r.sido].push(r)
+              const sub = subRegionOf(r.addr)
+              if (!bySub[sub]) bySub[sub] = []
+              bySub[sub].push(r)
             }
-            const dateLabel = targetDate.replace(/-/g, '.')
-            const kindLabel = kind === 'sunday' ? '일요일' : '공휴일'
-            const title = `${dateLabel} ${kindLabel} 약국 찾기 — 전국 지역별 문 여는 약국 리스트`
-            let content = `<p>${dateLabel}(${kindLabel})에 문을 여는 전국 약국 리스트입니다. 국립중앙의료원 공공데이터를 기반으로 자동 갱신됩니다. 실제 방문 전 전화로 한 번 더 확인하시는 걸 권장드려요.</p>\n`
-            for (const sido of Object.keys(bySido).sort()) {
-              content += `<h2>${sido}</h2>\n<ul>\n`
-              for (const r of bySido[sido]) {
-                const t1 = fmtHM(r[sField]), t2 = fmtHM(r[cField])
-                const timeStr = t1 && t2 ? ` — ${t1}~${t2}` : ''
-                content += `<li><strong>${r.name}</strong> ${r.addr} ${r.tel || ''}${timeStr}</li>\n`
+            const th = (label) => `<th style="border:1px solid #ccc;padding:6px 8px;background:#f2f2f2;">${label}</th>`
+            const td = (val, center) => `<td style="border:1px solid #ccc;padding:6px 8px;${center ? 'text-align:center;' : ''}">${val}</td>`
+            let html = ''
+            let n = 0
+            for (const sub of Object.keys(bySub).sort((a, b) => a.localeCompare(b, 'ko'))) {
+              const list = bySub[sub].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+              html += `<h3>${sub}</h3>\n<table style="width:100%;border-collapse:collapse;margin:0 0 24px;font-size:14px;">\n`
+              html += `<thead><tr>${th('번호')}${th('약국명')}${th('주소')}${th('전화')}${th('영업시간')}</tr></thead>\n<tbody>\n`
+              for (const r of list) {
+                n++
+                html += `<tr>${td(n, true)}${td(`<strong>${r.name}</strong>`)}${td(r.addr)}${td(r.tel || '')}${td(r.timeStr || '')}</tr>\n`
               }
-              content += `</ul>\n`
+              html += `</tbody></table>\n`
             }
-            return { title, content }
+            return html
           }
 
           async function composeChuseokPost(targetDate) {
