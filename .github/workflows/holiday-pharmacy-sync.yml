@@ -255,7 +255,7 @@ jobs:
             const res = await fetch(`${SITE_BASE}/api/blog/posts`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_SECRET_TOKEN },
-              body: JSON.stringify({ title, slug, content, category: '휴일약국', status: 'published' }),
+              body: JSON.stringify({ title, slug, content, category: '휴일약국', status: 'published', content_format: 'html' }),
             })
             if (!res.ok) console.log(`❌ 발행 실패 (${res.status}): ${await res.text()}`)
             else console.log(`✅ 발행 완료: ${title} (${slug})`)
