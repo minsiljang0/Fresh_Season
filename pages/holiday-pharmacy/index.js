@@ -354,6 +354,12 @@ export default function HolidayPharmacy() {
                 ✅ 지금 영업중만
               </button>
             </div>
+            {!loading && (
+              <p style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6 }}>
+                {selectedRegion ? `${selectedRegion.icon} ${sido}${district ? ' ' + district : ''} — ` : ''}
+                총 <strong style={{ color: 'var(--accent)' }}>{displayPharmacies.length}</strong>곳
+              </p>
+            )}
 
             {locationError && (
               <div style={{
