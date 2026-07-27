@@ -253,10 +253,24 @@ jobs:
             return rest.split(/\s+/)[0] || ''
           }
 
-          const SEOUL_GANGNAM_GU = ['강남구', '서초구', '송파구', '강동구', '영등포구', '동작구', '관악구', '금천구', '구로구', '양천구', '강서구']
-          const SEOUL_GANGBUK_GU = ['종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구', '강북구', '도봉구', '노원구', '은평구', '서대문구', '마포구']
-          const GYEONGGI_NORTH_SI = ['고양시', '구리시', '남양주시', '동두천시', '양주시', '연천군', '의정부시', '파주시', '포천시', '가평군', '김포시']
-          const GYEONGGI_SOUTH_SI = ['수원시', '성남시', '용인시', '부천시', '안산시', '안양시', '평택시', '시흥시', '화성시', '광명시', '군포시', '이천시', '오산시', '하남시', '의왕시', '여주시', '광주시', '안성시', '과천시', '양평군']
+          // 서울 25개 구 (구 하나당 글 하나 — 서울/경기는 통짜로 묶으면 한 글에 수백~천 곳씩 들어가 너무 무거워짐)
+          const SEOUL_GU_KEY = {
+            '종로구': 'jongno', '중구': 'jung', '용산구': 'yongsan', '성동구': 'seongdong', '광진구': 'gwangjin',
+            '동대문구': 'dongdaemun', '중랑구': 'jungnang', '성북구': 'seongbuk', '강북구': 'gangbuk', '도봉구': 'dobong',
+            '노원구': 'nowon', '은평구': 'eunpyeong', '서대문구': 'seodaemun', '마포구': 'mapo', '강서구': 'gangseo',
+            '구로구': 'guro', '금천구': 'geumcheon', '영등포구': 'yeongdeungpo', '동작구': 'dongjak', '관악구': 'gwanak',
+            '서초구': 'seocho', '강남구': 'gangnam', '송파구': 'songpa', '강동구': 'gangdong', '양천구': 'yangcheon',
+          }
+
+          // 경기 31개 시/군 (같은 이유로 시/군 하나당 글 하나). '광주시'는 광주광역시와 슬러그가 겹치므로 gwangju-gg로 구분.
+          const GYEONGGI_SI_KEY = {
+            '고양시': 'goyang', '구리시': 'guri', '남양주시': 'namyangju', '동두천시': 'dongducheon', '양주시': 'yangju',
+            '연천군': 'yeoncheon', '의정부시': 'uijeongbu', '파주시': 'paju', '포천시': 'pocheon', '가평군': 'gapyeong', '김포시': 'gimpo',
+            '수원시': 'suwon', '성남시': 'seongnam', '용인시': 'yongin', '부천시': 'bucheon', '안산시': 'ansan', '안양시': 'anyang',
+            '평택시': 'pyeongtaek', '시흥시': 'siheung', '화성시': 'hwaseong', '광명시': 'gwangmyeong', '군포시': 'gunpo',
+            '이천시': 'icheon', '오산시': 'osan', '하남시': 'hanam', '의왕시': 'uiwang', '여주시': 'yeoju', '광주시': 'gwangju-gg',
+            '안성시': 'anseong', '과천시': 'gwacheon', '양평군': 'yangpyeong',
+          }
 
           // 서울/경기를 뺀 나머지 15개 시도 (슬러그용 영문 키)
           const OTHER_SIDO_KEY = {
@@ -266,12 +280,16 @@ jobs:
             '경상북도': 'gyeongbuk', '경상남도': 'gyeongnam', '제주특별자치도': 'jeju',
           }
 
-          // 서울 강남/강북 + 경기 북부/남부 + 나머지 15개 시도 = 총 19개 발행 지역
+          // 서울 25개 구 + 경기 31개 시/군 + 나머지 15개 시도 = 총 71개 발행 지역
           const REGION_GROUPS = [
-            { key: 'seoul-gangnam', label: '서울 강남권', filter: r => r.sido === '서울특별시' && SEOUL_GANGNAM_GU.includes(extractDistrict(r.addr, r.sido)) },
-            { key: 'seoul-gangbuk', label: '서울 강북권', filter: r => r.sido === '서울특별시' && SEOUL_GANGBUK_GU.includes(extractDistrict(r.addr, r.sido)) },
-            { key: 'gyeonggi-north', label: '경기 북부', filter: r => r.sido === '경기도' && GYEONGGI_NORTH_SI.includes(extractDistrict(r.addr, r.sido)) },
-            { key: 'gyeonggi-south', label: '경기 남부', filter: r => r.sido === '경기도' && GYEONGGI_SOUTH_SI.includes(extractDistrict(r.addr, r.sido)) },
+            ...Object.entries(SEOUL_GU_KEY).map(([gu, key]) => ({
+              key, label: `서울 ${gu}`,
+              filter: r => r.sido === '서울특별시' && extractDistrict(r.addr, r.sido) === gu,
+            })),
+            ...Object.entries(GYEONGGI_SI_KEY).map(([si, key]) => ({
+              key, label: `경기 ${si}`,
+              filter: r => r.sido === '경기도' && extractDistrict(r.addr, r.sido) === si,
+            })),
             ...Object.entries(OTHER_SIDO_KEY).map(([sido, key]) => ({ key, label: sido, filter: r => r.sido === sido })),
           ]
 
@@ -317,7 +335,7 @@ jobs:
             return html
           }
 
-          // 정기(매주 일요일 / 지정 공휴일) 발행 — 서울강남/강북·경기북부/남부·나머지 15개 시도 = 19개 글로 분리
+          // 정기(매주 일요일 / 지정 공휴일) 발행 — 서울 25개 구·경기 31개 시군·나머지 15개 시도 = 71개 글로 분리
           async function composeRegionalPosts(targetDate, kind) {
             // 일요일(매주 반복)은 duty_time7, 실제 지정 공휴일(신정·삼일절 등)은 duty_time8 — 서로 다른 필드라 구분해서 읽어야 함
             const fieldIdx = kind === 'sunday' ? 7 : 8
@@ -345,10 +363,10 @@ jobs:
               if (rows.length === 0) { console.log(`⏭️ [${group.label}] 대상 약국 없음, 건너뜀`); continue }
 
               const title = `${dateLabel} ${kindLabel} 약국 찾기 — ${group.label} 오늘 문 여는 약국 리스트`
-              const summary = `${dateLabel}(${kindLabel}) ${group.label}에서 오늘 문 여는 약국을 구/시별 가나다순으로 정리했습니다. 방문 전 전화 확인 권장.`
+              const summary = `${dateLabel}(${kindLabel}) ${group.label}에서 오늘 문 여는 약국을 가나다순으로 정리했습니다. 방문 전 전화 확인 권장.`
               const content =
                 `<p>${dateLabel}(${kindLabel}) ${group.label} 지역에서 오늘 문을 여는 약국 리스트입니다. ` +
-                `국립중앙의료원 공공데이터 기반으로 자동 갱신됩니다. 약국명은 구/시 안에서 가나다순으로 정렬되어 있습니다. ` +
+                `국립중앙의료원 공공데이터 기반으로 자동 갱신됩니다. 약국명은 가나다순으로 정렬되어 있습니다. ` +
                 `실제 방문 전 전화로 한 번 더 확인하시는 걸 권장드려요.</p>\n` +
                 buildDistrictSections(rows, dateLabel, kindLabel)
 
@@ -357,7 +375,7 @@ jobs:
             return posts
           }
 
-          // 명절(설날/추석) 발행 — 정기 발행과 동일하게 19개 지역 글로 분리
+          // 명절(설날/추석) 발행 — 정기 발행과 동일하게 71개 지역 글로 분리
           async function composeChuseokPosts(targetDate) {
             const orFilter = [1, 2, 3, 4, 5].map(n => `duty_day${n}.eq.${targetDate}`).join(',')
             const rows = await sbSelectAll('chuseok_seollal_pharmacies', `select=*&or=(${orFilter})&order=sido,name`)
@@ -389,10 +407,10 @@ jobs:
               if (groupRows.length === 0) { console.log(`⏭️ [${group.label}] 명절 대상 약국 없음, 건너뜀`); continue }
 
               const title = `${dateLabel} ${kindLabel} 약국 찾기 — ${group.label} 오늘 문 여는 약국 리스트`
-              const summary = `${dateLabel}(${kindLabel}) ${group.label}에서 오늘 문 여는 약국을 구/시별 가나다순으로 정리했습니다. 연휴 중 일정이 바뀔 수 있으니 방문 전 전화 확인 권장.`
+              const summary = `${dateLabel}(${kindLabel}) ${group.label}에서 오늘 문 여는 약국을 가나다순으로 정리했습니다. 연휴 중 일정이 바뀔 수 있으니 방문 전 전화 확인 권장.`
               const content =
                 `<p>${dateLabel}(${kindLabel}) 기간입니다. ${group.label} 지역에서 오늘 실제로 문을 여는 약국 리스트입니다(국립중앙의료원 명절 비상진료기관 데이터 기반). ` +
-                `약국명은 구/시 안에서 가나다순으로 정렬되어 있습니다. 연휴 중 일정이 매일 달라질 수 있으니 방문 전 전화 확인을 권장드려요.</p>\n` +
+                `약국명은 가나다순으로 정렬되어 있습니다. 연휴 중 일정이 매일 달라질 수 있으니 방문 전 전화 확인을 권장드려요.</p>\n` +
                 buildDistrictSections(groupRows, dateLabel, kindLabel)
 
               posts.push({ key: group.key, label: group.label, title, summary, content })
@@ -428,7 +446,7 @@ jobs:
 
             const dateStamp = targetDate.replace(/-/g, '')
 
-            // chuseok / sunday / holiday 전부 동일하게 19개 지역 글로 분리 발행
+            // chuseok / sunday / holiday 전부 동일하게 71개 지역 글로 분리 발행
             const posts = postType === 'chuseok'
               ? await composeChuseokPosts(targetDate)
               : await composeRegionalPosts(targetDate, postType)
