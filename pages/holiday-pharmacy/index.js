@@ -170,6 +170,7 @@ export default function HolidayPharmacy() {
   const [searchInput, setSearchInput] = useState('')
   const [onlyOpenNow, setOnlyOpenNow] = useState(false)
   const [myLocation, setMyLocation] = useState(null)
+  const [myLocationLabel, setMyLocationLabel] = useState('')
   const [locationError, setLocationError] = useState(false)
   const [locationLoading, setLocationLoading] = useState(false)
   const middleSlot = useAdSlot('home_middle')
@@ -187,10 +188,15 @@ export default function HolidayPharmacy() {
   const findNearby = () => {
     setLocationLoading(true)
     setLocationError(false)
+    setMyLocationLabel('')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setMyLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
         setLocationLoading(false)
+        fetch(`/api/reverse-geocode?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`)
+          .then(r => r.json())
+          .then(d => setMyLocationLabel(d.label || ''))
+          .catch(() => {})
       },
       () => { setLocationError(true); setLocationLoading(false) }
     )
@@ -322,7 +328,9 @@ export default function HolidayPharmacy() {
               </div>
             )}
             {myLocation && (
-              <p style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, marginTop: 8 }}>✅ 내 위치 기준 가까운 순으로 정렬했어요</p>
+              <p style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, marginTop: 8 }}>
+                ✅ 내 위치{myLocationLabel ? `(${myLocationLabel})` : ''} 기준 가까운 순으로 정렬했어요
+              </p>
             )}
           </div>
 
