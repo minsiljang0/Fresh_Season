@@ -127,7 +127,8 @@ function isOpenNow(ph, holidaySet) {
   const now = new Date()
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const jsDay = now.getDay() // 0=일 ~ 6=토
-  const idx = (holidaySet.has(dateStr) || jsDay === 0) ? 8 : jsDay
+  // 일요일(dutyTime7)과 실제 지정 공휴일(dutyTime8)은 서로 다른 필드 — 혼동 금지
+  const idx = holidaySet.has(dateStr) ? 8 : (jsDay === 0 ? 7 : jsDay)
   const openStr = ph[`duty_time${idx}_s`]
   const closeStr = ph[`duty_time${idx}_c`]
   if (!openStr || !closeStr) return false
@@ -408,8 +409,10 @@ export default function HolidayPharmacy() {
           )}
           <div className="grid-auto">
             {displayPharmacies.map(ph => {
-              const openTime = formatTime(ph.duty_time8_s)
-              const closeTime = formatTime(ph.duty_time8_c)
+              const sunOpen = formatTime(ph.duty_time7_s)
+              const sunClose = formatTime(ph.duty_time7_c)
+              const holOpen = formatTime(ph.duty_time8_s)
+              const holClose = formatTime(ph.duty_time8_c)
               return (
                 <div key={ph.id} className="card" style={{ padding: 20 }}>
                   <span className="badge" style={{ marginBottom: 10, marginRight: 6, display: 'inline-block', background: '#0ea5e922', color: '#0ea5e9', border: '1px solid #0ea5e944' }}>
@@ -422,9 +425,14 @@ export default function HolidayPharmacy() {
                   )}
                   <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, lineHeight: 1.4 }}>{ph.name}</h2>
                   <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>{ph.addr}</p>
-                  {openTime && closeTime && (
+                  {sunOpen && sunClose && (
                     <p style={{ fontSize: 12, color: '#0ea5e9', fontWeight: 700, marginTop: 8 }}>
-                      공휴일 진료 {openTime} ~ {closeTime}
+                      일요일 진료 {sunOpen} ~ {sunClose}
+                    </p>
+                  )}
+                  {holOpen && holClose && (
+                    <p style={{ fontSize: 12, color: '#f97316', fontWeight: 700, marginTop: 4 }}>
+                      공휴일(신정·명절 등) 진료 {holOpen} ~ {holClose}
                     </p>
                   )}
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
