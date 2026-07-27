@@ -168,7 +168,7 @@ export default function HolidayPharmacy() {
   const [district, setDistrict] = useState('')
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
-  const [onlyOpenNow, setOnlyOpenNow] = useState(false)
+  const [onlyOpenNow, setOnlyOpenNow] = useState(true)
   const [myLocation, setMyLocation] = useState(null)
   const [myLocationLabel, setMyLocationLabel] = useState('')
   const [locationError, setLocationError] = useState(false)
@@ -351,7 +351,7 @@ export default function HolidayPharmacy() {
           {loading && <SkeletonBlogList count={5} />}
           {!loading && displayPharmacies.length === 0 && (
             <div className="empty-state">
-              <p>{search || sido ? '조건에 맞는 약국을 찾지 못했어요.' : '아직 수집된 약국 정보가 없어요. 매일 자동 수집이 곧 채워줄 거예요.'}</p>
+              <p>{search || sido || onlyOpenNow ? '조건에 맞는 약국을 찾지 못했어요. "지금 영업중만" 필터를 꺼보세요.' : '아직 수집된 약국 정보가 없어요. 매일 자동 수집이 곧 채워줄 거예요.'}</p>
             </div>
           )}
           <div className="grid-auto">
