@@ -236,77 +236,79 @@ export default function HolidayPharmacy() {
           <AdSlot slot="home_middle" label="중단 배너 광고" slotData={middleSlot} />
         </div>
 
-        <section style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
-            🗺 지역을 클릭해서 검색하세요{selectedRegion ? ` — ${selectedRegion.icon} ${selectedRegion.name}${district ? ' ' + district : ''} 선택됨` : ''}
-          </p>
-          <KoreaClickMap
-            sidoId={selectedRegion?.id || ''}
-            onSelect={selectSidoById}
-            district={district}
-            onSelectDistrict={setDistrict}
-          />
-          {sido && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
-              <button onClick={() => { setSido(''); setDistrict('') }} className="month-pill" style={{ fontSize: 12, fontWeight: 700 }}>
-                {selectedRegion?.icon} {sido}{district ? ` ${district}` : ''} ✕ 해제
+        <section style={{ marginBottom: 20, display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div style={{ flex: '1 1 300px', minWidth: 280 }}>
+            <form onSubmit={e => { e.preventDefault(); runSearch() }} style={{ display: 'flex', gap: 6, maxWidth: 360, marginBottom: 10 }}>
+              <input
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                placeholder="🔍 약국명·주소로 검색"
+                className="month-pill"
+                style={{ fontWeight: 500, flex: 1, minWidth: 0 }}
+              />
+              <button type="submit" className="month-pill" style={{ fontWeight: 700, flexShrink: 0, background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}>
+                검색
+              </button>
+            </form>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button
+                onClick={findNearby}
+                disabled={locationLoading}
+                className="month-pill"
+                style={{ fontWeight: 700, background: myLocation ? 'var(--accent)' : undefined, color: myLocation ? '#fff' : undefined, borderColor: myLocation ? 'var(--accent)' : undefined }}
+              >
+                {locationLoading ? '위치 확인 중...' : '📍 내 위치에서 가까운 순으로 찾기'}
+              </button>
+              <button
+                onClick={() => setOnlyOpenNow(v => !v)}
+                className="month-pill"
+                style={{ fontWeight: 700, background: onlyOpenNow ? '#10b981' : undefined, color: onlyOpenNow ? '#fff' : undefined, borderColor: onlyOpenNow ? '#10b981' : undefined }}
+              >
+                ✅ 지금 영업중만
               </button>
             </div>
-          )}
-        </section>
 
-        <section style={{ marginBottom: 20 }}>
-          <form onSubmit={e => { e.preventDefault(); runSearch() }} style={{ display: 'flex', gap: 6, maxWidth: 360, marginBottom: 10 }}>
-            <input
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              placeholder="🔍 약국명·주소로 검색"
-              className="month-pill"
-              style={{ fontWeight: 500, flex: 1, minWidth: 0 }}
-            />
-            <button type="submit" className="month-pill" style={{ fontWeight: 700, flexShrink: 0, background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}>
-              검색
-            </button>
-          </form>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button
-              onClick={findNearby}
-              disabled={locationLoading}
-              className="month-pill"
-              style={{ fontWeight: 700, background: myLocation ? 'var(--accent)' : undefined, color: myLocation ? '#fff' : undefined, borderColor: myLocation ? 'var(--accent)' : undefined }}
-            >
-              {locationLoading ? '위치 확인 중...' : '📍 내 위치에서 가까운 순으로 찾기'}
-            </button>
-            <button
-              onClick={() => setOnlyOpenNow(v => !v)}
-              className="month-pill"
-              style={{ fontWeight: 700, background: onlyOpenNow ? '#10b981' : undefined, color: onlyOpenNow ? '#fff' : undefined, borderColor: onlyOpenNow ? '#10b981' : undefined }}
-            >
-              ✅ 지금 영업중만
-            </button>
+            {locationError && (
+              <div style={{
+                marginTop: 12, padding: 16, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 420,
+              }}>
+                <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📍 내 위치 확인을 허용하면 주변 약국을 더 빨리 찾을 수 있어요!</p>
+                <ol style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.8, paddingLeft: 18, marginBottom: 8 }}>
+                  <li>주소창 왼쪽의 🔒(또는 위치) 아이콘을 클릭해주세요.</li>
+                  <li>이 사이트의 위치 접근을 "허용"으로 바꾼 뒤, 아래 버튼을 다시 눌러주세요.</li>
+                </ol>
+                <button onClick={findNearby} className="month-pill" style={{ fontSize: 12, fontWeight: 700, background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}>
+                  완료, 다시 찾기
+                </button>
+                <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
+                  * 위치를 허용하시면 지금 계신 곳에서 가까운 약국 순으로 보여드려요.<br />
+                  * PC 환경에서는 위치 정확도가 다소 떨어질 수 있어요.
+                </p>
+              </div>
+            )}
+            {myLocation && (
+              <p style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, marginTop: 8 }}>✅ 내 위치 기준 가까운 순으로 정렬했어요</p>
+            )}
           </div>
 
-          {locationError && (
-            <div style={{
-              marginTop: 12, padding: 16, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)', maxWidth: 420,
-            }}>
-              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📍 내 위치 확인을 허용하면 주변 약국을 더 빨리 찾을 수 있어요!</p>
-              <ol style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.8, paddingLeft: 18, marginBottom: 8 }}>
-                <li>주소창 왼쪽의 🔒(또는 위치) 아이콘을 클릭해주세요.</li>
-                <li>이 사이트의 위치 접근을 "허용"으로 바꾼 뒤, 아래 버튼을 다시 눌러주세요.</li>
-              </ol>
-              <button onClick={findNearby} className="month-pill" style={{ fontSize: 12, fontWeight: 700, background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}>
-                완료, 다시 찾기
-              </button>
-              <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8 }}>
-                * 위치를 허용하시면 지금 계신 곳에서 가까운 약국 순으로 보여드려요.<br />
-                * PC 환경에서는 위치 정확도가 다소 떨어질 수 있어요.
-              </p>
-            </div>
-          )}
-          {myLocation && (
-            <p style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700, marginTop: 8 }}>✅ 내 위치 기준 가까운 순으로 정렬했어요</p>
-          )}
+          <div style={{ flex: '1 1 320px', minWidth: 280 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+              🗺 지역을 클릭해서 검색하세요{selectedRegion ? ` — ${selectedRegion.icon} ${selectedRegion.name}${district ? ' ' + district : ''} 선택됨` : ''}
+            </p>
+            <KoreaClickMap
+              sidoId={selectedRegion?.id || ''}
+              onSelect={selectSidoById}
+              district={district}
+              onSelectDistrict={setDistrict}
+            />
+            {sido && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+                <button onClick={() => { setSido(''); setDistrict('') }} className="month-pill" style={{ fontSize: 12, fontWeight: 700 }}>
+                  {selectedRegion?.icon} {sido}{district ? ` ${district}` : ''} ✕ 해제
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         <section style={{ marginBottom: 64 }}>
