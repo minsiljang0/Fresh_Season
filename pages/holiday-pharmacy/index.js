@@ -238,6 +238,31 @@ export default function HolidayPharmacy() {
 
         <section style={{ marginBottom: 20, display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div style={{ flex: '1 1 300px', minWidth: 280 }}>
+            <div style={{ display: 'flex', gap: 6, maxWidth: 360, marginBottom: 10 }}>
+              <select
+                value={selectedRegion?.id || ''}
+                onChange={e => selectSidoById(e.target.value)}
+                className="month-pill"
+                style={{ fontSize: 13, fontWeight: 600, flex: 1, minWidth: 0 }}
+              >
+                <option value="">시도 선택</option>
+                {REGIONS.map(r => (
+                  <option key={r.id} value={r.id}>{r.icon} {r.name}</option>
+                ))}
+              </select>
+              <select
+                value={district}
+                onChange={e => setDistrict(e.target.value)}
+                disabled={!sido}
+                className="month-pill"
+                style={{ fontSize: 13, fontWeight: 600, flex: 1, minWidth: 0 }}
+              >
+                <option value="">시군구 선택</option>
+                {selectedRegion?.districts?.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
             <form onSubmit={e => { e.preventDefault(); runSearch() }} style={{ display: 'flex', gap: 6, maxWidth: 360, marginBottom: 10 }}>
               <input
                 value={searchInput}
