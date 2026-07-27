@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: '30 20 * * *'  # 매일 오전 5시 30분 KST (UTC 20:30)
   workflow_dispatch:        # 수동 실행 가능
+    inputs:
+      force_full_sync:
+        description: '전체 재수집 강제 실행 (평소엔 월요일에만 자동 실행됨)'
+        type: boolean
+        default: false
+      force_publish_date:
+        description: '발행 판단용 날짜 강제 지정 — 테스트용 (YYYY-MM-DD, 비워두면 평소처럼 내일 날짜 자동 사용)'
+        type: string
+        default: ''
 
 jobs:
   sync-holiday-pharmacy:
@@ -16,10 +25,13 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ADMIN_SECRET_TOKEN: ${{ secrets.ADMIN_SECRET_TOKEN }}
+          FORCE_FULL_SYNC: ${{ github.event.inputs.force_full_sync }}
+          FORCE_PUBLISH_DATE: ${{ github.event.inputs.force_publish_date }}
         run: |
           node << 'SCRIPT'
           const {
             HOLIDAY_PHARMACY_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_SECRET_TOKEN,
+            FORCE_FULL_SYNC, FORCE_PUBLISH_DATE,
           } = process.env
 
           const SITE_BASE = 'https://www.fsfood.kr'
@@ -158,7 +170,12 @@ jobs:
             return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
           }
 
+          function todayKST() {
+            return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+          }
+
           function tomorrowKST() {
+            if (FORCE_PUBLISH_DATE) { console.log(`⚠️ 테스트 모드: 날짜를 ${FORCE_PUBLISH_DATE}로 강제 지정`); return FORCE_PUBLISH_DATE }
             const now = new Date(Date.now() + 9 * 60 * 60 * 1000)
             now.setUTCDate(now.getUTCDate() + 1)
             return now.toISOString().slice(0, 10)
@@ -262,25 +279,36 @@ jobs:
           }
 
           async function main() {
-            let totalSaved = 0
-            for (const sido of SIDO_LIST) {
-              const rows = await fetchSido(sido)
-              await upsertPharmRows(rows)
-              console.log(`✅ [약국] ${sido}: ${rows.length}곳`)
-              totalSaved += rows.length
-              await new Promise(r => setTimeout(r, 200))
-            }
-            console.log(`완료: 공휴일 진료 약국 총 ${totalSaved}곳 저장\n`)
+            // 전체 재수집은 느려서(9~11분) 매일 안 하고 월요일에만, 또는 수동으로 강제 실행했을 때만 돈다.
+            // 발행 판단은 이미 저장된 DB만 읽어서 몇 초면 끝나므로 매일(또는 강제 테스트 시) 돈다.
+            const isMonday = dayOfWeek(todayKST()) === 1
+            const shouldFullSync = isMonday || FORCE_FULL_SYNC === 'true'
 
-            let holidayTotalSaved = 0
-            for (const sido of SIDO_LIST) {
-              const rows = await fetchHolidaySido(sido)
-              await upsertHolidayRows(rows)
-              console.log(`✅ [명절] ${sido}: ${rows.length}곳`)
-              holidayTotalSaved += rows.length
-              await new Promise(r => setTimeout(r, 200))
+            if (shouldFullSync) {
+              console.log(`🔄 전체 재수집 실행 (${isMonday ? '월요일' : '수동 강제실행'})\n`)
+
+              let totalSaved = 0
+              for (const sido of SIDO_LIST) {
+                const rows = await fetchSido(sido)
+                await upsertPharmRows(rows)
+                console.log(`✅ [약국] ${sido}: ${rows.length}곳`)
+                totalSaved += rows.length
+                await new Promise(r => setTimeout(r, 200))
+              }
+              console.log(`완료: 공휴일 진료 약국 총 ${totalSaved}곳 저장\n`)
+
+              let holidayTotalSaved = 0
+              for (const sido of SIDO_LIST) {
+                const rows = await fetchHolidaySido(sido)
+                await upsertHolidayRows(rows)
+                console.log(`✅ [명절] ${sido}: ${rows.length}곳`)
+                holidayTotalSaved += rows.length
+                await new Promise(r => setTimeout(r, 200))
+              }
+              console.log(`완료: 명절 비상진료 약국 총 ${holidayTotalSaved}곳 저장\n`)
+            } else {
+              console.log(`⏭️ 오늘은 전체 재수집 건너뜀 (저장된 데이터로 발행 판단만 실행, 월요일에 다음 재수집 예정)\n`)
             }
-            console.log(`완료: 명절 비상진료 약국 총 ${holidayTotalSaved}곳 저장\n`)
 
             await decideAndPublish()
           }
