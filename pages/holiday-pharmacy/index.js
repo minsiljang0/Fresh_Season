@@ -57,11 +57,13 @@ function buildWeekStrip() {
   return days
 }
 
+// 실제 렌더링된 각 시도 path의 getBBox() 중심좌표를 브라우저에서 직접 측정해서 반영한 값
+// (map.js에서 가져온 원래 좌표가 이 페이지의 viewBox 기준으로는 안 맞아서 재측정함)
 const REGION_LABEL_POS = {
-  gangwon: [370, 200], gyeonggi: [210, 270], incheon: [148, 285], seoul: [210, 248],
-  sejong: [232, 368], daejeon: [240, 393], chungnam: [168, 355], chungbuk: [278, 308],
-  jeonbuk: [195, 445], jeonnam: [180, 530], gwangju: [207, 478], gyeongbuk: [328, 308],
-  gyeongnam: [278, 468], daegu: [295, 398], ulsan: [358, 412], busan: [328, 498], jeju: [175, 648],
+  seoul: [165, 140], gyeonggi: [179, 136], incheon: [80, 128], gangwon: [249, 109],
+  sejong: [185, 262], daejeon: [194, 290], chungnam: [158, 268], chungbuk: [231, 254],
+  jeonbuk: [178, 365], jeonnam: [157, 469], gwangju: [156, 436], gyeongbuk: [324, 264],
+  gyeongnam: [260, 417], daegu: [271, 355], ulsan: [315, 390], busan: [303, 432], jeju: [137, 654],
 }
 const REGION_SHORT = {
   seoul: '서울', busan: '부산', daegu: '대구', incheon: '인천', gwangju: '광주', daejeon: '대전',
