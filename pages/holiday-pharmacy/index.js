@@ -57,27 +57,16 @@ function buildWeekStrip() {
   return days
 }
 
-const REGION_LABEL_POS = {
-  gangwon: [370, 200], gyeonggi: [210, 270], incheon: [148, 285], seoul: [210, 248],
-  sejong: [232, 368], daejeon: [240, 393], chungnam: [168, 355], chungbuk: [278, 308],
-  jeonbuk: [195, 445], jeonnam: [180, 530], gwangju: [207, 478], gyeongbuk: [328, 308],
-  gyeongnam: [278, 468], daegu: [295, 398], ulsan: [358, 412], busan: [328, 498], jeju: [175, 648],
-}
-
 function KoreaClickMap({ sidoId, onSelect }) {
   return (
     <svg viewBox="90 100 400 580" style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block', margin: '0 auto' }} xmlns="http://www.w3.org/2000/svg">
       {REGIONS.map(r => {
         const pathD = KOREA_PATHS[r.id]
         if (!pathD) return null
-        const [lx, ly] = REGION_LABEL_POS[r.id] || [0, 0]
         const isSelected = sidoId === r.id
         return (
           <g key={r.id} onClick={() => onSelect(isSelected ? '' : r.id)} style={{ cursor: 'pointer' }}>
             <path d={pathD} fill={isSelected ? 'var(--accent)' : '#0ea5e922'} stroke={isSelected ? '#0ea5e9' : '#0ea5e966'} strokeWidth={isSelected ? 1.5 : 0.6} style={{ transition: 'fill 0.15s' }} />
-            <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 9, fontWeight: isSelected ? 700 : 600, fill: isSelected ? '#fff' : 'var(--text2)', pointerEvents: 'none', userSelect: 'none' }}>
-              {r.icon}
-            </text>
           </g>
         )
       })}
