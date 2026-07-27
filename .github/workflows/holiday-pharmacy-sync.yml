@@ -17,6 +17,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           node << 'SCRIPT'
+          const { HOLIDAY_PHARMACY_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env
           const API_BASE = 'https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyListInfoInqire'
           const SIDO_LIST = [
             '서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시',
