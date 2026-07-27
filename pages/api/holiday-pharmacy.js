@@ -10,7 +10,7 @@ export default async function handler(req, res) {
       .from('holiday_pharmacies')
       .select('id, name, sido, addr, tel, lat, lng, duty_time1_s, duty_time1_c, duty_time2_s, duty_time2_c, duty_time3_s, duty_time3_c, duty_time4_s, duty_time4_c, duty_time5_s, duty_time5_c, duty_time6_s, duty_time6_c, duty_time7_s, duty_time7_c, duty_time8_s, duty_time8_c, fetched_at')
       .order('name')
-      .limit(200)
+      .limit(2000)
 
     if (sido) query = query.eq('sido', sido)
     if (q) query = query.or(`name.ilike.%${q}%,addr.ilike.%${q}%`)
