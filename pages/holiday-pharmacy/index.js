@@ -57,19 +57,66 @@ function buildWeekStrip() {
   return days
 }
 
-function KoreaClickMap({ sidoId, onSelect }) {
+const REGION_LABEL_POS = {
+  gangwon: [370, 200], gyeonggi: [210, 270], incheon: [148, 285], seoul: [210, 248],
+  sejong: [232, 368], daejeon: [240, 393], chungnam: [168, 355], chungbuk: [278, 308],
+  jeonbuk: [195, 445], jeonnam: [180, 530], gwangju: [207, 478], gyeongbuk: [328, 308],
+  gyeongnam: [278, 468], daegu: [295, 398], ulsan: [358, 412], busan: [328, 498], jeju: [175, 648],
+}
+const REGION_SHORT = {
+  seoul: '서울', busan: '부산', daegu: '대구', incheon: '인천', gwangju: '광주', daejeon: '대전',
+  ulsan: '울산', sejong: '세종', gyeonggi: '경기', gangwon: '강원', chungbuk: '충북', chungnam: '충남',
+  jeonbuk: '전북', jeonnam: '전남', gyeongbuk: '경북', gyeongnam: '경남', jeju: '제주',
+}
+
+function KoreaClickMap({ sidoId, onSelect, district, onSelectDistrict }) {
+  const selectedRegion = REGIONS.find(r => r.id === sidoId)
   return (
-    <svg viewBox="90 100 400 580" style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block', margin: '0 auto' }} xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="90 100 400 580" style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block', margin: '0 auto', overflow: 'visible' }} xmlns="http://www.w3.org/2000/svg">
       {REGIONS.map(r => {
         const pathD = KOREA_PATHS[r.id]
         if (!pathD) return null
         const isSelected = sidoId === r.id
+        const [lx, ly] = REGION_LABEL_POS[r.id] || [0, 0]
         return (
           <g key={r.id} onClick={() => onSelect(isSelected ? '' : r.id)} style={{ cursor: 'pointer' }}>
             <path d={pathD} fill={isSelected ? 'var(--accent)' : '#0ea5e922'} stroke={isSelected ? '#0ea5e9' : '#0ea5e966'} strokeWidth={isSelected ? 1.5 : 0.6} style={{ transition: 'fill 0.15s' }} />
+            <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 9, fontWeight: isSelected ? 700 : 600, fill: isSelected ? '#fff' : 'var(--text2)', pointerEvents: 'none', userSelect: 'none' }}>
+              {REGION_SHORT[r.id]}
+            </text>
           </g>
         )
       })}
+      {selectedRegion && selectedRegion.districts?.length > 0 && (() => {
+        const [px, py] = REGION_LABEL_POS[selectedRegion.id] || [200, 300]
+        const boxW = 116, boxH = 150
+        const bx = Math.min(Math.max(px - boxW / 2, 92), 480 - boxW)
+        const by = Math.min(py + 12, 680 - boxH)
+        return (
+          <foreignObject x={bx} y={by} width={boxW} height={boxH}>
+            <div xmlns="http://www.w3.org/1999/xhtml" style={{
+              background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 8,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.25)', fontSize: 11, height: boxH, overflowY: 'auto', padding: 4, boxSizing: 'border-box',
+            }}>
+              <div
+                onClick={() => onSelectDistrict('')}
+                style={{ padding: '4px 6px', fontWeight: 700, cursor: 'pointer', color: !district ? 'var(--accent)' : 'var(--text)', borderBottom: '1px solid var(--border)', marginBottom: 2 }}
+              >
+                전체 {selectedRegion.name}
+              </div>
+              {selectedRegion.districts.map(d => (
+                <div
+                  key={d}
+                  onClick={() => onSelectDistrict(d)}
+                  style={{ padding: '4px 6px', cursor: 'pointer', color: district === d ? 'var(--accent)' : 'var(--text2)', fontWeight: district === d ? 700 : 400 }}
+                >
+                  {selectedRegion.name} {d}
+                </div>
+              ))}
+            </div>
+          </foreignObject>
+        )
+      })()}
     </svg>
   )
 }
@@ -189,27 +236,19 @@ export default function HolidayPharmacy() {
 
         <section style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
-            🗺 지역을 클릭해서 검색하세요{selectedRegion ? ` — ${selectedRegion.icon} ${selectedRegion.name} 선택됨` : ''}
+            🗺 지역을 클릭해서 검색하세요{selectedRegion ? ` — ${selectedRegion.icon} ${selectedRegion.name}${district ? ' ' + district : ''} 선택됨` : ''}
           </p>
-          <KoreaClickMap sidoId={selectedRegion?.id || ''} onSelect={selectSidoById} />
+          <KoreaClickMap
+            sidoId={selectedRegion?.id || ''}
+            onSelect={selectSidoById}
+            district={district}
+            onSelectDistrict={setDistrict}
+          />
           {sido && (
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
               <button onClick={() => { setSido(''); setDistrict('') }} className="month-pill" style={{ fontSize: 12, fontWeight: 700 }}>
-                {selectedRegion?.icon} {sido} ✕ 해제
+                {selectedRegion?.icon} {sido}{district ? ` ${district}` : ''} ✕ 해제
               </button>
-              {selectedRegion?.districts?.length > 0 && (
-                <select
-                  value={district}
-                  onChange={e => setDistrict(e.target.value)}
-                  className="month-pill"
-                  style={{ fontSize: 12, fontWeight: 600 }}
-                >
-                  <option value="">전체 시군구</option>
-                  {selectedRegion.districts.map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              )}
             </div>
           )}
         </section>
