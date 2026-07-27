@@ -86,10 +86,12 @@ export default async function handler(req, res) {
   if (!isAdmin) return res.status(401).json({ error: '인증 필요' })
 
   if (req.method === 'POST') {
-    const { title, slug, content, category, author, status = 'published', scheduled_at, summary, tags, cover_image, title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards } = req.body
+    const { title, slug, content, category, author, status = 'published', scheduled_at, summary, tags, cover_image, title_score, seo_score, title_score_detail, seo_score_detail, naver_summary, instagram_cards, content_format } = req.body
     if (!title || !slug || !content) return res.status(400).json({ error: '필수 항목 누락' })
     const { data, error } = await supabase.from('blog_posts').insert([{
       id: genId(), title, slug, content, category: category || '',
+      // 'markdown'(기본) | 'html' — html이면 렌더링 시 마크다운 변환 없이 원본 그대로 사용
+      content_format: content_format === 'html' ? 'html' : 'markdown',
       summary: summary || '', tags: Array.isArray(tags) ? tags : [], cover_image: cover_image || '',
       // ⚠️ blog_posts 테이블의 실제 컬럼명은 author가 아니라 author_name 이다.
       author_name: (author && String(author).trim()) || 'Fresh Season 편집팀',

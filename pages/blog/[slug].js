@@ -539,10 +539,21 @@ export async function getServerSideProps(context) {
     const post = await res.json()
     if (!post) return { props: { post: null, html: '', stepImages: [], recipeData: null } }
 
-    // 서버에서 마크다운 → HTML 변환 (레시피/식재료손질은 본문 끝에 숨겨진 사진 목록을 먼저 분리)
-    const { parseMarkdown } = await import('../../lib/parseMarkdown')
-    const { content: cleanContent, images: stepImages } = extractStepImages(post.content || '')
-    const html = parseMarkdown(cleanContent)
+    // content_format이 'html'이면 마크다운 변환(및 그에 따른 태그 이스케이프) 없이 원본 그대로 사용
+    // (자동발행 크론처럼 완성된 HTML을 직접 만들어 보내는 경우용 — 어떤 태그를 쓰든 제약 없음)
+    let html, stepImages, cleanContent
+    if (post.content_format === 'html') {
+      html = post.content || ''
+      stepImages = []
+      cleanContent = post.content || ''
+    } else {
+      // 서버에서 마크다운 → HTML 변환 (레시피/식재료손질은 본문 끝에 숨겨진 사진 목록을 먼저 분리)
+      const { parseMarkdown } = await import('../../lib/parseMarkdown')
+      const extracted = extractStepImages(post.content || '')
+      cleanContent = extracted.content
+      stepImages = extracted.images
+      html = parseMarkdown(cleanContent)
+    }
 
     // Recipe schema — 레시피/식재료손질 글이고 "재료: ..." + 번호 목록 패턴이 실제로
     // 있을 때만 추출한다(lib/recipeSchema.js). 못 뽑으면 null — 억지로 만들지 않는다.
