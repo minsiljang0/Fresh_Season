@@ -202,6 +202,24 @@ jobs:
             return res.json()
           }
 
+          // Supabase(PostgREST)는 쿼리에 limit=10000을 줘도 프로젝트 기본 db-max-rows(보통 1000)를
+          // 넘겨서 못 돌려줌 — 전체를 다 가져오려면 offset을 옮겨가며 페이지네이션해야 함.
+          async function sbSelectAll(table, qs, pageSize = 1000) {
+            let all = []
+            let offset = 0
+            while (true) {
+              const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}&limit=${pageSize}&offset=${offset}`, {
+                headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+              })
+              if (!res.ok) { console.log(`❌ [조회 실패] ${table}: ${res.status}`); break }
+              const page = await res.json()
+              all = all.concat(page)
+              if (page.length < pageSize) break
+              offset += pageSize
+            }
+            return all
+          }
+
           function fmtHM(hhmm) {
             if (!hhmm || hhmm.length !== 4) return null
             return `${hhmm.slice(0, 2)}:${hhmm.slice(2, 4)}`
@@ -304,7 +322,7 @@ jobs:
             // 일요일(매주 반복)은 duty_time7, 실제 지정 공휴일(신정·삼일절 등)은 duty_time8 — 서로 다른 필드라 구분해서 읽어야 함
             const fieldIdx = kind === 'sunday' ? 7 : 8
             const sField = `duty_time${fieldIdx}_s`, cField = `duty_time${fieldIdx}_c`
-            const allRows = await sbSelect('holiday_pharmacies', `select=name,sido,addr,tel,${sField},${cField}&order=sido,name&limit=10000`)
+            const allRows = await sbSelectAll('holiday_pharmacies', `select=name,sido,addr,tel,${sField},${cField}&order=sido,name`)
 
             const usable = allRows
               .filter(r => r[sField] || r[cField]) // 이 날짜 종류에 해당하는 시간이 없는 약국은 제외
@@ -342,7 +360,7 @@ jobs:
           // 명절(설날/추석) 발행 — 정기 발행과 동일하게 19개 지역 글로 분리
           async function composeChuseokPosts(targetDate) {
             const orFilter = [1, 2, 3, 4, 5].map(n => `duty_day${n}.eq.${targetDate}`).join(',')
-            const rows = await sbSelect('chuseok_seollal_pharmacies', `select=*&or=(${orFilter})&order=sido,name&limit=10000`)
+            const rows = await sbSelectAll('chuseok_seollal_pharmacies', `select=*&or=(${orFilter})&order=sido,name`)
 
             const usable = []
             for (const r of rows) {
