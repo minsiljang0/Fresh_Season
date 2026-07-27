@@ -78,7 +78,7 @@ jobs:
               totalCount = Number(body.totalCount || 0)
               let items = body.items?.item || []
               if (!Array.isArray(items)) items = items ? [items] : []
-              for (const item of items) if (item.dutyTime8s || item.dutyTime8c) rows.push(mapPharmItem(sido, item))
+              for (const item of items) if (item.dutyTime7s || item.dutyTime7c || item.dutyTime8s || item.dutyTime8c) rows.push(mapPharmItem(sido, item))
               if (items.length === 0) break
               pageNo++
               await new Promise(r => setTimeout(r, 150))
@@ -178,9 +178,13 @@ jobs:
           }
 
           async function composeRegularPost(targetDate, kind) {
-            const rows = await sbSelect('holiday_pharmacies', 'select=name,sido,addr,tel,duty_time8_s,duty_time8_c&order=sido,name&limit=10000')
+            // 일요일(매주 반복)은 duty_time7, 실제 지정 공휴일(신정·삼일절 등)은 duty_time8 — 서로 다른 필드라 구분해서 읽어야 함
+            const fieldIdx = kind === 'sunday' ? 7 : 8
+            const sField = `duty_time${fieldIdx}_s`, cField = `duty_time${fieldIdx}_c`
+            const rows = await sbSelect('holiday_pharmacies', `select=name,sido,addr,tel,${sField},${cField}&order=sido,name&limit=10000`)
             const bySido = {}
             for (const r of rows) {
+              if (!r[sField] && !r[cField]) continue // 이 날짜 종류에 해당하는 시간이 없는 약국은 제외
               if (!bySido[r.sido]) bySido[r.sido] = []
               bySido[r.sido].push(r)
             }
@@ -191,7 +195,7 @@ jobs:
             for (const sido of Object.keys(bySido).sort()) {
               content += `<h2>${sido}</h2>\n<ul>\n`
               for (const r of bySido[sido]) {
-                const t1 = fmtHM(r.duty_time8_s), t2 = fmtHM(r.duty_time8_c)
+                const t1 = fmtHM(r[sField]), t2 = fmtHM(r[cField])
                 const timeStr = t1 && t2 ? ` — ${t1}~${t2}` : ''
                 content += `<li><strong>${r.name}</strong> ${r.addr} ${r.tel || ''}${timeStr}</li>\n`
               }
