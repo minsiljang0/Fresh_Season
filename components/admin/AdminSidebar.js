@@ -21,6 +21,7 @@ const NAV = [
   { id: 'backlink',      label: '백링크 관리',     icon: '🔗' },
   { id: 'health_guide',  label: '건강 가이드 관리', icon: '🩺' },
   { id: 'health_map',    label: '건강지도 관리',   icon: '🧍' },
+  { id: 'holiday_pharmacy', label: '휴일약국',     icon: '💊' },
 ]
 
 function NavItem({ item, active, onClick }) {
