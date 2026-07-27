@@ -161,8 +161,36 @@ function WeekStrip() {
   )
 }
 
+function MapModal({ target, from, onClose }) {
+  const destQuery = encodeURIComponent(target.addr || target.name)
+  const src = (from && target.lat && target.lng)
+    ? `https://www.google.com/maps?saddr=${from.lat},${from.lng}&daddr=${target.lat},${target.lng}&output=embed`
+    : `https://www.google.com/maps?q=${destQuery}&output=embed`
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+    >
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 480, height: '80vh', maxHeight: 640,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>🗺 {target.name}</span>
+          <button onClick={onClose} className="month-pill" style={{ fontSize: 13, fontWeight: 700, marginLeft: 'auto' }}>
+            ✕ 닫기
+          </button>
+        </div>
+        <iframe src={src} style={{ flex: 1, border: 'none', width: '100%' }} title="지도" />
+      </div>
+    </div>
+  )
+}
+
 export default function HolidayPharmacy() {
   const [pharmacies, setPharmacies] = useState([])
+  const [mapModalTarget, setMapModalTarget] = useState(null)
+  const [directionsLoading, setDirectionsLoading] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sido, setSido] = useState('')
   const [district, setDistrict] = useState('')
@@ -199,6 +227,24 @@ export default function HolidayPharmacy() {
           .catch(() => {})
       },
       () => { setLocationError(true); setLocationLoading(false) }
+    )
+  }
+
+  const openDirections = (ph) => {
+    if (myLocation) { setMapModalTarget(ph); return }
+    setDirectionsLoading(ph.id)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setMyLocation(loc)
+        setDirectionsLoading(null)
+        setMapModalTarget(ph)
+        fetch(`/api/reverse-geocode?lat=${loc.lat}&lng=${loc.lng}`)
+          .then(r => r.json())
+          .then(d => setMyLocationLabel(d.label || ''))
+          .catch(() => {})
+      },
+      () => { setDirectionsLoading(null); setMapModalTarget(ph) } // 위치 거부해도 목적지만 보여줌
     )
   }
 
@@ -381,13 +427,13 @@ export default function HolidayPharmacy() {
                         📞 {ph.tel}
                       </a>
                     )}
-                    <a
-                      href={`https://map.kakao.com/?q=${encodeURIComponent(ph.addr || ph.name)}`}
-                      target="_blank" rel="noreferrer"
+                    <button
+                      onClick={() => openDirections(ph)}
+                      disabled={directionsLoading === ph.id}
                       className="month-pill" style={{ fontSize: 12, fontWeight: 700 }}
                     >
-                      🗺 길찾기
-                    </a>
+                      {directionsLoading === ph.id ? '위치 확인 중...' : '🗺 길찾기'}
+                    </button>
                   </div>
                 </div>
               )
@@ -396,6 +442,9 @@ export default function HolidayPharmacy() {
         </section>
       </main>
       <Footer />
+      {mapModalTarget && (
+        <MapModal target={mapModalTarget} from={myLocation} onClose={() => setMapModalTarget(null)} />
+      )}
     </>
   )
 }
