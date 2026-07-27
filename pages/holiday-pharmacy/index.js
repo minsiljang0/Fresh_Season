@@ -262,6 +262,16 @@ export default function HolidayPharmacy() {
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
+              {sido && (
+                <button
+                  onClick={() => { setSido(''); setDistrict('') }}
+                  className="month-pill"
+                  style={{ fontSize: 13, fontWeight: 700, flexShrink: 0 }}
+                  title="지역 선택 해제"
+                >
+                  ✕
+                </button>
+              )}
             </div>
             <form onSubmit={e => { e.preventDefault(); runSearch() }} style={{ display: 'flex', gap: 6, maxWidth: 360, marginBottom: 10 }}>
               <input
@@ -326,13 +336,6 @@ export default function HolidayPharmacy() {
               district={district}
               onSelectDistrict={setDistrict}
             />
-            {sido && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
-                <button onClick={() => { setSido(''); setDistrict('') }} className="month-pill" style={{ fontSize: 12, fontWeight: 700 }}>
-                  {selectedRegion?.icon} {sido}{district ? ` ${district}` : ''} ✕ 해제
-                </button>
-              </div>
-            )}
           </div>
         </section>
 
