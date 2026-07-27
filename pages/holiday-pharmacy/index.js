@@ -35,14 +35,14 @@ export default function HolidayPharmacy() {
   return (
     <>
       <Head>
-        <title>휴일약국 — Fresh Season</title>
-        <meta name="description" content="공휴일에도 문 여는 약국을 지역별로 확인하세요. 국립중앙의료원 공공데이터 기반으로 매일 자동 갱신됩니다." />
+        <title>일요일 약국 찾기 — 오늘 문 여는 휴일약국 | Fresh Season</title>
+        <meta name="description" content="일요일·공휴일에 가까운 곳에서 지금 문 여는 약국을 바로 찾아보세요. 국립중앙의료원 공공데이터 기반, 매일 자동 갱신됩니다." />
       </Head>
       <Header />
       <main className="wrap">
         <section style={{ padding: '40px 0 28px' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>💊 휴일약국</h1>
-          <p style={{ fontSize: 13, color: 'var(--text2)' }}>공휴일에도 문 여는 약국을 지역별로 확인하세요 (국립중앙의료원 공공데이터, 매일 자동 갱신)</p>
+          <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>💊 일요일 약국 찾기</h1>
+          <p style={{ fontSize: 13, color: 'var(--text2)' }}>일요일·공휴일에도 문 여는 약국을 지역별로 확인하세요 (국립중앙의료원 공공데이터, 매일 자동 갱신)</p>
         </section>
 
         {/* 전체 페이지 중단 배너 */}
