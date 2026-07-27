@@ -417,7 +417,7 @@ jobs:
 
             for (const p of posts) {
               const slug = `${postType}-pharmacy-${p.key}-${dateStamp}`
-              await publishPost({ title: p.title, slug, content: p.content })
+              await publishPost({ title: p.title, slug, summary: p.summary, content: p.content })
               await new Promise(r => setTimeout(r, 300))
             }
           }
