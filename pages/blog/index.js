@@ -9,6 +9,8 @@ import { HEALTH_CATEGORIES } from '../../lib/blogCategories'
 import { AdSlot } from '../../components/AdSlot'
 import { useAdSlot } from '../../lib/AdSlotsContext'
 
+const PAGE_SIZE = 30
+
 export default function BlogIndex() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -17,6 +19,8 @@ export default function BlogIndex() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [healthCat, setHealthCat] = useState('') // 건강효능 드롭다운은 검색어로 매핑된다
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const middleSlot = useAdSlot('home_middle')
 
   useEffect(() => {
@@ -25,25 +29,47 @@ export default function BlogIndex() {
       .catch(() => setCustomCategories([]))
   }, [])
 
-  const runSearch = () => setSearch(searchInput.trim())
+  const runSearch = () => { setCategory(''); setSearch(searchInput.trim()); setPage(1) }
 
   useEffect(() => {
     setLoading(true)
     const params = new URLSearchParams()
     if (category) params.set('category', category)
     if (search) params.set('q', search)
-    if (!category && !search) params.set('limit', '30')
-    fetch(`/api/blog/posts?${params.toString()}`).then(r => r.json()).then(d => setPosts(Array.isArray(d) ? d : []))
+    params.set('limit', String(PAGE_SIZE))
+    params.set('offset', String((page - 1) * PAGE_SIZE))
+    fetch(`/api/blog/posts?${params.toString()}`).then(r => {
+      const totalHeader = r.headers.get('X-Total-Count')
+      setTotal(totalHeader ? Number(totalHeader) : 0)
+      return r.json()
+    }).then(d => setPosts(Array.isArray(d) ? d : []))
       .catch(() => setPosts([])).finally(() => setLoading(false))
-  }, [category, search])
+  }, [category, search, page])
 
   const isRegionSelected = REGIONS.some(r => r.id === category)
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const selectHealthCat = (val) => {
     setHealthCat(val)
     setCategory('')
     setSearchInput(val) // 건강효능은 카테고리로 저장되는 값이 아니라 제목·본문 검색으로 매칭한다
     setSearch(val)
+    setPage(1)
+  }
+
+  const goToPage = (n) => {
+    setPage(n)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const pageNumbers = () => {
+    const windowSize = 5
+    let start = Math.max(1, page - Math.floor(windowSize / 2))
+    const end = Math.min(totalPages, start + windowSize - 1)
+    start = Math.max(1, end - windowSize + 1)
+    const nums = []
+    for (let i = start; i <= end; i++) nums.push(i)
+    return nums
   }
 
   return (
@@ -67,12 +93,12 @@ export default function BlogIndex() {
         {/* 필터: 전체 / 지역 드롭다운 / 건강효능 드롭다운 / 검색 / 커스텀 카테고리 칩 */}
         <section style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-            <button onClick={() => { setCategory(''); setSearchInput(''); setSearch(''); setHealthCat('') }} className="month-pill"
+            <button onClick={() => { setCategory(''); setSearchInput(''); setSearch(''); setHealthCat(''); setPage(1) }} className="month-pill"
               style={{ borderColor: !category && !search ? '#888' : undefined, color: !category && !search ? 'var(--text)' : undefined, fontWeight: 600 }}>
               전체
             </button>
 
-            <select value={isRegionSelected ? category : ''} onChange={e => { setCategory(e.target.value); setSearchInput(''); setSearch(''); setHealthCat('') }}
+            <select value={isRegionSelected ? category : ''} onChange={e => { setCategory(e.target.value); setSearchInput(''); setSearch(''); setHealthCat(''); setPage(1) }}
               className="month-pill" style={{ fontWeight: 600, cursor: 'pointer', paddingRight: 8 }}>
               <option value="">📍 지역 선택</option>
               {REGIONS.map(r => (
@@ -88,7 +114,7 @@ export default function BlogIndex() {
               ))}
             </select>
 
-            <form onSubmit={e => { e.preventDefault(); setCategory(''); runSearch() }} style={{ display: 'flex', gap: 6, flex: '1 1 260px', maxWidth: 360 }}>
+            <form onSubmit={e => { e.preventDefault(); runSearch() }} style={{ display: 'flex', gap: 6, flex: '1 1 260px', maxWidth: 360 }}>
               <input
                 value={searchInput}
                 onChange={e => { setSearchInput(e.target.value); setHealthCat('') }}
@@ -154,6 +180,42 @@ export default function BlogIndex() {
               )
             })}
           </div>
+
+          {!loading && totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 32, flexWrap: 'wrap' }}>
+              <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page === 1} className="month-pill"
+                style={{ opacity: page === 1 ? 0.4 : 1, cursor: page === 1 ? 'default' : 'pointer' }}>
+                이전
+              </button>
+              {pageNumbers()[0] > 1 && (
+                <>
+                  <button onClick={() => goToPage(1)} className="month-pill">1</button>
+                  {pageNumbers()[0] > 2 && <span style={{ color: 'var(--text3)' }}>…</span>}
+                </>
+              )}
+              {pageNumbers().map(n => (
+                <button key={n} onClick={() => goToPage(n)} className="month-pill"
+                  style={{
+                    fontWeight: n === page ? 700 : 500,
+                    background: n === page ? 'var(--accent)' : undefined,
+                    borderColor: n === page ? 'var(--accent)' : undefined,
+                    color: n === page ? '#fff' : undefined,
+                  }}>
+                  {n}
+                </button>
+              ))}
+              {pageNumbers()[pageNumbers().length - 1] < totalPages && (
+                <>
+                  {pageNumbers()[pageNumbers().length - 1] < totalPages - 1 && <span style={{ color: 'var(--text3)' }}>…</span>}
+                  <button onClick={() => goToPage(totalPages)} className="month-pill">{totalPages}</button>
+                </>
+              )}
+              <button onClick={() => goToPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="month-pill"
+                style={{ opacity: page === totalPages ? 0.4 : 1, cursor: page === totalPages ? 'default' : 'pointer' }}>
+                다음
+              </button>
+            </div>
+          )}
         </section>
       </main>
       <Footer />

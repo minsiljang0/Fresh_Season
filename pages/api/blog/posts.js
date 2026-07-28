@@ -67,7 +67,9 @@ export default async function handler(req, res) {
       if (error || !data) return res.status(404).json({ error: 'Not found' })
       return res.status(200).json(isAdmin ? data : stripAdminScores(data))
     }
-    let query = supabase.from('blog_posts').select('*').order('created_at', { ascending: false })
+    // count:'exact'로 전체 개수를 같이 받아서 X-Total-Count 헤더로 내려준다 —
+    // 응답 바디는 기존대로 배열 그대로 유지해서 기존 호출부(관련글 위젯 등)를 안 깨뜨림.
+    let query = supabase.from('blog_posts').select('*', { count: 'exact' }).order('created_at', { ascending: false })
     if (!isAdmin) query = query.eq('status', 'published')
     query = query.eq('post_type', post_type || 'blog')
     if (category) query = query.eq('category', category)
@@ -77,9 +79,10 @@ export default async function handler(req, res) {
       if (safeQ) query = query.or(`title.ilike.%${safeQ}%,content.ilike.%${safeQ}%`)
     }
     query = query.range(Number(offset), Number(offset) + Number(limit) - 1)
-    const { data, error } = await query
+    const { data, error, count } = await query
     if (error) return res.status(500).json({ error: error.message })
     const rows = data || []
+    res.setHeader('X-Total-Count', String(count ?? rows.length))
     return res.status(200).json(isAdmin ? rows : rows.map(stripAdminScores))
   }
 
